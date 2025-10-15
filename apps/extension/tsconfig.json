@@ -1,0 +1,41 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": "../../",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@boostlly/core": ["packages/core/src"],
+      "@boostlly/core/*": ["packages/core/src/*"],
+      "@boostlly/ui": ["packages/ui/src"],
+      "@boostlly/ui/*": ["packages/ui/src/*"],
+      "@boostlly/features": ["packages/features/src"],
+      "@boostlly/features/*": ["packages/features/src/*"],
+      "@boostlly/platform": ["packages/platform/src"],
+      "@boostlly/platform/*": ["packages/platform/src/*"],
+      "@boostlly/platform-web": ["packages/platform-web/src"],
+      "@boostlly/platform-web/*": ["packages/platform-web/src/*"],
+      "@boostlly/platform-extension": ["packages/platform-extension/src"],
+      "@boostlly/platform-extension/*": ["packages/platform-extension/src/*"]
+    }
+  },
+  "include": [
+    "src",
+    "../../packages/features/src/types/speech-recognition.d.ts"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

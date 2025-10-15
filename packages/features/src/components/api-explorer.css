@@ -1,0 +1,65 @@
+/* API Explorer Component Styles */
+.api-explorer {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.api-explorer .provider-selector {
+  margin-bottom: 1rem;
+}
+
+.api-explorer .search-section {
+  margin-bottom: 1.5rem;
+}
+
+.api-explorer .results-section {
+  margin-top: 1.5rem;
+}
+
+.api-explorer .quote-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: white;
+}
+
+.api-explorer .quote-text {
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
+
+.api-explorer .quote-author {
+  font-weight: 600;
+  color: #374151;
+}
+
+.api-explorer .quote-meta {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.api-explorer .loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.api-explorer .error {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.api-explorer .success {
+  color: #059669;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}

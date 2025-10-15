@@ -1,0 +1,100 @@
+name: Build and Package Extension
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/extension/**'
+      - 'packages/**'
+      - 'scripts/**'
+  workflow_dispatch:
+
+jobs:
+  build-extension:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.14.0
+          
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+            
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build packages
+        run: |
+          pnpm --filter @boostlly/core run build
+          pnpm --filter @boostlly/features run build
+          pnpm --filter @boostlly/ui run build
+          pnpm --filter @boostlly/platform-extension run build
+          
+      - name: Build extension
+        run: pnpm --filter @boostlly/extension run build
+        
+      - name: Create extension archive
+        run: |
+          cd apps/extension/dist
+          zip -r boostlly-extension-${{ github.sha }}.zip .
+          
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: boostlly-extension
+          path: apps/extension/dist/boostlly-extension-${{ github.sha }}.zip
+          
+      - name: Create Release
+        uses: actions/create-release@v1
+        if: github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Boostlly Extension v${{ github.run_number }}
+          body: |
+            ## Boostlly Extension Release
+            
+            ### Installation Instructions
+            
+            1. Download the `boostlly-extension.zip` file from the artifacts
+            2. Extract the zip file
+            3. Open Chrome/Edge and go to `chrome://extensions/`
+            4. Enable "Developer mode"
+            5. Click "Load unpacked" and select the extracted folder
+            
+            ### Changes
+            - Latest build from commit ${{ github.sha }}
+          draft: false
+          prerelease: false
+          
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        if: github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: apps/extension/dist/boostlly-extension-${{ github.sha }}.zip
+          asset_name: boostlly-extension.zip
+          asset_content_type: application/zip

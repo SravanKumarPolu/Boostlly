@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boostlly Extension Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Boostlly Extension Test</h1>
+    
+    <div class="test-section">
+        <h2>Extension Status</h2>
+        <p>This page tests if the Boostlly extension is working correctly.</p>
+        <button onclick="testExtension()">Test Extension</button>
+        <div id="extension-status" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Storage Test</h2>
+        <p>Test if the extension can access Chrome storage.</p>
+        <button onclick="testStorage()">Test Storage</button>
+        <div id="storage-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Message Test</h2>
+        <p>Test communication with the extension background script.</p>
+        <button onclick="testMessage()">Send Message</button>
+        <div id="message-result" class="result"></div>
+    </div>
+
+    <script>
+        function testExtension() {
+            const statusDiv = document.getElementById('extension-status');
+            
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                statusDiv.innerHTML = '✅ Extension API available';
+                
+                // Check if our extension is installed
+                chrome.runtime.sendMessage({ type: 'GET_QUOTE' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        statusDiv.innerHTML += '<br>❌ Extension not loaded or not responding';
+                    } else {
+                        statusDiv.innerHTML += '<br>✅ Extension responding correctly';
+                        if (response && response.quote) {
+                            statusDiv.innerHTML += `<br>📝 Quote: "${response.quote.text}"`;
+                        }
+                    }
+                });
+            } else {
+                statusDiv.innerHTML = '❌ Extension API not available';
+            }
+        }
+
+        function testStorage() {
+            const resultDiv = document.getElementById('storage-result');
+            
+            if (typeof chrome !== 'undefined' && chrome.storage) {
+                chrome.storage.local.set({ test: 'Boostlly test data' }, () => {
+                    chrome.storage.local.get(['test'], (result) => {
+                        if (result.test === 'Boostlly test data') {
+                            resultDiv.innerHTML = '✅ Storage working correctly';
+                        } else {
+                            resultDiv.innerHTML = '❌ Storage test failed';
+                        }
+                    });
+                });
+            } else {
+                resultDiv.innerHTML = '❌ Chrome storage not available';
+            }
+        }
+
+        function testMessage() {
+            const resultDiv = document.getElementById('message-result');
+            
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage({ type: 'GET_QUOTE' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        resultDiv.innerHTML = '❌ Message failed: ' + chrome.runtime.lastError.message;
+                    } else if (response && response.quote) {
+                        resultDiv.innerHTML = `✅ Message successful!<br>📝 Quote: "${response.quote.text}"`;
+                    } else {
+                        resultDiv.innerHTML = '❌ Unexpected response format';
+                    }
+                });
+            } else {
+                resultDiv.innerHTML = '❌ Chrome runtime not available';
+            }
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            setTimeout(testExtension, 1000);
+        });
+    </script>
+</body>
+</html>

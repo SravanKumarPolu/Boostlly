@@ -1,0 +1,50 @@
+/* Mobile-first responsive styles for Smart Recommendations */
+
+/* Hide scrollbars on mobile while maintaining scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Safari and Chrome */
+}
+
+/* Ensure proper text wrapping on very small screens */
+@media (max-width: 480px) {
+  .xs\:inline {
+    display: inline !important;
+  }
+}
+
+/* Optimize touch targets on mobile */
+@media (max-width: 640px) {
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Ensure cards don't overflow on narrow screens */
+@media (max-width: 640px) {
+  .mobile-card {
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 8px;
+  }
+}
+
+/* Optimize grid gaps for mobile */
+@media (max-width: 640px) {
+  .mobile-grid {
+    gap: 12px;
+  }
+}
+
+/* Ensure proper spacing on very small screens */
+@media (max-width: 480px) {
+  .mobile-spacing {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}

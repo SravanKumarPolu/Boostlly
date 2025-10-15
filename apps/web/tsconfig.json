@@ -1,0 +1,32 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": "../../",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@boostlly/core": ["packages/core/src"],
+      "@boostlly/core/*": ["packages/core/src/*"],
+      "@boostlly/ui": ["packages/ui/src"],
+      "@boostlly/ui/*": ["packages/ui/src/*"],
+      "@boostlly/features": ["packages/features/src"],
+      "@boostlly/features/*": ["packages/features/src/*"],
+      "@boostlly/platform": ["packages/platform/src"],
+      "@boostlly/platform/*": ["packages/platform/src/*"],
+      "@boostlly/platform-web": ["packages/platform-web/src"],
+      "@boostlly/platform-web/*": ["packages/platform-web/src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "../../packages/features/src/types/speech-recognition.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Motivation - Boostlly</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      transition: background-image 0.5s ease;
+    }
+
+    .container {
+      max-width: 800px;
+      padding: 2rem;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(8px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      color: white;
+    }
+
+    .quote-text {
+      font-size: 1.8rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      font-weight: 300;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .quote-author {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      font-style: italic;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .refresh-btn {
+      margin-top: 2rem;
+      padding: 0.75rem 1.5rem;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .refresh-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .refresh-btn:focus-visible {
+      outline: 2px solid rgba(255, 255, 255, 0.8);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+
+    .action-buttons .refresh-btn {
+      margin-top: 0;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    /* Screen reader only class */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+      .container {
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid white;
+      }
+      
+      .quote-text, .quote-author {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      }
+      
+      .refresh-btn {
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid white;
+        color: white;
+      }
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      .refresh-btn {
+        transition: none;
+      }
+      
+      .refresh-btn:hover {
+        transform: none;
+      }
+    }
+
+    .loading {
+      opacity: 0.7;
+    }
+
+    .error {
+      color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.1);
+      padding: 1rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 107, 107, 0.3);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        margin: 1rem;
+        padding: 1.5rem;
+      }
+      
+      .quote-text {
+        font-size: 1.4rem;
+      }
+      
+      .quote-author {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container" role="main" aria-label="Daily motivational quote">
+    <section id="quote-content" class="loading" aria-live="polite" aria-label="Current quote">
+      <blockquote class="quote-text" aria-label="Quote text">Loading your daily motivation...</blockquote>
+      <cite class="quote-author" aria-label="Quote author">— Please wait</cite>
+    </section>
+    <div class="action-buttons">
+      <button 
+        class="refresh-btn" 
+        onclick="loadQuote()" 
+        aria-label="Get a new motivational quote"
+        title="Click to load a new motivational quote"
+      >
+        New Quote
+      </button>
+      <button 
+        class="refresh-btn" 
+        onclick="speakCurrentQuote()" 
+        aria-label="Speak current quote aloud"
+        title="Listen to the current quote using text-to-speech"
+      >
+        🔊 Read Aloud
+      </button>
+    </div>
+    <div id="status-announcement" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  </main>
+
+  <script type="module">
+    import { BundledProvider, useAutoTheme, playSound, accessibleTTS, announceToScreenReader } from '@boostlly/core';
+
+    const quoteContent = document.getElementById('quote-content');
+    const statusAnnouncement = document.getElementById('status-announcement');
+    const bundledProvider = new BundledProvider();
+
+    // Accessibility helper functions
+    function announceStatus(message) {
+      if (statusAnnouncement) {
+        statusAnnouncement.textContent = message;
+      }
+    }
+
+    function speakQuote(quote) {
+      if (quote && quote.text && quote.author) {
+        accessibleTTS.speak(`"${quote.text}" by ${quote.author}`, {
+          onStart: () => announceStatus('Speaking quote aloud'),
+          onEnd: () => announceStatus('Finished speaking quote'),
+          onError: (error) => announceStatus(`Speech error: ${error}`)
+        });
+      }
+    }
+
+    function speakCurrentQuote() {
+      const quoteText = document.querySelector('.quote-text');
+      const quoteAuthor = document.querySelector('.quote-author');
+      
+      if (quoteText && quoteAuthor && !quoteContent.classList.contains('loading')) {
+        const text = quoteText.textContent.replace(/"/g, '');
+        const author = quoteAuthor.textContent.replace('— ', '');
+        
+        if (text && author && text !== 'Loading your daily motivation...') {
+          speakQuote({ text, author });
+        } else {
+          announceStatus('No quote available to speak');
+        }
+      } else {
+        announceStatus('Please wait for quote to load');
+      }
+    }
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const target = e.target;
+        if (target.classList.contains('refresh-btn')) {
+          e.preventDefault();
+          if (target.textContent.includes('New Quote')) {
+            loadQuote();
+          } else if (target.textContent.includes('Read Aloud')) {
+            speakCurrentQuote();
+          }
+        }
+      } else if (e.key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Press 'r' to refresh quote
+        e.preventDefault();
+        loadQuote();
+      } else if (e.key === 's' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Press 's' to speak quote
+        e.preventDefault();
+        speakCurrentQuote();
+      }
+    });
+
+    // Initialize theme and background
+    async function initializeTheme() {
+      try {
+        const today = new Date();
+        const dateKey = today.toISOString().split('T')[0].replace(/-/g, '');
+        const imageUrl = `https://picsum.photos/seed/${dateKey}/1920/1080`;
+        
+        // Set background image
+        document.body.style.backgroundImage = `url(${imageUrl})`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundAttachment = 'fixed';
+        
+        console.log('Extension: Background set', imageUrl);
+
+        // Try to extract colors and apply theme
+        try {
+          const { extractPalette, applyColorPalette } = await import('@boostlly/core');
+          const palette = await extractPalette(imageUrl);
+          applyColorPalette(palette);
+          console.log('Extension: Theme applied', palette);
+        } catch (colorError) {
+          console.warn('Extension: Color extraction failed', colorError);
+        }
+      } catch (error) {
+        console.error('Extension: Theme initialization failed', error);
+      }
+    }
+
+    // Load and display quote
+    async function loadQuote() {
+      try {
+        quoteContent.classList.add('loading');
+        announceStatus('Loading new quote...');
+        
+        const quote = await bundledProvider.random();
+        
+        quoteContent.innerHTML = `
+          <blockquote class="quote-text" aria-label="Quote text">"${quote.text}"</blockquote>
+          <cite class="quote-author" aria-label="Quote author">— ${quote.author}</cite>
+        `;
+        
+        quoteContent.classList.remove('loading');
+        announceStatus(`New quote loaded: "${quote.text}" by ${quote.author}`);
+        
+        // Play sound
+        try {
+          await playSound('crystal-chime', 70);
+        } catch (soundError) {
+          console.warn('Extension: Sound playback failed', soundError);
+        }
+        
+        console.log('Extension: Quote loaded', quote);
+      } catch (error) {
+        console.error('Extension: Failed to load quote', error);
+        announceStatus('Failed to load quote. Please try again.');
+        quoteContent.innerHTML = `
+          <div class="error" role="alert" aria-label="Error message">
+            <div class="quote-text">Failed to load quote</div>
+            <div class="quote-author">Please try again</div>
+          </div>
+        `;
+        quoteContent.classList.remove('loading');
+      }
+    }
+
+    // Initialize everything
+    async function initialize() {
+      try {
+        await initializeTheme();
+        await loadQuote();
+      } catch (error) {
+        console.error('Extension: Initialization failed', error);
+      }
+    }
+
+    // Start the app
+    initialize();
+
+    // Make loadQuote available globally
+    window.loadQuote = loadQuote;
+  </script>
+</body>
+</html>
