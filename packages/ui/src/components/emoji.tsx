@@ -1,12 +1,22 @@
 
+import { useState, useEffect } from 'react';
+
+interface EmojiProps {
+  emoji: string;
+  fallback?: string;
+  className?: string;
+}
+
 // Emoji fallback component for better cross-platform support
-export const Emoji = ({ emoji, fallback, className = "" }) => {
+export const Emoji = ({ emoji, fallback, className = "" }: EmojiProps) => {
   const [showFallback, setShowFallback] = useState(false);
   
   useEffect(() => {
     // Test if emoji renders properly
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
     ctx.font = '16px Arial';
     const width = ctx.measureText(emoji).width;
     

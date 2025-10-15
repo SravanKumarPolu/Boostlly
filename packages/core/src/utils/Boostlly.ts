@@ -23,7 +23,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-1",
     text: "Don't watch the clock; do what it does. Keep going.",
     author: "Sam Levenson",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "perseverance", "time", "action"],
     source: "Boostlly",
   },
@@ -31,7 +31,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-2",
     text: "The harder you work for something, the greater you'll feel when you achieve it.",
     author: "Anonymous",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "work", "achievement", "effort"],
     source: "Boostlly",
   },
@@ -39,7 +39,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-3",
     text: "Success is not final; failure is not fatal: It is the courage to continue that counts.",
     author: "Winston Churchill",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["success", "failure", "courage", "motivation"],
     source: "Boostlly",
   },
@@ -47,7 +47,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-4",
     text: "Dream big. Start small. Act now.",
     author: "Robin Sharma",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "dreams", "action", "planning"],
     source: "Boostlly",
   },
@@ -55,7 +55,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-5",
     text: "It always seems impossible until it's done.",
     author: "Nelson Mandela",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "impossible", "achievement", "perseverance"],
     source: "Boostlly",
   },
@@ -63,7 +63,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-6",
     text: "Push yourself, because no one else is going to do it for you.",
     author: "Anonymous",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "self-discipline", "independence", "effort"],
     source: "Boostlly",
   },
@@ -71,7 +71,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-7",
     text: "Great things never come from comfort zones.",
     author: "Anonymous",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "comfort-zone", "growth", "challenge"],
     source: "Boostlly",
   },
@@ -79,7 +79,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-8",
     text: "The way to get started is to quit talking and begin doing.",
     author: "Walt Disney",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "action", "doing", "start"],
     source: "Boostlly",
   },
@@ -87,7 +87,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-9",
     text: "Don't limit your challenges—challenge your limits.",
     author: "Anonymous",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "challenge", "limits", "growth"],
     source: "Boostlly",
   },
@@ -95,7 +95,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-10",
     text: "Success is walking from failure to failure with no loss of enthusiasm.",
     author: "Winston Churchill",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["success", "failure", "enthusiasm", "motivation"],
     source: "Boostlly",
   },
@@ -831,7 +831,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-11",
     text: "The future belongs to those who believe in the beauty of their dreams.",
     author: "Eleanor Roosevelt",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "future", "dreams", "belief"],
     source: "Boostlly",
   },
@@ -839,7 +839,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-12",
     text: "You miss 100% of the shots you don't take.",
     author: "Wayne Gretzky",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "action", "opportunity", "risk"],
     source: "Boostlly",
   },
@@ -847,7 +847,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-13",
     text: "The way to get started is to quit talking and begin doing.",
     author: "Walt Disney",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "action", "doing", "start"],
     source: "Boostlly",
   },
@@ -855,7 +855,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-14",
     text: "Innovation distinguishes between a leader and a follower.",
     author: "Steve Jobs",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "innovation", "leadership", "creativity"],
     source: "Boostlly",
   },
@@ -863,7 +863,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     id: "boostlly-motivation-15",
     text: "Life is what happens to you while you're busy making other plans.",
     author: "John Lennon",
-    category: "🏆 Motivation",
+    category: "💪 Motivation",
     tags: ["motivation", "life", "plans", "present"],
     source: "Boostlly",
   },
@@ -1570,7 +1570,7 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
  */
 const CATEGORY_ALIASES: Record<string, string> = {
   // Old categories -> New emoji categories
-  "motivation": "🏆 Motivation",
+  "motivation": "💪 Motivation",
   "success": "🏆 Success",
   "learning": "🌱 Learning",
   "growth": "🌱 Growth",
@@ -1605,7 +1605,8 @@ const CATEGORY_ALIASES: Record<string, string> = {
   "adaptability": "🔄 Adaptability",
   "faith": "✨ Faith",
   "hope": "✨ Hope",
-  "motivation & success": "🏆 Motivation & Success",
+  "general": "🌟 General",
+  "motivation & success": "💪 Motivation & Success",
   "growth & learning": "🌱 Growth & Learning",
   "mindset & positivity": "💭 Mindset & Positivity",
   "courage & confidence": "💪 Courage & Confidence",
@@ -1644,8 +1645,21 @@ export function getRandomFallbackQuote(category?: string): Quote {
     availableQuotes = BOOSTLLY_FALLBACK_QUOTES;
   }
   
-  const randomIndex = Math.floor(Math.random() * availableQuotes.length);
-  return availableQuotes[randomIndex];
+   // Use date-based selection for consistency between localhost and deployed versions
+   const today = new Date();
+   const dayOfYear = Math.floor(
+     (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) /
+       (1000 * 60 * 60 * 24),
+   );
+   const year = today.getFullYear();
+   const month = today.getMonth() + 1;
+   const day = today.getDate();
+   
+   // Use multiple factors to create more variety but keep it deterministic
+   const combined = (dayOfYear * 7 + year * 3 + month * 5 + day * 11) % 1000;
+   const quoteIndex = combined % availableQuotes.length;
+   
+   return availableQuotes[quoteIndex];
 }
 
 /**

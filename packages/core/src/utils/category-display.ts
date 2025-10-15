@@ -10,7 +10,7 @@
  */
 export const CATEGORY_DISPLAY_MAP: Record<string, string> = {
   // Core categories
-  "motivation": "🏆 Motivation",
+  "motivation": "💪 Motivation",
   "success": "🏆 Success",
   "learning": "🌱 Learning",
   "growth": "🌱 Growth",
@@ -45,9 +45,10 @@ export const CATEGORY_DISPLAY_MAP: Record<string, string> = {
   "adaptability": "🔄 Adaptability",
   "faith": "✨ Faith",
   "hope": "✨ Hope",
+  "general": "🌟 General",
   
   // Handle combined category names from external APIs
-  "motivation & success": "🏆 Motivation & Success",
+  "motivation & success": "💪 Motivation & Success",
   "growth & learning": "🌱 Growth & Learning",
   "mindset & positivity": "💭 Mindset & Positivity",
   "courage & confidence": "💪 Courage & Confidence",
