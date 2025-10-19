@@ -2,6 +2,7 @@ import { Quote } from "../../types";
 import { QuoteProvider, normalizeQuote, logProviderError } from "./base";
 import { guardedFetch } from "../../utils/rateLimiter";
 import { maybeProxy } from "../../utils/network";
+import { getRandomFallbackQuote } from "../../utils/Boostlly";
 
 export class FavQsProvider implements QuoteProvider {
   readonly name = "FavQs";
@@ -11,7 +12,7 @@ export class FavQsProvider implements QuoteProvider {
       const url = maybeProxy("https://favqs.com/api/qotd");
       const res = await guardedFetch(url, {
         cache: "default",
-      });
+      }, 8000); // 8 second timeout for FavQs
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -31,12 +32,8 @@ export class FavQsProvider implements QuoteProvider {
         "FavQs",
         "daily",
       );
-      return normalizeQuote({
-        text: "Every day is a new opportunity.",
-        author: "Anonymous",
-        category: "general",
-        source: "FavQs",
-      });
+      // Fallback to Boostlly quotes with motivation category
+      return getRandomFallbackQuote("motivation");
     }
   }
 
@@ -47,7 +44,7 @@ export class FavQsProvider implements QuoteProvider {
       );
       const res = await guardedFetch(url, {
         cache: "default",
-      });
+      }, 8000); // 8 second timeout for FavQs
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -81,7 +78,7 @@ export class FavQsProvider implements QuoteProvider {
       );
       const res = await guardedFetch(url, {
         cache: "default",
-      });
+      }, 8000); // 8 second timeout for FavQs
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -115,7 +112,7 @@ export class FavQsProvider implements QuoteProvider {
       );
       const res = await guardedFetch(url, {
         cache: "default",
-      });
+      }, 8000); // 8 second timeout for FavQs
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);

@@ -12,7 +12,6 @@ import {
 } from "../types";
 import { StorageService } from "@boostlly/platform";
 import { QuotableProvider } from "./providers/quotable";
-import { LocalProvider } from "./providers/local";
 import { ZenQuotesProvider } from "./providers/zenquotes";
 import { TheySaidSoProvider } from "./providers/theysaidso";
 import { FavQsProvider } from "./providers/favqs";
@@ -20,7 +19,6 @@ import { QuoteGardenProvider } from "./providers/quotegarden";
 import { StoicQuotesProvider } from "./providers/stoic-quotes";
 import { ProgrammingQuotesProvider } from "./providers/programming-quotes";
 import { DummyJSONProvider } from "./providers/dummyjson";
-import { BundledProvider } from "./providers/bundled";
 import type { QuoteProvider } from "./providers/base";
 import { logError, logWarning, logDebug } from "../utils/logger";
 import { debugEnv } from "../utils/env";
@@ -29,6 +27,7 @@ import {
   getFallbackChain as getDayBasedFallbackChain,
   getProviderDisplayName,
 } from "../utils/day-based-quotes";
+import { getRandomFallbackQuote } from "../utils/Boostlly";
 
 /**
  * QuoteService - Central service for managing quotes from multiple providers
@@ -58,7 +57,7 @@ export class QuoteService {
   private apiCache: Map<string, { data: any; ts: number }> = new Map();
   private lastCallAt: Map<string, number> = new Map();
 
-  // Default source weights (sum = 1, DummyJSON/Bundled/Local stay fallback-only)
+  // Default source weights (sum = 1, DummyJSON stays fallback-only)
   // Updated based on API reliability and quality analysis
   private defaultSourceWeights: SourceWeights = {
     ZenQuotes: 0.25, // Very reliable, daily + random endpoints, diverse
@@ -69,8 +68,6 @@ export class QuoteService {
     "Programming Quotes": 0.1, // Programming and tech quotes
     "They Said So": 0.0, // Removed from rotation (can still be used as fallback)
     DummyJSON: 0.0, // Keep as FALLBACK ONLY for Mon-Sat API failures
-    Bundled: 0.0, // Keep as fallback-only
-    Local: 0.0, // Keep as fallback-only
   };
 
   private sourceWeights: SourceWeights;
@@ -108,12 +105,8 @@ export class QuoteService {
       categories: ["motivation", "productivity", "success", "leadership"],
       ...config,
     };
-    // Initialize with default quotes immediately
-    this.quotes = this.getDefaultQuotes();
     // Setup providers (order matters for fallback)
     this.providers = [
-      new BundledProvider(), // Sunday - Bundled quotes from JSON
-      new LocalProvider(this.quotes), // Final fallback - Local quotes
       new ZenQuotesProvider(), // Monday - Zen wisdom
       new QuotableProvider(), // Tuesday - Inspiring collection
       new FavQsProvider(), // Wednesday - Quote of the day
@@ -172,11 +165,9 @@ export class QuoteService {
           "Stoic Quotes": (stored as any)["Stoic Quotes"] || 0,
           "Programming Quotes": (stored as any)["Programming Quotes"] || 0,
           DummyJSON: 0, // DummyJSON always stays fallback-only
-          Bundled: 0, // Bundled always stays fallback-only
-          Local: 0, // Local always stays fallback-only
         };
 
-        // Re-normalize to the default distribution (excluding Local/Bundled from normalization)
+        // Re-normalize to the default distribution
         const totalWeight =
           cleaned.ZenQuotes +
           cleaned.Quotable +
@@ -221,7 +212,7 @@ export class QuoteService {
   }
 
   private selectPrimarySource(): Source {
-    // Weighted random selection from APIs (exclude Local/Bundled)
+    // Weighted random selection from APIs
     // Updated order based on new priority distribution
     const apiSources: Source[] = [
       "ZenQuotes", // 25% - Very reliable, daily + random endpoints, diverse
@@ -257,8 +248,6 @@ export class QuoteService {
       "Stoic Quotes", // 15% - Stoic philosophy quotes
       "Programming Quotes", // 10% - Programming and tech quotes
       "They Said So", // Additional fallback option
-      "Bundled", // Bundled quotes from JSON
-      "Local", // Final fallback
     ];
     const primaryIndex = fallbackOrder.indexOf(primarySource);
 
@@ -273,8 +262,8 @@ export class QuoteService {
       typeof process !== "undefined" &&
       process.env.NODE_ENV === "production"
     ) {
-      // In build environment, just use default quotes
-      this.quotes = this.getDefaultQuotes();
+      // In build environment, just use Boostlly fallback quotes
+      this.quotes = [getRandomFallbackQuote()];
       return;
     }
 
@@ -286,8 +275,8 @@ export class QuoteService {
         { operation: "ensureInitialized" },
         "QuoteService",
       );
-      // Keep default quotes if initialization fails
-      this.quotes = this.getDefaultQuotes();
+      // Keep Boostlly fallback quotes if initialization fails
+      this.quotes = [getRandomFallbackQuote()];
     }
   }
 
@@ -324,8 +313,8 @@ export class QuoteService {
         { operation: "loadQuotes" },
         "QuoteService",
       );
-      // Keep default quotes if loading fails
-      this.quotes = this.getDefaultQuotes();
+      // Keep Boostlly fallback quotes if loading fails
+      this.quotes = [getRandomFallbackQuote()];
     }
   }
 
@@ -339,14 +328,14 @@ export class QuoteService {
 
       if (primaryProvider) {
         const q = await primaryProvider.random();
-        this.quotes = [q, ...this.getDefaultQuotes()];
+        this.quotes = [q, getRandomFallbackQuote()];
       } else {
         logWarning(
           "Primary provider not found, using local fallback",
           { primarySource },
           "QuoteService",
         );
-        this.quotes = this.getDefaultQuotes();
+        this.quotes = [getRandomFallbackQuote()];
       }
     } catch (error) {
       logWarning(
@@ -354,7 +343,7 @@ export class QuoteService {
         { error: error instanceof Error ? error.message : String(error) },
         "QuoteService",
       );
-      this.quotes = this.getDefaultQuotes();
+      this.quotes = [getRandomFallbackQuote()];
     }
     await this.storage.set("quotes", this.quotes);
   }
@@ -362,7 +351,7 @@ export class QuoteService {
   getDailyQuote(): Quote {
     // Always ensure we have at least one quote
     if (this.quotes.length === 0) {
-      this.quotes = this.getDefaultQuotes();
+      this.quotes = [getRandomFallbackQuote()];
     }
 
     // Include custom saved quotes from storage
@@ -488,7 +477,7 @@ export class QuoteService {
    * predictable yet varied experience throughout the week.
    *
    * Weekly Schedule:
-   * - Sunday: Bundled (local quotes)
+   * - Sunday: DummyJSON (fallback quotes)
    * - Monday: ZenQuotes
    * - Tuesday: Quotable
    * - Wednesday: FavQs
@@ -648,7 +637,7 @@ export class QuoteService {
   getRandomQuote(): Quote {
     // Always ensure we have at least one quote
     if (this.quotes.length === 0) {
-      this.quotes = this.getDefaultQuotes();
+      this.quotes = [getRandomFallbackQuote()];
     }
 
     // Include custom saved quotes from storage
@@ -903,7 +892,7 @@ export class QuoteService {
     ];
 
     if (includeLocal) {
-      usedSources.push("Local");
+      usedSources.push("DummyJSON");
     }
 
     // Get quotes from each source
@@ -1004,9 +993,9 @@ export class QuoteService {
       }
     }
 
-    // Add local search if no filters or filters allow local
-    if (!filters?.source || filters.source === "Local") {
-      const localResults = this.quotes
+    // Add fallback search if no filters or filters allow fallback
+    if (!filters?.source || filters.source === "DummyJSON") {
+      const fallbackResults = this.quotes
         .filter(
           (quote) =>
             quote.text.toLowerCase().includes(normalizedQuery) ||
@@ -1015,8 +1004,8 @@ export class QuoteService {
         )
         .filter((quote) => this.matchesFilters(quote, filters));
 
-      allResults.push(...localResults);
-      usedSources.push("Local");
+      allResults.push(...fallbackResults);
+      usedSources.push("DummyJSON");
     }
 
     // Update search history
@@ -1383,8 +1372,6 @@ export class QuoteService {
         "Stoic Quotes": 0,
         "Programming Quotes": 0,
         DummyJSON: 0,
-        Bundled: 0,
-        Local: 0,
       },
       categoryDistribution: {},
       averageRating: 0,
@@ -1401,7 +1388,7 @@ export class QuoteService {
       "FavQs",
       "They Said So",
       "QuoteGarden",
-      "Local",
+      "DummyJSON",
     ];
     sources.forEach((source) => {
       this.healthStatus.set(source, {
@@ -1501,218 +1488,4 @@ export class QuoteService {
     }
   }
 
-  private getDefaultQuotes(): Quote[] {
-    return [
-      {
-        id: "1",
-        text: "The only way to do great work is to love what you do.",
-        author: "Steve Jobs",
-        category: "motivation",
-        source: "Stanford Commencement Speech",
-      },
-      {
-        id: "2",
-        text: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-        author: "Winston Churchill",
-        category: "success",
-        source: "Famous Quote",
-      },
-      {
-        id: "3",
-        text: "The future belongs to those who believe in the beauty of their dreams.",
-        author: "Eleanor Roosevelt",
-        category: "motivation",
-        source: "Famous Quote",
-      },
-      {
-        id: "4",
-        text: "Productivity is never an accident. It is always the result of a commitment to excellence, intelligent planning, and focused effort.",
-        author: "Paul J. Meyer",
-        category: "productivity",
-        source: "Famous Quote",
-      },
-      {
-        id: "5",
-        text: "The best way to predict the future is to create it.",
-        author: "Peter Drucker",
-        category: "leadership",
-        source: "Famous Quote",
-      },
-      {
-        id: "6",
-        text: "Don't watch the clock; do what it does. Keep going.",
-        author: "Sam Levenson",
-        category: "motivation",
-        source: "Famous Quote",
-      },
-      {
-        id: "7",
-        text: "The only limit to our realization of tomorrow is our doubts of today.",
-        author: "Franklin D. Roosevelt",
-        category: "motivation",
-        source: "Famous Quote",
-      },
-      {
-        id: "8",
-        text: "It always seems impossible until it's done.",
-        author: "Nelson Mandela",
-        category: "success",
-        source: "Famous Quote",
-      },
-      {
-        id: "9",
-        text: "The journey of a thousand miles begins with one step.",
-        author: "Lao Tzu",
-        category: "motivation",
-        source: "Tao Te Ching",
-      },
-      {
-        id: "10",
-        text: "What you get by achieving your goals is not as important as what you become by achieving your goals.",
-        author: "Zig Ziglar",
-        category: "success",
-        source: "Famous Quote",
-      },
-      {
-        id: "11",
-        text: "The mind is everything. What you think you become.",
-        author: "Buddha",
-        category: "mindfulness",
-        source: "Buddhist Teaching",
-      },
-      {
-        id: "12",
-        text: "Quality is not an act, it is a habit.",
-        author: "Aristotle",
-        category: "excellence",
-        source: "Famous Quote",
-      },
-      {
-        id: "13",
-        text: "The only person you are destined to become is the person you decide to be.",
-        author: "Ralph Waldo Emerson",
-        category: "self-improvement",
-        source: "Famous Quote",
-      },
-      {
-        id: "14",
-        text: "Believe you can and you're halfway there.",
-        author: "Theodore Roosevelt",
-        category: "motivation",
-        source: "Famous Quote",
-      },
-      {
-        id: "15",
-        text: "The difference between ordinary and extraordinary is that little extra.",
-        author: "Jimmy Johnson",
-        category: "excellence",
-        source: "Famous Quote",
-      },
-      {
-        id: "16",
-        text: "Your time is limited, don't waste it living someone else's life.",
-        author: "Steve Jobs",
-        category: "life",
-        source: "Stanford Commencement Speech",
-      },
-      {
-        id: "17",
-        text: "The greatest glory in living lies not in never falling, but in rising every time we fall.",
-        author: "Nelson Mandela",
-        category: "resilience",
-        source: "Famous Quote",
-      },
-      {
-        id: "18",
-        text: "In the middle of difficulty lies opportunity.",
-        author: "Albert Einstein",
-        category: "opportunity",
-        source: "Famous Quote",
-      },
-      {
-        id: "19",
-        text: "The way to get started is to quit talking and begin doing.",
-        author: "Walt Disney",
-        category: "action",
-        source: "Famous Quote",
-      },
-      {
-        id: "20",
-        text: "Success usually comes to those who are too busy to be looking for it.",
-        author: "Henry David Thoreau",
-        category: "success",
-        source: "Famous Quote",
-      },
-      {
-        id: "21",
-        text: "The only impossible journey is the one you never begin.",
-        author: "Tony Robbins",
-        category: "motivation",
-        source: "Famous Quote",
-      },
-      {
-        id: "22",
-        text: "What you do today can improve all your tomorrows.",
-        author: "Ralph Marston",
-        category: "motivation",
-        source: "Famous Quote",
-      },
-      {
-        id: "23",
-        text: "The secret of getting ahead is getting started.",
-        author: "Mark Twain",
-        category: "action",
-        source: "Famous Quote",
-      },
-      {
-        id: "24",
-        text: "Don't let yesterday take up too much of today.",
-        author: "Will Rogers",
-        category: "mindfulness",
-        source: "Famous Quote",
-      },
-      {
-        id: "25",
-        text: "The best revenge is massive success.",
-        author: "Frank Sinatra",
-        category: "success",
-        source: "Famous Quote",
-      },
-      {
-        id: "26",
-        text: "Life is what happens when you're busy making other plans.",
-        author: "John Lennon",
-        category: "life",
-        source: "Famous Quote",
-      },
-      {
-        id: "27",
-        text: "The only way to achieve the impossible is to believe it is possible.",
-        author: "Charles Kingsleigh",
-        category: "belief",
-        source: "Alice in Wonderland",
-      },
-      {
-        id: "28",
-        text: "You miss 100% of the shots you don't take.",
-        author: "Wayne Gretzky",
-        category: "opportunity",
-        source: "Famous Quote",
-      },
-      {
-        id: "29",
-        text: "The harder you work for something, the greater you'll feel when you achieve it.",
-        author: "Anonymous",
-        category: "success",
-        source: "Famous Quote",
-      },
-      {
-        id: "30",
-        text: "Dream big and dare to fail.",
-        author: "Norman Vaughan",
-        category: "motivation",
-        source: "Famous Quote",
-      },
-    ];
-  }
 }

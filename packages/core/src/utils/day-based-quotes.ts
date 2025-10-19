@@ -23,8 +23,8 @@ export const WEEKLY_PROVIDER_SCHEDULE: readonly DayProviderMapping[] = [
   {
     day: 0, // Sunday
     dayName: "Sunday",
-    provider: "Bundled",
-    description: "Local bundled quotes for offline reliability",
+    provider: "DummyJSON",
+    description: "Fallback quotes for offline reliability",
   },
   {
     day: 1, // Monday
@@ -77,8 +77,7 @@ export const FALLBACK_CHAIN: readonly Source[] = [
   "Stoic Quotes", // Stoic philosophy
   "Programming Quotes", // Programming wisdom
   "They Said So", // Additional option
-  "Bundled", // Local bundled quotes
-  "Local", // Final fallback
+  "DummyJSON", // Fallback quotes
 ] as const;
 
 /**
@@ -129,8 +128,6 @@ export function getProviderDisplayName(source: Source): string {
     "Stoic Quotes": "Stoic Quotes",
     "Programming Quotes": "Programming Quotes",
     DummyJSON: "DummyJSON",
-    Bundled: "Bundled Collection",
-    Local: "Local Storage",
   };
   return displayNames[source] || source;
 }
@@ -164,7 +161,7 @@ export function getWeeklySchedule(): string {
  * @returns true if the provider doesn't require network access
  */
 export function isOfflineProvider(source: Source): boolean {
-  return source === "Local" || source === "Bundled";
+  return source === "DummyJSON";
 }
 
 /**

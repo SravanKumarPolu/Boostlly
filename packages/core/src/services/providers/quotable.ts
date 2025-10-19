@@ -46,7 +46,7 @@ export class QuotableProvider implements QuoteProvider {
 
         const res = await guardedFetch(url, {
           cache: "default",
-        });
+        }, 8000); // 8 second timeout for Quotable
 
         if (res.ok) {
           const quote = await res.json();
@@ -79,16 +79,14 @@ export class QuotableProvider implements QuoteProvider {
         );
       }
 
-      // Fallback to local quotes with date-based selection
-      const fallbackQuotes = this.getFallbackQuotes();
-      const quoteIndex = this.getQuoteIndexForDate() % fallbackQuotes.length;
-      const dailyQuote = fallbackQuotes[quoteIndex];
+      // Fallback to Boostlly quotes with motivation category
+      const fallbackQuote = getRandomFallbackQuote("motivation");
 
       // Cache the daily quote
-      this.dailyQuoteCache = dailyQuote;
+      this.dailyQuoteCache = fallbackQuote;
       this.dailyQuoteDate = today;
 
-      return dailyQuote;
+      return fallbackQuote;
     } catch (e) {
       logProviderError(
         e instanceof Error ? e : new Error(String(e)),
@@ -96,10 +94,8 @@ export class QuotableProvider implements QuoteProvider {
         "daily",
       );
 
-      // Final fallback
-      const fallbackQuotes = this.getFallbackQuotes();
-      const quoteIndex = Math.floor(Math.random() * fallbackQuotes.length);
-      return fallbackQuotes[quoteIndex];
+      // Final fallback to Boostlly quotes
+      return getRandomFallbackQuote("motivation");
     }
   }
 
@@ -110,7 +106,7 @@ export class QuotableProvider implements QuoteProvider {
         const url = `https://api.quotable.io/search/quotes?query=${encodeURIComponent(query)}&limit=10`;
         const res = await guardedFetch(url, {
           cache: "default",
-        });
+        }, 8000); // 8 second timeout for Quotable
 
         if (res.ok) {
           const data = await res.json();
@@ -166,7 +162,7 @@ export class QuotableProvider implements QuoteProvider {
         const url = `https://api.quotable.io/quotes?tags=${encodeURIComponent(category)}&limit=10`;
         const res = await guardedFetch(url, {
           cache: "default",
-        });
+        }, 8000); // 8 second timeout for Quotable
 
         if (res.ok) {
           const data = await res.json();
@@ -219,7 +215,7 @@ export class QuotableProvider implements QuoteProvider {
         const url = `https://api.quotable.io/quotes?author=${encodeURIComponent(author)}&limit=10`;
         const res = await guardedFetch(url, {
           cache: "default",
-        });
+        }, 8000); // 8 second timeout for Quotable
 
         if (res.ok) {
           const data = await res.json();

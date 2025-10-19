@@ -42,7 +42,7 @@ export function APIExplorer({ storage }: APIExplorerProps) {
     "FavQs",
     "They Said So",
     "QuoteGarden",
-    "Local",
+    "DummyJSON",
   ];
   const categories = [
     "motivation",

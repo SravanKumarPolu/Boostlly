@@ -3,6 +3,7 @@ import { QuoteProvider, normalizeQuote } from "./base";
 import { logProviderError } from "./base";
 import { guardedFetch } from "../../utils/rateLimiter";
 import { maybeProxy } from "../../utils/network";
+import { getRandomFallbackQuote } from "../../utils/Boostlly";
 
 export class ZenQuotesProvider implements QuoteProvider {
   readonly name = "ZenQuotes";
@@ -25,7 +26,7 @@ export class ZenQuotesProvider implements QuoteProvider {
       const url = maybeProxy("https://zenquotes.io/api/today");
       const res = await guardedFetch(url, {
         cache: "default",
-      });
+      }, 8000); // 8 second timeout for ZenQuotes
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -50,12 +51,8 @@ export class ZenQuotesProvider implements QuoteProvider {
         "ZenQuotes",
         "getTodayQuote",
       );
-      return normalizeQuote({
-        text: "Breathe. You got this.",
-        author: "Anonymous",
-        category: "general",
-        source: "ZenQuotes",
-      });
+      // Fallback to Boostlly quotes with zen/mindfulness category
+      return getRandomFallbackQuote("mindfulness");
     }
   }
 

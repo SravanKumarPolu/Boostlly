@@ -21,9 +21,7 @@ export type Source =
   | "QuoteGarden"
   | "Stoic Quotes"
   | "Programming Quotes"
-  | "DummyJSON"
-  | "Local"
-  | "Bundled";
+  | "DummyJSON";
 
 export interface SourceWeights {
   ZenQuotes: number;
@@ -34,8 +32,6 @@ export interface SourceWeights {
   "Stoic Quotes": number;
   "Programming Quotes": number;
   DummyJSON: number;
-  Local: number;
-  Bundled: number;
 }
 
 export interface QuoteCollection {

@@ -40,8 +40,7 @@ export class QuoteGardenProvider implements QuoteProvider {
       );
       const res = await guardedFetch(url, {
         cache: "no-store",
-        signal: AbortSignal.timeout(10000), // 10 second timeout
-      });
+      }, 8000); // 8 second timeout for QuoteGarden
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);

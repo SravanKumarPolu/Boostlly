@@ -158,7 +158,7 @@ export class ProgrammingQuotesProvider implements QuoteProvider {
       const res = await guardedFetch(url, {
         method: "HEAD",
         cache: "no-cache",
-      });
+      }, 8000); // 8 second timeout for Programming Quotes
 
       const responseTime = Date.now() - startTime;
 

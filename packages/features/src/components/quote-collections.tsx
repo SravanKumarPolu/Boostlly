@@ -58,7 +58,7 @@ export function QuoteCollections({ storage }: QuoteCollectionsProps) {
     "FavQs",
     "They Said So",
     "QuoteGarden",
-    "Local",
+    "DummyJSON",
   ];
   const categories = [
     "motivation",

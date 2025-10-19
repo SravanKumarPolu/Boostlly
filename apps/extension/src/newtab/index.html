@@ -186,11 +186,11 @@
   </main>
 
   <script type="module">
-    import { BundledProvider, useAutoTheme, playSound, accessibleTTS, announceToScreenReader } from '@boostlly/core';
+    import { DummyJSONProvider, useAutoTheme, playSound, accessibleTTS, announceToScreenReader } from '@boostlly/core';
 
     const quoteContent = document.getElementById('quote-content');
     const statusAnnouncement = document.getElementById('status-announcement');
-    const bundledProvider = new BundledProvider();
+    const dummyProvider = new DummyJSONProvider();
 
     // Accessibility helper functions
     function announceStatus(message) {
@@ -285,7 +285,7 @@
         quoteContent.classList.add('loading');
         announceStatus('Loading new quote...');
         
-        const quote = await bundledProvider.random();
+        const quote = await dummyProvider.random();
         
         quoteContent.innerHTML = `
           <blockquote class="quote-text" aria-label="Quote text">"${quote.text}"</blockquote>

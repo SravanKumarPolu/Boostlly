@@ -44,7 +44,7 @@ export class StoicQuotesProvider implements QuoteProvider {
           headers: {
             Accept: "application/json",
           },
-        });
+        }, 8000); // 8 second timeout for Stoic Quotes
 
         if (res.ok) {
           const data = await res.json();

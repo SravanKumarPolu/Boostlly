@@ -6,7 +6,7 @@ import { ZenQuotesProvider } from "./providers/zenquotes";
 // import { TheySaidSoProvider } from "./providers/theysaidso";
 // import { FavQsProvider } from "./providers/favqs";
 // import { QuoteGardenProvider } from "./providers/quotegarden";
-import { LocalProvider } from "./providers/local";
+import { getRandomFallbackQuote } from "../utils/Boostlly";
 
 export interface APIConfig {
   name: string;
@@ -173,9 +173,8 @@ export class APIIntegrationManager {
       }
     }
 
-    // Fallback to local provider
-    const localProvider = new LocalProvider(this.getDefaultQuotes());
-    const fallbackQuote = await localProvider.random();
+    // Fallback to Boostlly quotes
+    const fallbackQuote = getRandomFallbackQuote();
 
     return {
       success: true,
@@ -457,29 +456,4 @@ export class APIIntegrationManager {
     });
   }
 
-  private getDefaultQuotes(): Quote[] {
-    return [
-      {
-        id: "1",
-        text: "The only way to do great work is to love what you do.",
-        author: "Steve Jobs",
-        category: "motivation",
-        source: "Stanford Commencement Speech",
-      },
-      {
-        id: "2",
-        text: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-        author: "Winston Churchill",
-        category: "success",
-        source: "Famous Quote",
-      },
-      {
-        id: "3",
-        text: "The future belongs to those who believe in the beauty of their dreams.",
-        author: "Eleanor Roosevelt",
-        category: "motivation",
-        source: "Famous Quote",
-      },
-    ];
-  }
 }

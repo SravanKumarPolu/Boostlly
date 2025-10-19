@@ -154,7 +154,7 @@ export class DummyJSONProvider implements QuoteProvider {
       const res = await guardedFetch(url, {
         method: "HEAD",
         cache: "no-cache",
-      });
+      }, 8000); // 8 second timeout for DummyJSON
 
       const responseTime = Date.now() - startTime;
 

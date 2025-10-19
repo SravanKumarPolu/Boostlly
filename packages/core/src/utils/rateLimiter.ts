@@ -40,12 +40,31 @@ const allow = createLimiter({ capacity: 4, refillPerMin: 8 });
 export async function guardedFetch(
   input: RequestInfo,
   init?: RequestInit,
+  timeoutMs: number = 10000, // 10 second default timeout
 ): Promise<Response> {
   if (!allow()) {
     throw new Error("rate_limited");
   }
   const url = typeof input === "string" ? input : input.url;
-  return extensionFetch(url, init);
+  
+  // Create an AbortController for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await extensionFetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeoutMs}ms`);
+    }
+    throw error;
+  }
 }
 
 /**
