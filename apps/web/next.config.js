@@ -268,6 +268,18 @@ const nextConfig = {
         },
       ];
 
+      // Force cache refresh for JavaScript files
+      const jsCacheHeaders = [
+        {
+          key: "Cache-Control",
+          value: "public, max-age=0, must-revalidate",
+        },
+        {
+          key: "ETag",
+          value: `"${Date.now()}"`,
+        },
+      ];
+
       const developmentHeaders = [
         {
           key: "Cache-Control",
@@ -289,6 +301,12 @@ const nextConfig = {
       headers.push({
         source: "/static/(.*)",
         headers: performanceHeaders,
+      });
+
+      // JavaScript files with no cache to force refresh
+      headers.push({
+        source: "/_next/static/chunks/(.*).js",
+        headers: jsCacheHeaders,
       });
 
       // API routes with security headers
