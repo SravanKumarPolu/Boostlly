@@ -136,6 +136,10 @@ export const TodayTab = forwardRef<
             incrementQuotesRead();
           } catch (error) {
             console.error("Error loading daily quote:", error);
+            // Fallback to a default quote if loading fails
+            const fallbackQuote = quoteService.getRandomQuote();
+            setTodayQuote(fallbackQuote);
+            initializeQuoteStates(fallbackQuote);
           }
         };
         loadDailyQuote();
