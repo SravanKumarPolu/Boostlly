@@ -303,7 +303,29 @@ const nextConfig = {
         headers: performanceHeaders,
       });
 
-      // JavaScript files with no cache to force refresh
+      
+      // AGGRESSIVE CACHE BUSTING - Force refresh all JS files
+      headers.push({
+        source: "/_next/static/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate, max-age=0",
+          },
+          {
+            key: "Pragma",
+            value: "no-cache",
+          },
+          {
+            key: "Expires",
+            value: "0",
+          },
+          {
+            key: "ETag",
+            value: `"${Date.now()}"`,
+          },
+        ],
+      });
       headers.push({
         source: "/_next/static/chunks/(.*).js",
         headers: jsCacheHeaders,
