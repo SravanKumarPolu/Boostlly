@@ -58,6 +58,7 @@ export function QuoteCollections({ storage }: QuoteCollectionsProps) {
     "FavQs",
     "They Said So",
     "QuoteGarden",
+    "Stoic Quotes",
     "DummyJSON",
   ];
   const categories = [

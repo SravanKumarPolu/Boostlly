@@ -56,6 +56,8 @@ export class QuoteService {
   private providers: QuoteProvider[] = [];
   private apiCache: Map<string, { data: any; ts: number }> = new Map();
   private lastCallAt: Map<string, number> = new Map();
+  // Cache of API-enriched quotes accumulated over days
+  private cachedApiQuotes: Quote[] = [];
 
   // Default source weights (sum = 1, DummyJSON stays fallback-only)
   // Updated based on API reliability and quality analysis
@@ -143,6 +145,13 @@ export class QuoteService {
         for (const [k, v] of Object.entries(lastCalls)) {
           if (typeof v === "number") this.lastCallAt.set(k, v);
         }
+      }
+      // Load previously cached API quotes (daily enrichment pool)
+      const persistedApiQuotes = (
+        this.storage.getSync as any
+      )?.("quotes-cache");
+      if (Array.isArray(persistedApiQuotes)) {
+        this.cachedApiQuotes = persistedApiQuotes as Quote[];
       }
     } catch {}
 
@@ -307,6 +316,8 @@ export class QuoteService {
       } else {
         await this.fetchQuotes();
       }
+      // Perform once-per-day enrichment in the background (non-blocking)
+      this.maybeFetchOneDaily().catch(() => {});
     } catch (error) {
       logError(
         error instanceof Error ? error : new Error(String(error)),
@@ -348,6 +359,58 @@ export class QuoteService {
     await this.storage.set("quotes", this.quotes);
   }
 
+  /**
+   * Fetch one quote per day from API providers and cache locally (enrichment)
+   * - Dedupes against existing cached API quotes by stable id/text+author
+   * - Stores in storage key `quotes-cache` and marks `quotes-last-fetch` as YYYY-MM-DD
+   */
+  private async maybeFetchOneDaily(): Promise<void> {
+    try {
+      // Only run in browser/runtime environments with storage
+      const today = new Date().toISOString().split("T")[0];
+      const lastFetched = (this.storage.getSync as any)?.("quotes-last-fetch");
+      if (lastFetched === today) return;
+
+      // Try primary providers quickly; fall back to local if needed, but only cache API ones
+      const primarySource = this.selectPrimarySource();
+      const tryOrder: Source[] = [primarySource, ...this.getFallbackChain(primarySource)];
+      let fetched: Quote | null = null;
+      for (const source of tryOrder) {
+        if (source === "DummyJSON") continue; // skip local fallback for enrichment
+        const provider = this.providers.find((p) => p.name === source);
+        if (!provider) continue;
+        try {
+          const q = await provider.random();
+          if (q) {
+            fetched = q;
+            break;
+          }
+        } catch {}
+      }
+
+      if (!fetched) {
+        // Nothing to cache today
+        (this.storage.setSync as any)?.("quotes-last-fetch", today);
+        return;
+      }
+
+      // Deduplicate by id if present, else by text|author signature
+      const signature = (q: Quote) => `${q.id ?? ""}|${(q.text || "").trim()}|${(q.author || "").trim()}`;
+
+      const current: Quote[] = Array.isArray(this.cachedApiQuotes)
+        ? this.cachedApiQuotes
+        : [];
+      const exists = current.some((q) => signature(q) === signature(fetched!));
+      if (!exists) {
+        current.push(fetched);
+        this.cachedApiQuotes = current;
+        await this.storage.set("quotes-cache", current);
+      }
+
+      (this.storage.setSync as any)?.("quotes-last-fetch", today);
+    } catch {}
+  }
+
   getDailyQuote(): Quote {
     // Always ensure we have at least one quote
     if (this.quotes.length === 0) {
@@ -355,7 +418,8 @@ export class QuoteService {
     }
 
     // Include custom saved quotes from storage
-    let allQuotes = [...this.quotes];
+    // Merge shipped/local quotes with cached API enrichment pool
+    let allQuotes = [...this.quotes, ...this.cachedApiQuotes];
     try {
       const savedQuotes = this.storage.getSync("savedQuotes");
       if (Array.isArray(savedQuotes) && savedQuotes.length > 0) {
