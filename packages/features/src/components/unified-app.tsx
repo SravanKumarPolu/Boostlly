@@ -1983,12 +1983,34 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                           </div>
                           {/* Beta Header */}
                           <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                              <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400">
-                                This is a Beta version. Coming soon: these
-                                features.
-                              </h3>
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
+                              <div className="flex-1">
+                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                                  🚀 Advanced Features - Beta Version
+                                </h3>
+                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
+                                  These advanced features are currently in beta. Coming soon with full functionality:
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>AI-Powered Analytics</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Smart Predictions</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Voice Commands</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Pattern Recognition</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                           {/* Analytics removed for privacy-first approach */}
@@ -2027,12 +2049,34 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                           </div>
                           {/* Beta Header */}
                           <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                              <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400">
-                                This is a Beta version. Coming soon: these
-                                features.
-                              </h3>
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
+                              <div className="flex-1">
+                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                                  🚀 Advanced Features - Beta Version
+                                </h3>
+                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
+                                  These advanced features are currently in beta. Coming soon with full functionality:
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>AI-Powered Analytics</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Smart Predictions</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Voice Commands</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Pattern Recognition</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                           <SmartRecommendations
@@ -2111,12 +2155,34 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                           </div>
                           {/* Beta Header */}
                           <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                              <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400">
-                                This is a Beta version. Coming soon: these
-                                features.
-                              </h3>
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
+                              <div className="flex-1">
+                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                                  🚀 Advanced Features - Beta Version
+                                </h3>
+                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
+                                  These advanced features are currently in beta. Coming soon with full functionality:
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>AI-Powered Analytics</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Smart Predictions</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Voice Commands</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Pattern Recognition</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                           {/* Advanced analytics removed for privacy-first approach */}
@@ -2155,12 +2221,34 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                           </div>
                           {/* Beta Header */}
                           <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                              <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400">
-                                This is a Beta version. Coming soon: these
-                                features.
-                              </h3>
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
+                              <div className="flex-1">
+                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                                  🚀 Advanced Features - Beta Version
+                                </h3>
+                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
+                                  These advanced features are currently in beta. Coming soon with full functionality:
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>AI-Powered Analytics</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Smart Predictions</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Voice Commands</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Pattern Recognition</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                           <IntelligentCategorization
@@ -2240,12 +2328,34 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                           </div>
                           {/* Beta Header */}
                           <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                              <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400">
-                                This is a Beta version. Coming soon: these
-                                features.
-                              </h3>
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
+                              <div className="flex-1">
+                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                                  🚀 Advanced Features - Beta Version
+                                </h3>
+                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
+                                  These advanced features are currently in beta. Coming soon with full functionality:
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>AI-Powered Analytics</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Smart Predictions</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Voice Commands</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Pattern Recognition</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                           <PatternRecognition
@@ -2427,12 +2537,34 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                           </div>
                           {/* Beta Header */}
                           <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                              <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400">
-                                This is a Beta version. Coming soon: these
-                                features.
-                              </h3>
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
+                              <div className="flex-1">
+                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                                  🚀 Advanced Features - Beta Version
+                                </h3>
+                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
+                                  These advanced features are currently in beta. Coming soon with full functionality:
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>AI-Powered Analytics</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Smart Predictions</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Voice Commands</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                    <span>Pattern Recognition</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                           <AdvancedPredictions
