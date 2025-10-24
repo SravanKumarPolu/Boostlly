@@ -457,13 +457,30 @@ export class QuoteService {
       }
     }
 
+    // Get recent quote history to avoid repetition
+    const recentQuotes = this.getRecentQuoteHistory(7); // Last 7 days
+    
+    // Filter out recently shown quotes if we have enough quotes
+    let availableQuotes = allQuotes;
+    if (allQuotes.length > recentQuotes.length + 5) {
+      availableQuotes = allQuotes.filter(quote => 
+        !recentQuotes.some(recent => recent.id === quote.id)
+      );
+    }
+    
+    // If filtering left us with too few quotes, use all quotes
+    if (availableQuotes.length < 3) {
+      availableQuotes = allQuotes;
+    }
+
     // Otherwise, select a new daily quote based on today's date
     const quoteIndex = this.getQuoteIndexForDate(today);
-    const dailyQuote = allQuotes[quoteIndex % allQuotes.length];
+    const dailyQuote = availableQuotes[quoteIndex % availableQuotes.length];
 
-    // Store the new daily quote
+    // Store the new daily quote and update history
     this.storage.setSync("dailyQuote", dailyQuote);
     this.storage.setSync("dailyQuoteDate", today);
+    this.updateQuoteHistory(dailyQuote, today);
 
     return dailyQuote;
   }
@@ -1371,8 +1388,58 @@ export class QuoteService {
 
     // Use multiple factors to create more variety
     // Combine day of year, year, month, and day for better distribution
-    const combined = (dayOfYear * 7 + year * 3 + month * 5 + day * 11) % 1000;
+    // Added more factors to reduce cycling in small quote pools
+    const combined = (dayOfYear * 7 + year * 3 + month * 5 + day * 11 + 
+                     Math.floor(date.getTime() / (1000 * 60 * 60 * 24)) * 13) % 1000;
     return combined;
+  }
+
+  /**
+   * Get recent quote history to avoid repetition
+   */
+  private getRecentQuoteHistory(days: number): Quote[] {
+    try {
+      const history = this.storage.getSync("quoteHistory") || [];
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      return history.filter((entry: any) => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= cutoffDate;
+      }).map((entry: any) => entry.quote);
+    } catch (error) {
+      logDebug("Could not load quote history", { error });
+      return [];
+    }
+  }
+
+  /**
+   * Update quote history to track shown quotes
+   */
+  private updateQuoteHistory(quote: Quote, date: string): void {
+    try {
+      const history = this.storage.getSync("quoteHistory") || [];
+      
+      // Add new entry
+      history.push({
+        quote: quote,
+        date: date,
+        timestamp: Date.now()
+      });
+      
+      // Keep only last 30 days of history
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 30);
+      
+      const filteredHistory = history.filter((entry: any) => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= cutoffDate;
+      });
+      
+      this.storage.setSync("quoteHistory", filteredHistory);
+    } catch (error) {
+      logDebug("Could not update quote history", { error });
+    }
   }
 
   getQuoteByCategory(category: string): Quote[] {

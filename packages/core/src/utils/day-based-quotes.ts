@@ -47,14 +47,14 @@ export const WEEKLY_PROVIDER_SCHEDULE: readonly DayProviderMapping[] = [
   {
     day: 4, // Thursday
     dayName: "Thursday",
-    provider: "QuoteGarden",
-    description: "Quote Garden's curated collection",
+    provider: "Stoic Quotes",
+    description: "Thursday wisdom from stoic philosophy",
   },
   {
     day: 5, // Friday
     dayName: "Friday",
-    provider: "Stoic Quotes",
-    description: "End the week with stoic philosophy",
+    provider: "QuoteGarden",
+    description: "End the week with Quote Garden's curated collection",
   },
   {
     day: 6, // Saturday
