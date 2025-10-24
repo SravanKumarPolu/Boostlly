@@ -1,20 +1,19 @@
-/**
- * Search components for Boostlly
- *
- * This module exports search-related components that provide
- * advanced search functionality with filtering, suggestions,
- * and voice commands.
- */
+// Search components exports
+export { SearchContainer } from './SearchContainer';
+export { SearchInput } from './SearchInput';
+export { SearchFilters } from './SearchFilters';
+export { SearchResults } from './SearchResults';
+export { SearchHistory } from './SearchHistory';
+export { SearchAnalytics } from './SearchAnalytics';
 
-export { SearchInput } from "./SearchInput";
-export { SearchFilters } from "./SearchFilters";
-export { SearchResults } from "./SearchResults";
-export { AdvancedSearchRefactored } from "./AdvancedSearchRefactored";
-
-// Re-export types
+// Re-export the hook for external use
+export { useSearchState } from '../../hooks/useSearchState';
 export type {
   SearchFilters as SearchFiltersType,
-  SearchFiltersProps,
-} from "./SearchFilters";
-
-export type { Quote as SearchQuote, SearchResultsProps } from "./SearchResults";
+  SearchHistoryItem,
+  SavedSearch,
+  SearchAnalytics as SearchAnalyticsType,
+  SearchInsights,
+  SmartRecommendation,
+  RelatedContent,
+} from '../../hooks/useSearchState';

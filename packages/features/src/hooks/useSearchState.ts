@@ -1,35 +1,29 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { SearchService, logError, logDebug, logWarning } from "@boostlly/core";
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { SearchService } from '@boostlly/core';
 
-/**
- * Interface for search history items
- */
+// Types for search state management
+export interface SearchFilters {
+  author: string;
+  category: string;
+  collection: string;
+  isLiked: boolean | undefined;
+}
+
 export interface SearchHistoryItem {
   query: string;
   timestamp: number;
   resultCount: number;
 }
 
-/**
- * Interface for saved searches
- */
 export interface SavedSearch {
   id: string;
   name: string;
   query: string;
-  filters: {
-    author: string;
-    category: string;
-    collection: string;
-    isLiked: boolean | undefined;
-  };
+  filters: SearchFilters;
   createdAt: number;
   useCount: number;
 }
 
-/**
- * Interface for search analytics
- */
 export interface SearchAnalytics {
   popularSearches: { query: string; count: number }[];
   popularAuthors: { author: string; count: number }[];
@@ -38,39 +32,54 @@ export interface SearchAnalytics {
   averageResults: number;
 }
 
-/**
- * Interface for search filters
- */
-export interface SearchFilters {
-  author: string;
-  category: string;
-  collection: string;
-  isLiked: boolean | undefined;
+export interface SearchInsights {
+  favoriteAuthor: string;
+  favoriteCategory: string;
+  mostQuotedAuthor: string;
+  searchTrends: { date: string; count: number }[];
+  uniqueAuthorsCount: number;
+  uniqueCategoriesCount: number;
+}
+
+export interface SmartRecommendation {
+  type: 'similar' | 'trending' | 'discovery';
+  quote: any;
+  reason: string;
+  score: number;
+}
+
+export interface RelatedContent {
+  sameAuthor: any[];
+  sameCategory: any[];
+  sameCollection: any[];
+  similarQuotes: any[];
 }
 
 /**
  * Custom hook for managing search state and functionality
- *
+ * 
+ * This hook centralizes all search-related state management, reducing
+ * the complexity of components that use search functionality.
+ * 
  * @param savedQuotes - Array of saved quotes to search through
- * @param collections - Array of collections to search through
+ * @param collections - Array of collections for filtering
  * @returns Object containing search state and methods
- *
- * @example
- * ```tsx
- * const {
- *   searchQuery,
- *   setSearchQuery,
- *   suggestions,
- *   searchHistory,
- *   performSearch,
- *   saveSearch,
- *   clearHistory
- * } = useSearchState(savedQuotes, collections);
- * ```
  */
 export function useSearchState(savedQuotes: any[], collections: any[]) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  // Basic search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<SearchFilters>({
+    author: '',
+    category: '',
+    collection: '',
+    isLiked: undefined,
+  });
+
+  // Enhanced search experience state
+  const [showSearchHistory, setShowSearchHistory] = useState(false);
+  const [showSavedSearches, setShowSavedSearches] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [searchAnalytics, setSearchAnalytics] = useState<SearchAnalytics>({
@@ -80,188 +89,165 @@ export function useSearchState(savedQuotes: any[], collections: any[]) {
     totalSearches: 0,
     averageResults: 0,
   });
-  const [filters, setFilters] = useState<SearchFilters>({
-    author: "",
-    category: "",
-    collection: "",
-    isLiked: undefined,
-  });
 
-  // Initialize search service
+  // Advanced discovery state
+  const [showInsights, setShowInsights] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showRelatedContent, setShowRelatedContent] = useState(false);
+  const [searchInsights, setSearchInsights] = useState<SearchInsights>({
+    favoriteAuthor: '',
+    favoriteCategory: '',
+    mostQuotedAuthor: '',
+    searchTrends: [],
+    uniqueAuthorsCount: 0,
+    uniqueCategoriesCount: 0,
+  });
+  const [smartRecommendations, setSmartRecommendations] = useState<SmartRecommendation[]>([]);
+  const [relatedContent, setRelatedContent] = useState<RelatedContent>({
+    sameAuthor: [],
+    sameCategory: [],
+    sameCollection: [],
+    similarQuotes: [],
+  });
+  const [selectedQuote, setSelectedQuote] = useState<any>(null);
+
+  // Search service instance
   const searchService = useMemo(
     () => new SearchService(collections),
-    [collections],
+    [collections]
   );
 
-  // Update search service data when quotes or collections change
+  // Update search service when data changes
   useEffect(() => {
     searchService.updateData(savedQuotes, collections);
   }, [savedQuotes, collections, searchService]);
 
-  // Update suggestions based on search query
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const newSuggestions = searchService.getSuggestions(searchQuery);
-      setSuggestions(newSuggestions);
-    } else {
-      setSuggestions([]);
-    }
-  }, [searchQuery, searchService]);
-
-  // Load search data from localStorage
-  const loadSearchData = useCallback(() => {
-    try {
-      const history = localStorage.getItem("boostlly-search-history");
-      const saved = localStorage.getItem("boostlly-saved-searches");
-      const analytics = localStorage.getItem("boostlly-search-analytics");
-
-      if (history) setSearchHistory(JSON.parse(history));
-      if (saved) setSavedSearches(JSON.parse(saved));
-      if (analytics) setSearchAnalytics(JSON.parse(analytics));
-    } catch (error) {
-      logError("Failed to load search data:", { error: error });
-    }
-  }, []);
-
-  // Save search data to localStorage
-  const saveSearchData = useCallback(() => {
-    try {
-      localStorage.setItem(
-        "boostlly-search-history",
-        JSON.stringify(searchHistory),
-      );
-      localStorage.setItem(
-        "boostlly-saved-searches",
-        JSON.stringify(savedSearches),
-      );
-      localStorage.setItem(
-        "boostlly-search-analytics",
-        JSON.stringify(searchAnalytics),
-      );
-    } catch (error) {
-      logError("Failed to save search data:", { error: error });
-    }
-  }, [searchHistory, savedSearches, searchAnalytics]);
-
   // Perform search with current query and filters
-  const performSearch = useCallback(
-    (query?: string, customFilters?: Partial<SearchFilters>) => {
-      const searchTerm = query || searchQuery;
-      const searchFilters = { ...filters, ...customFilters };
+  const performSearch = useCallback(async () => {
+    if (!searchQuery.trim()) return [];
 
-      const results = searchService.search(searchTerm);
+    try {
+      const results = await searchService.search(searchQuery);
 
-      // Add to search history
-      if (searchTerm.trim()) {
-        const historyItem: SearchHistoryItem = {
-          query: searchTerm,
-          timestamp: Date.now(),
-          resultCount: results.length,
-        };
+      // Update search history
+      const historyItem: SearchHistoryItem = {
+        query: searchQuery,
+        timestamp: Date.now(),
+        resultCount: results.length,
+      };
+      setSearchHistory(prev => [historyItem, ...prev.slice(0, 49)]); // Keep last 50
 
-        setSearchHistory((prev) => {
-          const newHistory = [
-            historyItem,
-            ...prev.filter((item) => item.query !== searchTerm),
-          ].slice(0, 20);
-          return newHistory;
-        });
-
-        // Update analytics
-        setSearchAnalytics((prev) => ({
-          ...prev,
-          totalSearches: prev.totalSearches + 1,
-          averageResults:
-            (prev.averageResults * prev.totalSearches + results.length) /
-            (prev.totalSearches + 1),
-        }));
-      }
+      // Update analytics
+      setSearchAnalytics(prev => ({
+        ...prev,
+        totalSearches: prev.totalSearches + 1,
+        averageResults: (prev.averageResults + results.length) / 2,
+      }));
 
       return results;
-    },
-    [searchQuery, filters, searchService],
-  );
+    } catch (error) {
+      console.error('Search failed:', error);
+      return [];
+    }
+  }, [searchQuery, filters, searchService]);
 
   // Save current search as a saved search
-  const saveSearch = useCallback(
-    (name: string) => {
-      if (!searchQuery.trim()) return;
-
-      const savedSearch: SavedSearch = {
-        id: Date.now().toString(),
-        name,
-        query: searchQuery,
-        filters,
-        createdAt: Date.now(),
-        useCount: 0,
-      };
-
-      setSavedSearches((prev) => [savedSearch, ...prev]);
-    },
-    [searchQuery, filters],
-  );
+  const saveSearch = useCallback((name: string) => {
+    const savedSearch: SavedSearch = {
+      id: Date.now().toString(),
+      name,
+      query: searchQuery,
+      filters: { ...filters },
+      createdAt: Date.now(),
+      useCount: 0,
+    };
+    setSavedSearches(prev => [...prev, savedSearch]);
+  }, [searchQuery, filters]);
 
   // Load a saved search
   const loadSavedSearch = useCallback((savedSearch: SavedSearch) => {
     setSearchQuery(savedSearch.query);
     setFilters(savedSearch.filters);
-
-    // Update use count
-    setSavedSearches((prev) =>
-      prev.map((search) =>
-        search.id === savedSearch.id
-          ? { ...search, useCount: search.useCount + 1 }
-          : search,
-      ),
+    setSavedSearches(prev => 
+      prev.map(s => 
+        s.id === savedSearch.id 
+          ? { ...s, useCount: s.useCount + 1 }
+          : s
+      )
     );
   }, []);
 
   // Clear search history
   const clearHistory = useCallback(() => {
     setSearchHistory([]);
-    localStorage.removeItem("boostlly-search-history");
   }, []);
 
   // Clear saved searches
   const clearSavedSearches = useCallback(() => {
     setSavedSearches([]);
-    localStorage.removeItem("boostlly-saved-searches");
   }, []);
 
   // Update filters
   const updateFilters = useCallback((newFilters: Partial<SearchFilters>) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
+    setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
-  // Clear filters
+  // Clear all filters
   const clearFilters = useCallback(() => {
     setFilters({
-      author: "",
-      category: "",
-      collection: "",
+      author: '',
+      category: '',
+      collection: '',
       isLiked: undefined,
     });
   }, []);
 
-  // Load data on mount
-  useEffect(() => {
-    loadSearchData();
-  }, [loadSearchData]);
-
-  // Save data when it changes
-  useEffect(() => {
-    saveSearchData();
-  }, [saveSearchData]);
+  // Generate suggestions based on search history and saved searches
+  const suggestions = useMemo(() => {
+    const historyQueries = searchHistory.map(item => item.query);
+    const savedQueries = savedSearches.map(item => item.query);
+    const allQueries = [...new Set([...historyQueries, ...savedQueries])];
+    
+    return allQueries
+      .filter(query => query.toLowerCase().includes(searchQuery.toLowerCase()))
+      .slice(0, 10);
+  }, [searchQuery, searchHistory, savedSearches]);
 
   return {
-    // State
+    // Basic search state
     searchQuery,
     setSearchQuery,
+    showFilters,
+    setShowFilters,
+    filters,
+    setFilters,
     suggestions,
+
+    // Enhanced search experience
+    showSearchHistory,
+    setShowSearchHistory,
+    showSavedSearches,
+    setShowSavedSearches,
+    showAnalytics,
+    setShowAnalytics,
     searchHistory,
     savedSearches,
     searchAnalytics,
-    filters,
+
+    // Advanced discovery
+    showInsights,
+    setShowInsights,
+    showRecommendations,
+    setShowRecommendations,
+    showRelatedContent,
+    setShowRelatedContent,
+    searchInsights,
+    smartRecommendations,
+    setSmartRecommendations,
+    relatedContent,
+    setRelatedContent,
+    selectedQuote,
+    setSelectedQuote,
 
     // Methods
     performSearch,

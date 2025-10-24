@@ -1,281 +1,156 @@
-import { useState } from "react";
-import { Button, Input } from "@boostlly/ui";
-import { Filter, X, Calendar, User, Tag, Folder } from "lucide-react";
+import React from 'react';
+import { Button, Input, Badge } from '@boostlly/ui';
+import { X, Filter } from 'lucide-react';
+import { SearchFilters as SearchFiltersType } from '../../hooks/useSearchState';
 
-/**
- * Interface for search filters
- */
-export interface SearchFilters {
-  author: string;
-  category: string;
-  collection: string;
-  isLiked: boolean | undefined;
-}
-
-/**
- * Props for the SearchFilters component
- */
-export interface SearchFiltersProps {
-  filters: SearchFilters;
-  onFiltersChange: (filters: Partial<SearchFilters>) => void;
+interface SearchFiltersProps {
+  filters: SearchFiltersType;
+  onFiltersChange: (filters: Partial<SearchFiltersType>) => void;
   onClearFilters: () => void;
-  collections: Array<{ id: string; name: string }>;
-  categories: string[];
-  authors: string[];
-  isOpen: boolean;
-  onToggle: () => void;
+  collections?: any[];
 }
 
 /**
- * SearchFilters component for advanced search filtering
- *
- * Provides filtering options for:
- * - Author
- * - Category
- * - Collection
- * - Liked status
- *
- * @param props - Component props
- * @returns JSX element
- *
- * @example
- * ```tsx
- * <SearchFilters
- *   filters={filters}
- *   onFiltersChange={updateFilters}
- *   onClearFilters={clearFilters}
- *   collections={collections}
- *   categories={categories}
- *   authors={authors}
- *   isOpen={showFilters}
- *   onToggle={toggleFilters}
- * />
- * ```
+ * Search filters component for advanced search functionality
  */
 export function SearchFilters({
   filters,
   onFiltersChange,
   onClearFilters,
-  collections,
-  categories,
-  authors,
-  isOpen,
-  onToggle,
+  collections = [],
 }: SearchFiltersProps) {
-  const [localFilters, setLocalFilters] = useState<SearchFilters>(filters);
-
-  /**
-   * Handles individual filter changes
-   */
-  const handleFilterChange = (key: keyof SearchFilters, value: any) => {
-    const newFilters = { ...localFilters, [key]: value };
-    setLocalFilters(newFilters);
-    onFiltersChange(newFilters);
+  const handleFilterChange = (key: keyof SearchFiltersType, value: any) => {
+    onFiltersChange({ [key]: value });
   };
 
-  /**
-   * Handles applying filters
-   */
-  const handleApplyFilters = () => {
-    onFiltersChange(localFilters);
-    onToggle();
-  };
-
-  /**
-   * Handles clearing all filters
-   */
-  const handleClearFilters = () => {
-    const clearedFilters = {
-      author: "",
-      category: "",
-      collection: "",
-      isLiked: undefined,
-    };
-    setLocalFilters(clearedFilters);
-    onClearFilters();
-  };
-
-  /**
-   * Checks if any filters are active
-   */
-  const hasActiveFilters = Object.values(localFilters).some(
-    (value) => value !== "" && value !== undefined,
+  const hasActiveFilters = Object.values(filters).some(value => 
+    value !== '' && value !== undefined
   );
 
   return (
-    <div className="space-y-4">
-      {/* Filter Toggle Button */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onToggle}
-        className="flex items-center gap-2"
-      >
-        <Filter size={16} />
-        Filters
+    <div className="p-4 border rounded-lg space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold flex items-center space-x-2">
+          <Filter className="w-5 h-5" />
+          <span>Search Filters</span>
+        </h3>
         {hasActiveFilters && (
-          <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-1">
-            {
-              Object.values(localFilters).filter(
-                (v) => v !== "" && v !== undefined,
-              ).length
-            }
-          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearFilters}
+            className="flex items-center space-x-1"
+          >
+            <X className="w-4 h-4" />
+            <span>Clear All</span>
+          </Button>
         )}
-      </Button>
+      </div>
 
-      {/* Filter Panel */}
-      {isOpen && (
-        <div className="bg-card/50 p-4 rounded-lg border border-border space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-foreground">
-              Filter Results
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggle}
-              className="p-1"
-            >
-              <X size={16} />
-            </Button>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Author Filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Author</label>
+          <Input
+            placeholder="Filter by author..."
+            value={filters.author}
+            onChange={(e) => handleFilterChange('author', e.target.value)}
+          />
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Author Filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <User size={16} />
-                Author
-              </label>
-              <Input
-                type="text"
-                value={localFilters.author}
-                onChange={(e) => handleFilterChange("author", e.target.value)}
-                placeholder="Filter by author..."
-                className="text-sm"
-              />
-              {authors.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {authors.slice(0, 5).map((author) => (
-                    <button
-                      key={author}
-                      type="button"
-                      onClick={() => handleFilterChange("author", author)}
-                      className={`px-2 py-1 text-xs rounded-full border ${
-                        localFilters.author === author
-                          ? "bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-200"
-                          : "bg-secondary border-border text-secondary-foreground"
-                      }`}
-                    >
-                      {author}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+        {/* Category Filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Category</label>
+          <Input
+            placeholder="Filter by category..."
+            value={filters.category}
+            onChange={(e) => handleFilterChange('category', e.target.value)}
+          />
+        </div>
 
-            {/* Category Filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Tag size={16} />
-                Category
-              </label>
-              <Input
-                type="text"
-                value={localFilters.category}
-                onChange={(e) => handleFilterChange("category", e.target.value)}
-                placeholder="Filter by category..."
-                className="text-sm"
-              />
-              {categories.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {categories.slice(0, 5).map((category) => (
-                    <button
-                      key={category}
-                      type="button"
-                      onClick={() => handleFilterChange("category", category)}
-                      className={`px-2 py-1 text-xs rounded-full border ${
-                        localFilters.category === category
-                          ? "bg-green-100 border-green-300 text-green-800 dark:bg-green-900 dark:border-green-700 dark:text-green-200"
-                          : "bg-secondary border-border text-secondary-foreground"
-                      }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+        {/* Collection Filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Collection</label>
+          <select
+            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+            value={filters.collection}
+            onChange={(e) => handleFilterChange('collection', e.target.value)}
+          >
+            <option value="">All Collections</option>
+            {collections.map((collection) => (
+              <option key={collection.id} value={collection.id}>
+                {collection.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            {/* Collection Filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Folder size={16} />
-                Collection
-              </label>
-              <select
-                value={localFilters.collection}
-                onChange={(e) =>
-                  handleFilterChange("collection", e.target.value)
-                }
-                className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground"
+        {/* Liked Filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Liked Status</label>
+          <select
+            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+            value={filters.isLiked === undefined ? '' : filters.isLiked.toString()}
+            onChange={(e) => {
+              const value = e.target.value;
+              handleFilterChange('isLiked', value === '' ? undefined : value === 'true');
+            }}
+          >
+            <option value="">All Quotes</option>
+            <option value="true">Liked Only</option>
+            <option value="false">Not Liked</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Active Filters Display */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap gap-2">
+          <span className="text-sm text-muted-foreground">Active filters:</span>
+          {filters.author && (
+            <Badge variant="secondary" className="flex items-center space-x-1">
+              <span>Author: {filters.author}</span>
+              <button
+                onClick={() => handleFilterChange('author', '')}
+                className="ml-1 hover:text-destructive"
               >
-                <option value="">All Collections</option>
-                {collections.map((collection) => (
-                  <option key={collection.id} value={collection.id}>
-                    {collection.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Liked Filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">
-                Status
-              </label>
-              <select
-                value={
-                  localFilters.isLiked === undefined
-                    ? ""
-                    : localFilters.isLiked.toString()
-                }
-                onChange={(e) => {
-                  const value = e.target.value;
-                  handleFilterChange(
-                    "isLiked",
-                    value === "" ? undefined : value === "true",
-                  );
-                }}
-                className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground"
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {filters.category && (
+            <Badge variant="secondary" className="flex items-center space-x-1">
+              <span>Category: {filters.category}</span>
+              <button
+                onClick={() => handleFilterChange('category', '')}
+                className="ml-1 hover:text-destructive"
               >
-                <option value="">All Quotes</option>
-                <option value="true">Liked Only</option>
-                <option value="false">Not Liked</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Filter Actions */}
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearFilters}
-              disabled={!hasActiveFilters}
-            >
-              Clear All
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={onToggle}>
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleApplyFilters}>
-                Apply Filters
-              </Button>
-            </div>
-          </div>
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {filters.collection && (
+            <Badge variant="secondary" className="flex items-center space-x-1">
+              <span>Collection: {collections.find(c => c.id === filters.collection)?.name || filters.collection}</span>
+              <button
+                onClick={() => handleFilterChange('collection', '')}
+                className="ml-1 hover:text-destructive"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {filters.isLiked !== undefined && (
+            <Badge variant="secondary" className="flex items-center space-x-1">
+              <span>Liked: {filters.isLiked ? 'Yes' : 'No'}</span>
+              <button
+                onClick={() => handleFilterChange('isLiked', undefined)}
+                className="ml-1 hover:text-destructive"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
         </div>
       )}
     </div>

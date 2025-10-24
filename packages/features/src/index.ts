@@ -3,23 +3,21 @@ export { TodayTab } from "./components/today-tab";
 export { CollectionsTab } from "./components/collections-tab";
 export { AdvancedSearch } from "./components/advanced-search";
 
-// Search components (refactored)
-export {
-  SearchInput,
-  SearchFilters,
-  SearchResults,
-  AdvancedSearchRefactored,
-} from "./components/search";
+// Refactored components (new, improved versions)
+export { UnifiedAppRefactored } from "./components/refactored/UnifiedAppRefactored";
+
+// Search components (modular search functionality)
+export * from "./components/search";
+
+// Navigation components
+export * from "./components/navigation";
 
 // Custom hooks
 export {
   useSearchState,
-  useVoiceCommands,
-  useQuoteActions,
-  useLocalStorage,
-  useLocalStorageArray,
-  useLocalStorageObject,
+  useAppState,
 } from "./hooks";
+
 export { ExportImport } from "./components/export-import";
 export { APIIntegration } from "./components/api-integration";
 export { APIExplorer } from "./components/api-explorer";
@@ -38,7 +36,7 @@ export { AdvancedPredictions } from "./components/advanced-predictions";
 
 // Enhanced Saved Page (removed)
 
-// Unified cross-platform app shell
+// Unified cross-platform app shell (legacy)
 export { UnifiedApp } from "./components/unified-app";
 
 // Dynamic theming components
