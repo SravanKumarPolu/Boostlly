@@ -28,6 +28,11 @@ import {
   getProviderDisplayName,
 } from "../utils/day-based-quotes";
 import { getRandomFallbackQuote } from "../utils/Boostlly";
+import { SOURCE_WEIGHTS, TIME_CONSTANTS } from "../constants";
+import { BaseService, ServiceResponse } from "./base-service";
+import { errorHandler, ErrorUtils } from "../utils/error-handler";
+import { getAPIConfig, getEnabledProviders } from "../utils/api-config";
+import { createCacheConfig, CACHE_KEYS } from "../utils/cache-utils";
 
 /**
  * QuoteService - Central service for managing quotes from multiple providers
@@ -41,7 +46,7 @@ import { getRandomFallbackQuote } from "../utils/Boostlly";
  * const storage = new StorageService();
  * const quoteService = new QuoteService(storage, {
  *   cacheEnabled: true,
- *   maxCacheAge: 24 * 60 * 60 * 1000,
+ *   maxCacheAge: TIME_CONSTANTS.CACHE_24_HOURS,
  *   categories: ["motivation", "success"]
  * });
  *
@@ -49,9 +54,9 @@ import { getRandomFallbackQuote } from "../utils/Boostlly";
  * const randomQuote = await quoteService.getRandomQuote();
  * ```
  */
-export class QuoteService {
+export class QuoteService extends BaseService {
   private storage: StorageService;
-  private config: QuoteServiceConfig;
+  private quoteConfig: QuoteServiceConfig;
   private quotes: Quote[] = [];
   private providers: QuoteProvider[] = [];
   private apiCache: Map<string, { data: any; ts: number }> = new Map();
@@ -61,16 +66,7 @@ export class QuoteService {
 
   // Default source weights (sum = 1, DummyJSON stays fallback-only)
   // Updated based on API reliability and quality analysis
-  private defaultSourceWeights: SourceWeights = {
-    ZenQuotes: 0.25, // Very reliable, daily + random endpoints, diverse
-    Quotable: 0.2, // Large free database, no API key, inspirational tags
-    FavQs: 0.15, // Daily curated QOTD, decent fallback
-    QuoteGarden: 0.15, // Curated collection
-    "Stoic Quotes": 0.15, // Stoic philosophy quotes
-    "Programming Quotes": 0.1, // Programming and tech quotes
-    "They Said So": 0.0, // Removed from rotation (can still be used as fallback)
-    DummyJSON: 0.0, // Keep as FALLBACK ONLY for Mon-Sat API failures
-  };
+  private defaultSourceWeights: SourceWeights = SOURCE_WEIGHTS;
 
   private sourceWeights: SourceWeights;
   private analytics: QuoteAnalytics;
@@ -97,13 +93,21 @@ export class QuoteService {
    * ```
    */
   constructor(storage?: StorageService, config?: Partial<QuoteServiceConfig>) {
+    super('QuoteService', {
+      cacheEnabled: true,
+      cacheTTL: TIME_CONSTANTS.CACHE_24_HOURS,
+      retryAttempts: 3,
+      timeout: 10000,
+      monitoringEnabled: true,
+    });
+
     if (!storage) {
       throw new Error("StorageService must be provided to QuoteService");
     }
     this.storage = storage;
-    this.config = {
+    this.quoteConfig = {
       cacheEnabled: true,
-      maxCacheAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxCacheAge: TIME_CONSTANTS.CACHE_24_HOURS, // 24 hours
       categories: ["motivation", "productivity", "success", "leadership"],
       ...config,
     };
@@ -308,7 +312,7 @@ export class QuoteService {
       const cached = await this.storage.get("quotes");
       if (
         cached &&
-        this.config.cacheEnabled &&
+        this.quoteConfig.cacheEnabled &&
         Array.isArray(cached) &&
         cached.length > 0
       ) {
@@ -1314,12 +1318,12 @@ export class QuoteService {
     return false;
   }
 
-  clearCache(): void {
+  async clearCache(): Promise<void> {
     this.apiCache.clear();
     this.lastCallAt.clear();
     try {
-      this.storage.setSync("apiCache", {});
-      this.storage.setSync("apiLastCall", {});
+      await this.storage.set("apiCache", {});
+      await this.storage.set("apiLastCall", {});
     } catch (error) {
       logError(
         error instanceof Error ? error : new Error(String(error)),

@@ -42,3 +42,18 @@ export {
   SearchableVirtualScroll,
   useVirtualScroll,
 } from "./components/virtual-scroll";
+export { Section } from "./components/Section";
+export { NavigationButton } from "./components/NavigationButton";
+
+// Unified Components
+export { 
+  BaseComponent, 
+  withBaseComponent, 
+  withPerformanceOptimization,
+  ComponentUtils 
+} from "./components/unified-component";
+export { 
+  UnifiedQuoteCard, 
+  QuoteCardGrid, 
+  QuoteCardList 
+} from "./components/unified-quote-card";

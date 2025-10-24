@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Badge } from '@boostlly/ui';
+import { Button, Badge, NavigationButton } from '@boostlly/ui';
 import { LucideIcon } from 'lucide-react';
 
 export interface NavigationTab {
@@ -43,38 +43,18 @@ export function Navigation({
     }
   };
 
-  const getTabClasses = (tab: NavigationTab) => {
-    const baseClasses = 'flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors';
-    const activeClasses = 'bg-primary text-primary-foreground';
-    const inactiveClasses = 'text-muted-foreground hover:text-foreground hover:bg-accent';
-    const disabledClasses = 'opacity-50 cursor-not-allowed';
-    
-    let classes = baseClasses;
-    
-    if (tab.disabled) {
-      classes += ` ${disabledClasses}`;
-    } else if (activeTab === tab.id) {
-      classes += ` ${activeClasses}`;
-    } else {
-      classes += ` ${inactiveClasses}`;
-    }
-    
-    return classes;
-  };
+  // Removed getTabClasses - now using NavigationButton component
 
   return (
     <nav className={`${getNavigationClasses()} ${className}`} role="tablist">
       {tabs.map((tab) => (
-        <button
+        <NavigationButton
           key={tab.id}
-          role="tab"
-          aria-selected={activeTab === tab.id}
-          aria-disabled={tab.disabled}
-          disabled={tab.disabled}
+          isActive={activeTab === tab.id}
+          isDisabled={tab.disabled}
           onClick={() => !tab.disabled && onTabChange(tab.id)}
-          className={getTabClasses(tab)}
+          icon={<tab.icon className="w-4 h-4" />}
         >
-          <tab.icon className="w-4 h-4" />
           <span className="font-medium">{tab.label}</span>
           {tab.count !== undefined && tab.count > 0 && (
             <Badge variant="secondary" className="ml-1">
@@ -86,7 +66,7 @@ export function Navigation({
               {tab.badge}
             </Badge>
           )}
-        </button>
+        </NavigationButton>
       ))}
     </nav>
   );

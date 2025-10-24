@@ -1,4 +1,5 @@
 import { StorageData } from "../types";
+import { APP_CONFIG, DEFAULT_USER_PREFERENCES, TIME_CONSTANTS } from "../constants";
 
 export class StorageManager {
   private static instance: StorageManager;
@@ -27,15 +28,9 @@ export class StorageManager {
     return {
       quotes: [],
       user: {
-        id: "default-user",
-        name: "User",
-        preferences: {
-          theme: "auto",
-          notifications: true,
-          dailyReminder: true,
-          categories: ["motivation", "productivity"],
-          language: "en",
-        },
+        id: APP_CONFIG.DEFAULT_USER_ID,
+        name: APP_CONFIG.DEFAULT_USER_NAME,
+        preferences: DEFAULT_USER_PREFERENCES,
         stats: {
           totalQuotes: 0,
           savedQuotes: 0,
@@ -46,7 +41,7 @@ export class StorageManager {
       },
       settings: {
         cacheEnabled: true,
-        maxCacheAge: 24 * 60 * 60 * 1000,
+        maxCacheAge: TIME_CONSTANTS.CACHE_24_HOURS,
         categories: ["motivation", "productivity", "success"],
       },
       feedback: {},

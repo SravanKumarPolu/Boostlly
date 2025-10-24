@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect } from 'react';
-import { ErrorBoundary } from '@boostlly/ui';
+import { ErrorBoundary, Section } from '@boostlly/ui';
 import { useAppState } from '../../hooks/useAppState';
 import { Navigation } from '../navigation/Navigation';
 import { SearchContainer } from '../search/SearchContainer';
@@ -107,112 +107,112 @@ export function UnifiedAppRefactored({
       
       case 'saved':
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Saved Quotes</h2>
-            <p className="text-muted-foreground">
-              Your saved quotes will appear here.
-            </p>
-          </div>
+          <Section
+            title="Saved Quotes"
+            description="Your saved quotes will appear here."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
       
       case 'create':
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Your Quotes</h2>
-            <p className="text-muted-foreground">
-              Create and manage your own quotes here.
-            </p>
-          </div>
+          <Section
+            title="Your Quotes"
+            description="Create and manage your own quotes here."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
       
       case 'stats':
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Statistics</h2>
-            <p className="text-muted-foreground">
-              View your quote statistics and insights.
-            </p>
-          </div>
+          <Section
+            title="Statistics"
+            description="View your quote statistics and insights."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
       
       case 'smart':
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Smart AI</h2>
-            <p className="text-muted-foreground">
-              AI-powered recommendations and insights.
-            </p>
-          </div>
+          <Section
+            title="Smart AI"
+            description="AI-powered recommendations and insights."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
       
       case 'analytics':
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Analytics</h2>
-            <p className="text-muted-foreground">
-              Advanced analytics and insights.
-            </p>
-          </div>
+          <Section
+            title="Analytics"
+            description="Advanced analytics and insights."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
       
       case 'categorization':
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Categories</h2>
-            <p className="text-muted-foreground">
-              Intelligent categorization features.
-            </p>
-          </div>
+          <Section
+            title="Categories"
+            description="Intelligent categorization features."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
       
       case 'patterns':
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Patterns</h2>
-            <p className="text-muted-foreground">
-              Pattern recognition and analysis.
-            </p>
-          </div>
+          <Section
+            title="Patterns"
+            description="Pattern recognition and analysis."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
       
       case 'voice':
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Voice Commands</h2>
-            <p className="text-muted-foreground">
-              Voice control features.
-            </p>
-          </div>
+          <Section
+            title="Voice Commands"
+            description="Voice control features."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
       
       case 'predictions':
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Predictions</h2>
-            <p className="text-muted-foreground">
-              AI-powered predictions and forecasts.
-            </p>
-          </div>
+          <Section
+            title="Predictions"
+            description="AI-powered predictions and forecasts."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
       
       case 'settings':
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Settings</h2>
-            <p className="text-muted-foreground">
-              Application settings and preferences.
-            </p>
-          </div>
+          <Section
+            title="Settings"
+            description="Application settings and preferences."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
       
       default:
         return (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Page Not Found</h2>
-            <p className="text-muted-foreground">
-              The requested page could not be found.
-            </p>
-          </div>
+          <Section
+            title="Page Not Found"
+            description="The requested page could not be found."
+          >
+            <div>Coming soon...</div>
+          </Section>
         );
     }
   };

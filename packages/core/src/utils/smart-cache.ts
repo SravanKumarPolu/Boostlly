@@ -371,6 +371,7 @@ class SmartCache {
 }
 
 // Singleton instance
+export { SmartCache };
 export const smartCache = new SmartCache();
 
 // Export utility functions

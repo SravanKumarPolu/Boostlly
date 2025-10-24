@@ -39,4 +39,13 @@ export { AdvancedPredictions } from "./components/advanced-predictions";
 // Unified cross-platform app shell (legacy)
 export { UnifiedApp } from "./components/unified-app";
 
+// Export unified app components
+export * from "./components/unified-app";
+
+// Export utilities
+export * from "./utils/code-splitting";
+
 // Dynamic theming components
+
+// Unified Components
+export * from "./components/unified-search";

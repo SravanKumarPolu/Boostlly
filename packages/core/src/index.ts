@@ -41,13 +41,15 @@ export * from "./utils/streaks.slice";
 export * from "./utils/useHydrated";
 
 // Advanced Features
-export * from "./utils/smart-cache";
+export { SmartCache } from "./utils/smart-cache";
+export type { CacheItem, CachePrediction, CacheConfig } from "./utils/smart-cache";
 
 // Export/Import features
 export * from "./utils/export-import";
 
 // API Integration
-export * from "./services/api-integration";
+export { APIIntegrationManager } from "./services/api-integration";
+export type { APIConfig, APIMetrics, APIResponse } from "./services/api-integration";
 
 // Mobile Enhancements
 export * from "./utils/mobile-enhancements";
@@ -58,3 +60,20 @@ export * from "./hooks/useSoundSettings";
 
 // Sound System
 export * from "./utils/sound-manager";
+
+// Constants and Utilities
+export * from "./constants";
+export * from "./utils/cache-utils";
+export * from "./utils/api-config";
+export * from "./utils/performance-optimizer";
+
+// Scalability Management
+export * from "./utils/scalability-manager";
+export * from "./utils/scalable-state-manager";
+export * from "./utils/scalable-api-manager";
+export * from "./utils/scalability-monitor";
+
+// Refactored Services
+export * from "./services/base-service";
+export * from "./services/quote-service-refactored";
+export * from "./utils/error-handler";
