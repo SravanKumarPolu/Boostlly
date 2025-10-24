@@ -355,3 +355,72 @@ export interface DynamicTheme {
   dominantColor: string;
   isAnalyzing: boolean;
 }
+
+// Article types for blog functionality
+export interface Article {
+  id: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  author: string;
+  publishedAt: Date;
+  updatedAt?: Date;
+  category: string;
+  tags: string[];
+  featured: boolean;
+  slug: string;
+  readingTime: number; // in minutes
+  imageUrl?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+}
+
+export interface ArticleCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  color: string;
+  articleCount: number;
+}
+
+// Email subscription types
+export interface EmailSubscription {
+  id: string;
+  email: string;
+  subscribedAt: Date;
+  preferences: EmailPreferences;
+  status: 'active' | 'unsubscribed' | 'bounced';
+  lastSent?: Date;
+  unsubscribeToken: string;
+}
+
+export interface EmailPreferences {
+  frequency: 'daily' | 'weekly' | 'monthly';
+  categories: string[];
+  timezone: string;
+  format: 'html' | 'text';
+  includeArticles: boolean;
+  includeTips: boolean;
+}
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  htmlContent: string;
+  textContent: string;
+  variables: string[];
+}
+
+export interface EmailCampaign {
+  id: string;
+  name: string;
+  templateId: string;
+  scheduledAt: Date;
+  status: 'draft' | 'scheduled' | 'sent' | 'failed';
+  recipients: string[];
+  sentCount: number;
+  openCount: number;
+  clickCount: number;
+}

@@ -53,6 +53,8 @@ import {
   MicOff,
   Clock,
   Calendar,
+  BookOpen,
+  Mail,
 } from "lucide-react";
 
 type Variant = "web" | "popup";
@@ -764,6 +766,8 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
     { id: "today", label: "Today", icon: Home },
     { id: "search", label: "Search", icon: Search },
     { id: "collections", label: "Collections", icon: FolderOpen },
+    { id: "articles", label: "Articles", icon: BookOpen },
+    { id: "newsletter", label: "Newsletter", icon: Mail },
     { id: "api", label: "API", icon: Globe },
     { id: "saved", label: "Saved", icon: Heart },
     { id: "create", label: "Your Quotes", icon: Plus },
@@ -2607,6 +2611,68 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                               language: "en",
                             }}
                           />
+                        </div>
+                      </Suspense>
+                    );
+                  case "articles":
+                    return (
+                      <Suspense fallback={<TabSkeleton />}>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h2
+                              className={`${variant === "popup" ? "text-lg" : "text-2xl"} font-bold inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
+                              style={{
+                                color: "hsl(var(--fg-hsl))",
+                                backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
+                                borderColor: "hsl(var(--fg-hsl) / 0.3)",
+                                textShadow: "0 1px 2px rgba(0,0,0,0.25)",
+                              }}
+                            >
+                              <BookOpen className="w-5 h-5 mr-2" />
+                              Motivational Articles
+                            </h2>
+                          </div>
+                          <div className="text-center py-8">
+                            <BookOpen className="w-16 h-16 text-purple-500 mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold text-gray-600 mb-2">Discover Inspiring Articles</h3>
+                            <p className="text-gray-500 mb-6">Access our library of motivational articles on discipline, productivity, and personal growth.</p>
+                            <Button asChild>
+                              <a href="/articles" target="_blank" rel="noopener noreferrer">
+                                Browse Articles
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
+                      </Suspense>
+                    );
+                  case "newsletter":
+                    return (
+                      <Suspense fallback={<TabSkeleton />}>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h2
+                              className={`${variant === "popup" ? "text-lg" : "text-2xl"} font-bold inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
+                              style={{
+                                color: "hsl(var(--fg-hsl))",
+                                backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
+                                borderColor: "hsl(var(--fg-hsl) / 0.3)",
+                                textShadow: "0 1px 2px rgba(0,0,0,0.25)",
+                              }}
+                            >
+                              <Mail className="w-5 h-5 mr-2" />
+                              Daily Newsletter
+                            </h2>
+                          </div>
+                          <div className="text-center py-8">
+                            <Mail className="w-16 h-16 text-indigo-500 mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold text-gray-600 mb-2">Get Daily Motivation</h3>
+                            <p className="text-gray-500 mb-6">Subscribe to receive inspiring quotes and motivational articles delivered to your inbox daily.</p>
+                            <Button asChild>
+                              <a href="/newsletter" target="_blank" rel="noopener noreferrer">
+                                Subscribe to Newsletter
+                              </a>
+                            </Button>
+                          </div>
                         </div>
                       </Suspense>
                     );

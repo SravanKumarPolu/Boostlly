@@ -31,6 +31,7 @@ export { PatternRecognition } from "./components/pattern-recognition";
 export { VoiceCommands } from "./components/voice-commands";
 export { GlobalVoiceListener } from "./components/global-voice-listener";
 export { AdvancedPredictions } from "./components/advanced-predictions";
+export { EmailSubscription } from "./components/email-subscription";
 
 // Community features removed for privacy-first approach
 
