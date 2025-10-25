@@ -167,14 +167,6 @@
     <div class="action-buttons">
       <button 
         class="refresh-btn" 
-        onclick="loadQuote()" 
-        aria-label="Get a new motivational quote"
-        title="Click to load a new motivational quote"
-      >
-        New Quote
-      </button>
-      <button 
-        class="refresh-btn" 
         onclick="speakCurrentQuote()" 
         aria-label="Speak current quote aloud"
         title="Listen to the current quote using text-to-speech"
@@ -233,16 +225,10 @@
         const target = e.target;
         if (target.classList.contains('refresh-btn')) {
           e.preventDefault();
-          if (target.textContent.includes('New Quote')) {
-            loadQuote();
-          } else if (target.textContent.includes('Read Aloud')) {
+          if (target.textContent.includes('Read Aloud')) {
             speakCurrentQuote();
           }
         }
-      } else if (e.key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        // Press 'r' to refresh quote
-        e.preventDefault();
-        loadQuote();
       } else if (e.key === 's' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // Press 's' to speak quote
         e.preventDefault();
@@ -316,11 +302,38 @@
       }
     }
 
+    // Check and auto-refresh quote every 24 hours
+    async function checkAndRefreshQuote() {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const lastQuoteDate = localStorage.getItem('lastQuoteDate');
+        
+        // If the date has changed (new day), fetch a new quote
+        if (lastQuoteDate !== today) {
+          console.log('Extension: New day detected, fetching fresh quote');
+          await loadQuote();
+          localStorage.setItem('lastQuoteDate', today);
+        }
+      } catch (error) {
+        console.error('Extension: Error in auto-refresh check:', error);
+      }
+    }
+
+    // Set up interval to check for new day every hour
+    setInterval(checkAndRefreshQuote, 60 * 60 * 1000);
+
     // Initialize everything
     async function initialize() {
       try {
         await initializeTheme();
         await loadQuote();
+        
+        // Save today's date after loading quote
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem('lastQuoteDate', today);
+        
+        // Check for auto-refresh on initial load
+        await checkAndRefreshQuote();
       } catch (error) {
         console.error('Extension: Initialization failed', error);
       }

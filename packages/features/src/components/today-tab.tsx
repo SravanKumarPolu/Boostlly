@@ -1,4 +1,4 @@
-import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
+import { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from "react";
 import {
   QuoteService,
   generateQuoteImage,
@@ -16,7 +16,6 @@ import {
   Copy,
   Sparkles,
   Image,
-  RefreshCw,
   Volume2,
 } from "lucide-react";
 import {
@@ -115,69 +114,28 @@ export const TodayTab = forwardRef<
     const [showAuthor, setShowAuthor] = useState(true);
     const quoteService = storage ? new QuoteService(storage) : null;
 
-    useEffect(() => {
-      if (quoteService && !quote) {
-        const loadDailyQuote = async () => {
-          try {
-            try {
-              quoteService.logDetectedEnv?.();
-            } catch {}
-            const force =
-              typeof window !== "undefined" &&
-              window.location.search.includes("force=1");
-            // Use day-based quote selection
-            const dailyQuote =
-              (await (quoteService as any).getQuoteByDay?.(force)) ||
-              quoteService.getDailyQuote();
-            console.log("Loaded daily quote (day-based):", dailyQuote);
-            setTodayQuote(dailyQuote);
-            initializeQuoteStates(dailyQuote);
-            updateReadingStreak();
-            incrementQuotesRead();
-          } catch (error) {
-            console.error("Error loading daily quote:", error);
-            // Fallback to a default quote if loading fails
-            const fallbackQuote = quoteService.getRandomQuote();
-            setTodayQuote(fallbackQuote);
-            initializeQuoteStates(fallbackQuote);
-          }
-        };
-        loadDailyQuote();
-      }
-    }, [
-      quoteService,
-      quote,
-      setTodayQuote,
-      updateReadingStreak,
-      incrementQuotesRead,
-    ]);
+    // Define helper functions
+    const quoteEquals = useCallback((a: any, b: any): boolean => {
+      if (!a || !b) return false;
 
-    // Initialize quote states whenever quote changes
-    useEffect(() => {
-      if (quote) {
-        initializeQuoteStates(quote);
-      }
-    }, [quote]);
+      // Normalize text and author for comparison
+      const normalizeText = (text: string) => (text || "").trim().toLowerCase();
+      const normalizeAuthor = (author: string) =>
+        (author || "").trim().toLowerCase();
 
-    // Load preference for showing author
-    useEffect(() => {
-      let cancelled = false;
-      (async () => {
-        try {
-          const pref = await storage?.get?.("showAuthor");
-          if (!cancelled) {
-            setShowAuthor(pref === undefined || pref === null ? true : !!pref);
-          }
-        } catch {
-          if (!cancelled) setShowAuthor(true);
-        }
-      })();
-      return () => {
-        cancelled = true;
-      };
-    }, [storage]);
+      // Compare by id if both have
+      if (a.id && b.id && a.id === b.id) return true;
 
-    async function initializeQuoteStates(currentQuote: any) {
+      // Compare by text and author (case-insensitive)
+      const aText = normalizeText(a.text);
+      const bText = normalizeText(b.text);
+      const aAuthor = normalizeAuthor(a.author);
+      const bAuthor = normalizeAuthor(b.author);
+
+      return aText === bText && aAuthor === bAuthor;
+    }, []);
+
+    const initializeQuoteStates = useCallback(async (currentQuote: any) => {
       try {
         console.log("Initializing quote states for:", currentQuote);
         if (!storage || !currentQuote) {
@@ -219,7 +177,113 @@ export const TodayTab = forwardRef<
         setIsLiked(false);
         setIsSaved(false);
       }
-    }
+    }, [storage, quoteEquals]);
+
+    useEffect(() => {
+      if (quoteService && !quote) {
+        const loadDailyQuote = async () => {
+          try {
+            try {
+              quoteService.logDetectedEnv?.();
+            } catch {}
+            const force =
+              typeof window !== "undefined" &&
+              window.location.search.includes("force=1");
+            // Use day-based quote selection
+            const dailyQuote =
+              (await (quoteService as any).getQuoteByDay?.(force)) ||
+              quoteService.getDailyQuote();
+            console.log("Loaded daily quote (day-based):", dailyQuote);
+            setTodayQuote(dailyQuote);
+            initializeQuoteStates(dailyQuote);
+            updateReadingStreak();
+            incrementQuotesRead();
+          } catch (error) {
+            console.error("Error loading daily quote:", error);
+            // Fallback to a default quote if loading fails
+            const fallbackQuote = quoteService.getRandomQuote();
+            setTodayQuote(fallbackQuote);
+            initializeQuoteStates(fallbackQuote);
+          }
+        };
+        loadDailyQuote();
+      }
+    }, [
+      quoteService,
+      quote,
+      setTodayQuote,
+      updateReadingStreak,
+      incrementQuotesRead,
+    ]);
+
+    // Auto-refresh quote every 24 hours (client-side only to prevent hydration mismatch)
+    useEffect(() => {
+      // Only run on client side to prevent hydration mismatch
+      if (!quoteService || typeof window === "undefined") return;
+
+      const checkAndRefreshQuote = async () => {
+        try {
+          const today = new Date().toISOString().split("T")[0];
+          const lastFetchDate = storage?.getSync?.("dayBasedQuoteDate");
+          
+          // If the date has changed (new day), fetch a new quote
+          if (lastFetchDate !== today) {
+            console.log("New day detected, fetching fresh quote");
+            const force =
+              typeof window !== "undefined" &&
+              window.location.search.includes("force=1");
+            const dailyQuote =
+              (await (quoteService as any).getQuoteByDay?.(force)) ||
+              quoteService.getDailyQuote();
+            
+            setTodayQuote(dailyQuote);
+            initializeQuoteStates(dailyQuote);
+            updateReadingStreak();
+            incrementQuotesRead();
+          }
+        } catch (error) {
+          console.error("Error in auto-refresh:", error);
+        }
+      };
+
+      // Small delay to ensure hydration is complete
+      const timer = setTimeout(() => {
+        checkAndRefreshQuote();
+      }, 100);
+
+      // Set up interval to check every hour (to catch the day change)
+      const intervalId = setInterval(checkAndRefreshQuote, 60 * 60 * 1000);
+
+      return () => {
+        clearTimeout(timer);
+        clearInterval(intervalId);
+      };
+    }, [quoteService, storage, setTodayQuote, updateReadingStreak, incrementQuotesRead, initializeQuoteStates]);
+
+    // Initialize quote states whenever quote changes
+    useEffect(() => {
+      if (quote) {
+        initializeQuoteStates(quote);
+      }
+    }, [quote]);
+
+    // Load preference for showing author
+    useEffect(() => {
+      let cancelled = false;
+      (async () => {
+        try {
+          const pref = await storage?.get?.("showAuthor");
+          if (!cancelled) {
+            setShowAuthor(pref === undefined || pref === null ? true : !!pref);
+          }
+        } catch {
+          if (!cancelled) setShowAuthor(true);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [storage]);
 
     // Listen for voice events like read/next/save/like/share
     useEffect(() => {
@@ -260,25 +324,7 @@ export const TodayTab = forwardRef<
       return () => window.removeEventListener("boostlly:voice", onVoice as any);
     }, [quoteService, setTodayQuote, updateReadingStreak, incrementQuotesRead]);
 
-    function quoteEquals(a: any, b: any): boolean {
-      if (!a || !b) return false;
 
-      // Normalize text and author for comparison
-      const normalizeText = (text: string) => (text || "").trim().toLowerCase();
-      const normalizeAuthor = (author: string) =>
-        (author || "").trim().toLowerCase();
-
-      // Compare by id if both have
-      if (a.id && b.id && a.id === b.id) return true;
-
-      // Compare by text and author (case-insensitive)
-      const aText = normalizeText(a.text);
-      const bText = normalizeText(b.text);
-      const aAuthor = normalizeAuthor(a.author);
-      const bAuthor = normalizeAuthor(b.author);
-
-      return aText === bText && aAuthor === bAuthor;
-    }
 
     const handleLike = async () => {
       try {
@@ -554,22 +600,9 @@ export const TodayTab = forwardRef<
     // Expose methods to parent component
     useImperativeHandle(ref, () => ({
       refresh: async () => {
-        if (quoteService) {
-          try {
-            // Get a new day-based quote (force refresh)
-            const newQuote = await quoteService.getQuoteByDay(true);
-            setTodayQuote(newQuote);
-            initializeQuoteStates(newQuote);
-            updateReadingStreak();
-            incrementQuotesRead();
-          } catch (error) {
-            console.error("Error refreshing quote:", error);
-            // Fallback to local quote if day-based fails
-            const fallbackQuote = quoteService.getRandomQuote();
-            setTodayQuote(fallbackQuote);
-            initializeQuoteStates(fallbackQuote);
-          }
-        }
+        // Auto-refresh is now handled automatically every 24 hours
+        // This method is kept for backward compatibility
+        console.log("Manual refresh requested, but auto-refresh is enabled");
       },
       getQuote: () => quote,
       speak: () => handleSpeak(),
@@ -731,31 +764,6 @@ export const TodayTab = forwardRef<
                   {getCategoryDisplay(quote.category)}
                 </Badge>
               )}
-              <Button
-                onClick={() => {
-                  if (quoteService) {
-                    try {
-                      const newQuote = quoteService.getRandomQuote();
-                      setTodayQuote(newQuote);
-                      initializeQuoteStates(newQuote);
-                      updateReadingStreak();
-                      incrementQuotesRead();
-                    } catch (error) {
-                      console.error("Error refreshing quote:", error);
-                    }
-                  }
-                }}
-                variant="ghost"
-                size="icon"
-                className="rounded-xl sm:rounded-2xl border backdrop-blur-md transition-all duration-300"
-                style={{
-                  backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
-                  color: "hsl(var(--fg-hsl))",
-                  borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                }}
-              >
-                <RefreshCw className="w-4 h-4" />
-              </Button>
             </div>
           </div>
 
