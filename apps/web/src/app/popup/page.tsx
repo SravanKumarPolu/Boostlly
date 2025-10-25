@@ -48,6 +48,7 @@ export default function PopupPage() {
 
   const [activeTab, setActiveTab] = useState("today");
   const [initializing, setInitializing] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [textToSpeech, setTextToSpeech] = useState(true);
   const [notificationSounds, setNotificationSounds] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
@@ -70,6 +71,10 @@ export default function PopupPage() {
     speak: () => void;
     getStatus: () => { quote: any; isSaved: boolean; isLiked: boolean };
   }>(null);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -483,17 +488,19 @@ export default function PopupPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">Statistics</h2>
-              <Button
-                variant="glass"
-                size="sm"
-                onClick={() => {
-                  // Refresh stats functionality
-                  console.log("Refreshing stats...");
-                }}
-              >
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Refresh
-              </Button>
+              {isHydrated && (
+                <Button
+                  variant="glass"
+                  size="sm"
+                  onClick={() => {
+                    // Refresh stats functionality
+                    console.log("Refreshing stats...");
+                  }}
+                >
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Refresh
+                </Button>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div
