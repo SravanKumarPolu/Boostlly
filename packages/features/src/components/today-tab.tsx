@@ -112,7 +112,13 @@ export const TodayTab = forwardRef<
     const [isLiked, setIsLiked] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [showAuthor, setShowAuthor] = useState(true);
+    const [isHydrated, setIsHydrated] = useState(false);
     const quoteService = storage ? new QuoteService(storage) : null;
+
+    // Set hydrated flag after mount to prevent hydration mismatch
+    useEffect(() => {
+      setIsHydrated(true);
+    }, []);
 
     // Define helper functions
     const quoteEquals = useCallback((a: any, b: any): boolean => {
@@ -218,8 +224,8 @@ export const TodayTab = forwardRef<
 
     // Auto-refresh quote every 24 hours (client-side only to prevent hydration mismatch)
     useEffect(() => {
-      // Only run on client side to prevent hydration mismatch
-      if (!quoteService || typeof window === "undefined") return;
+      // Only run on client side after hydration to prevent hydration mismatch
+      if (!quoteService || typeof window === "undefined" || !isHydrated) return;
 
       const checkAndRefreshQuote = async () => {
         try {
@@ -258,7 +264,7 @@ export const TodayTab = forwardRef<
         clearTimeout(timer);
         clearInterval(intervalId);
       };
-    }, [quoteService, storage, setTodayQuote, updateReadingStreak, incrementQuotesRead, initializeQuoteStates]);
+    }, [quoteService, storage, setTodayQuote, updateReadingStreak, incrementQuotesRead, initializeQuoteStates, isHydrated]);
 
     // Initialize quote states whenever quote changes
     useEffect(() => {
