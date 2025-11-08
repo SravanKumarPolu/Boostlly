@@ -24,15 +24,8 @@ import { createPlatformStorage } from './utils/storage-utils';
  */
 export function UnifiedApp({
   variant = 'web',
-  storage,
-  savedQuotes = [],
-  collections = [],
-  onRemoveQuote,
-  onSpeakQuote,
-  onSaveAsImage,
-  onAddToCollection,
 }: UnifiedAppProps) {
-  const [platformStorage, setPlatformStorage] = useState(storage);
+  const [platformStorage, setPlatformStorage] = useState<any>(null);
   const { appState, setActiveTab } = useAppState(platformStorage);
 
   // Initialize platform storage if not provided
@@ -63,12 +56,23 @@ export function UnifiedApp({
                 activeTab={appState.activeTab}
                 variant={variant}
                 storage={platformStorage}
-                savedQuotes={savedQuotes}
-                collections={collections}
-                onRemoveQuote={onRemoveQuote}
-                onSpeakQuote={onSpeakQuote}
-                onSaveAsImage={onSaveAsImage}
-                onAddToCollection={onAddToCollection}
+                savedQuotes={[]}
+                likedQuotes={[]}
+                collections={[]}
+                savedFilter="all"
+                savedSearch=""
+                savedSort="recent"
+                filteredSavedQuotes={[]}
+                simpleMode={appState.simpleMode}
+                onRemoveQuote={() => {}}
+                onAddToCollection={() => {}}
+                onSetSavedFilter={() => {}}
+                onSetSavedSearch={() => {}}
+                onSetSavedSort={() => {}}
+                onSetShowCreate={() => {}}
+                onSetShowAddToCollection={() => {}}
+                onSetSelectedQuoteForCollection={() => {}}
+                onSetActiveTab={setActiveTab}
               />
             </Suspense>
           </div>

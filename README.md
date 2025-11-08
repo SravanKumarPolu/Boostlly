@@ -290,6 +290,27 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - UI Components: Custom design system
 - Sounds: Custom generated audio files
 
+## 📚 Documentation
+
+### API Documentation
+
+- **[API Overview](docs/api/README.md)** - Complete API reference
+- **[Core API](docs/api/core.md)** - Core package APIs (services, types, utilities)
+- **[Services API](docs/api/services.md)** - Service classes (QuoteService, CollectionService, etc.)
+- **[Hooks API](docs/api/hooks.md)** - React hooks (useAutoTheme, useSoundSettings)
+- **[Utilities API](docs/api/utilities.md)** - Utility functions and helpers
+
+### Component Documentation
+
+- **[Components Overview](docs/components/README.md)** - Component documentation index
+- **[Feature Components](docs/components/features.md)** - Feature components (UnifiedApp, TodayTab, etc.)
+- **[UI Components](docs/components/ui.md)** - Design system components (Button, Card, Input, etc.)
+
+### Guides
+
+- **[Android Setup](ANDROID_SETUP.md)** - Android app setup guide
+- **[Android Summary](ANDROID_SUMMARY.md)** - Android implementation summary
+
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/yourusername/boostlly/issues)
