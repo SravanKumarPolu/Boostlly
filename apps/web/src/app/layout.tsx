@@ -129,7 +129,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <ChunkErrorBoundary>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>{children as any}</ToastProvider>
           <MonitoringBootstrap />
           <ServiceWorkerManager />
           <VersionChecker />

@@ -1,6 +1,7 @@
 import {
   NotificationService as INotificationService,
   NotificationOptions,
+  NotificationPermission,
 } from "../interfaces/notifications";
 
 export abstract class NotificationService implements INotificationService {

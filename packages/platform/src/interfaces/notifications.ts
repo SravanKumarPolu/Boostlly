@@ -1,3 +1,5 @@
+export type NotificationPermission = "granted" | "denied" | "prompt" | "default";
+
 export interface NotificationOptions {
   title: string;
   message: string;

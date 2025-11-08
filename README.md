@@ -8,7 +8,7 @@
 ## 🚀 Features
 
 - **Daily Motivation**: Get a fresh inspirational quote every day
-- **Cross-Platform**: Available as a web app and browser extension
+- **Cross-Platform**: Available as a web app, browser extension, and Android app
 - **Smart Widget**: Motivational widget on any webpage
 - **Beautiful UI**: Modern, responsive design with dark/light themes
 - **Offline Support**: Works without internet connection
@@ -26,6 +26,11 @@
 - **Firefox**: [Firefox Add-ons](https://addons.mozilla.org) *(coming soon)*
 - **Edge**: [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons) *(coming soon)*
 
+### 📱 Android App
+- **Google Play Store**: [Play Store](https://play.google.com/store) *(coming soon)*
+- **Features**: Native Android app with push notifications and offline support
+- **Installation**: Download from Google Play Store
+
 ## 🛠️ Development
 
 ### Prerequisites
@@ -33,6 +38,10 @@
 - **Node.js**: >= 18.0.0
 - **pnpm**: >= 8.0.0
 - **Git**: Latest version
+- **Android Development** (for Android app):
+  - Android Studio
+  - Java Development Kit (JDK) 17+
+  - Expo CLI: `npm install -g expo-cli` or `npm install -g eas-cli`
 
 ### Quick Start
 
@@ -50,6 +59,7 @@ pnpm dev
 # Or start specific apps
 pnpm web      # Web app only
 pnpm extension # Extension only
+pnpm android  # Android app only
 ```
 
 ### Project Structure
@@ -58,14 +68,16 @@ pnpm extension # Extension only
 boostlly/
 ├── apps/
 │   ├── web/              # Next.js web application
-│   └── extension/        # Browser extension (Vite + React)
+│   ├── extension/        # Browser extension (Vite + React)
+│   └── android/          # React Native Android app (Expo)
 ├── packages/
 │   ├── core/            # Core business logic
 │   ├── features/        # Feature components
 │   ├── ui/              # Shared UI components
 │   ├── platform/        # Platform abstractions
 │   ├── platform-web/    # Web-specific platform code
-│   └── platform-extension/ # Extension-specific platform code
+│   ├── platform-extension/ # Extension-specific platform code
+│   └── platform-android/  # Android-specific platform code
 ├── scripts/             # Build and deployment scripts
 └── assets/              # Static assets (images, sounds, etc.)
 ```
@@ -77,11 +89,15 @@ boostlly/
 pnpm dev                 # Start all apps in development mode
 pnpm web                 # Start web app only
 pnpm extension           # Start extension only
+pnpm android             # Start Android app only
 
 # Building
 pnpm build               # Build everything
 pnpm build:web           # Build web app only
 pnpm build:ext           # Build extension only
+pnpm build:android       # Build Android app (EAS)
+pnpm build:apk          # Build Android APK for testing
+pnpm build:aab          # Build Android AAB for Play Store
 pnpm build:fresh         # Clean build with verification
 
 # Testing & Quality
@@ -117,6 +133,41 @@ cd apps/web && ./deploy.sh
 - **Netlify**: [app.netlify.com/drop](https://app.netlify.com/drop) - Drag `apps/web/out` folder
 - **Vercel**: `npx vercel --prod --dir=apps/web/out`
 - **Any Static Host**: Upload contents of `apps/web/out`
+
+### Android App Deployment
+
+#### Prerequisites
+1. Create an Expo account at [expo.dev](https://expo.dev)
+2. Install EAS CLI: `npm install -g eas-cli`
+3. Login: `eas login`
+4. Configure: `eas build:configure`
+
+#### Build for Play Store
+```bash
+# Build AAB (Android App Bundle) for Play Store
+pnpm build:aab
+
+# Or build APK for testing
+pnpm build:apk
+```
+
+#### Submit to Play Store
+```bash
+# Using EAS Submit (recommended)
+cd apps/android
+eas submit --platform android
+
+# Or manually upload the AAB from EAS build dashboard
+```
+
+#### Play Store Setup
+1. Go to [Google Play Console](https://play.google.com/console)
+2. Create a new app
+3. Fill in store listing (name, description, screenshots, etc.)
+4. Upload the AAB file
+5. Submit for review
+
+For detailed Android setup instructions, see [apps/android/README.md](apps/android/README.md)
 
 ### Extension Deployment
 
@@ -192,6 +243,9 @@ The extension requires these permissions:
 - **@boostlly/features**: React components and hooks
 - **@boostlly/ui**: Design system and reusable components
 - **@boostlly/platform-***: Platform-specific implementations
+  - `platform-web`: Web-specific (localStorage, Web Notifications)
+  - `platform-extension`: Extension-specific (chrome.storage, chrome.alarms)
+  - `platform-android`: Android-specific (Expo SecureStore, Expo Notifications)
 
 ## 📱 Browser Support
 
@@ -203,6 +257,11 @@ The extension requires these permissions:
 - **Chrome**: 88+ (Manifest V3)
 - **Edge**: 88+ (Manifest V3)
 - **Firefox**: 109+ (Manifest V3 support)
+
+### Android App
+- **Android**: 6.0+ (API level 23+)
+- **React Native**: 0.74.0
+- **Expo SDK**: 51
 
 ## 🤝 Contributing
 

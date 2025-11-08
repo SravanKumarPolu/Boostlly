@@ -1,0 +1,36 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-native",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "baseUrl": "../../",
+    "paths": {
+      "@boostlly/core": ["packages/core/src"],
+      "@boostlly/core/*": ["packages/core/src/*"],
+      "@boostlly/ui": ["packages/ui/src"],
+      "@boostlly/ui/*": ["packages/ui/src/*"],
+      "@boostlly/features": ["packages/features/src"],
+      "@boostlly/features/*": ["packages/features/src/*"],
+      "@boostlly/platform": ["packages/platform/src"],
+      "@boostlly/platform/*": ["packages/platform/src/*"],
+      "@boostlly/platform-android": ["packages/platform-android/src"],
+      "@boostlly/platform-android/*": ["packages/platform-android/src/*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
+

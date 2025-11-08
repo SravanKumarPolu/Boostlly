@@ -20,7 +20,7 @@ export const createLazyComponent = <T extends React.ComponentType<any>>(
 ) => {
   const { loading: LoadingComponent, ssr = false, fallback } = options;
 
-  const LazyComponent = dynamic(importFn, {
+  const LazyComponent = dynamic(importFn as any, {
     loading: LoadingComponent
       ? () => React.createElement(LoadingComponent) as React.ReactElement
       : () => (fallback as React.ReactElement) || <ComponentSkeleton />,
