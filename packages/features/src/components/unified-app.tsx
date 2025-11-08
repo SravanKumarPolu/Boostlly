@@ -24,12 +24,9 @@ import { CollectionsTab } from "./collections-tab";
 import { AdvancedSearch } from "./advanced-search";
 import { APIExplorer } from "./api-explorer";
 import { EnhancedSettings } from "./enhanced-settings";
-import { SmartRecommendations } from "./smart-recommendations";
-import { IntelligentCategorization } from "./intelligent-categorization";
-import { PatternRecognition } from "./pattern-recognition";
 import { VoiceCommands } from "./voice-commands";
 import { GlobalVoiceListener } from "./global-voice-listener";
-import { AdvancedPredictions } from "./advanced-predictions";
+import { SimpleAnalytics } from "./simple-analytics";
 // Removed DynamicThemeProvider
 // Removed DynamicBackground
 
@@ -772,12 +769,8 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
     { id: "saved", label: "Saved", icon: Heart },
     { id: "create", label: "Your Quotes", icon: Plus },
     { id: "stats", label: "Stats", icon: BarChart3 },
-    { id: "smart", label: "Smart AI", icon: TrendingUp },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "categorization", label: "Categories", icon: FolderOpen },
-    { id: "patterns", label: "Patterns", icon: TrendingUp },
     { id: "voice", label: "Voice", icon: Volume2 },
-    { id: "predictions", label: "Predictions", icon: TrendingUp },
     { id: "settings", label: "Settings", icon: SettingsIcon },
   ];
 
@@ -791,6 +784,7 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
           "saved",
           "create",
           "voice",
+          "stats",
           "settings",
         ].includes(tab.id),
       )
@@ -1956,7 +1950,7 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                                   textShadow: "0 1px 2px rgba(0,0,0,0.25)",
                                 }}
                               >
-                                Analytics
+                                {simpleMode ? "Statistics" : "Analytics"}
                               </h2>
                               <p
                                 className="text-xs mt-1 inline-flex px-2 py-0.5 rounded-lg backdrop-blur-md border"
@@ -1967,57 +1961,28 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                                   textShadow: "0 1px 1px rgba(0,0,0,0.2)",
                                 }}
                               >
-                                Enhanced insights & statistics
+                                {simpleMode
+                                  ? "Simple statistics"
+                                  : "Enhanced insights & statistics"}
                               </p>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="glass" className="text-xs">
-                                Advanced
-                              </Badge>
-                              {variant === "popup" && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={openInOptionsPage}
-                                >
-                                  Open in Options
-                                </Button>
-                              )}
-                            </div>
+                            {variant === "popup" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={openInOptionsPage}
+                              >
+                                Open in Options
+                              </Button>
+                            )}
                           </div>
-                          {/* Beta Header */}
-                          <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
-                              <div className="flex-1">
-                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                                  🚀 Advanced Features - Beta Version
-                                </h3>
-                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
-                                  These advanced features are currently in beta. Coming soon with full functionality:
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>AI-Powered Analytics</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Smart Predictions</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Voice Commands</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Pattern Recognition</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          {/* Analytics removed for privacy-first approach */}
+                          {simpleMode ? (
+                            <SimpleAnalytics variant={variant} />
+                          ) : (
+                            <>
+                              {/* Analytics removed for privacy-first approach */}
+                            </>
+                          )}
                         </div>
                       </Suspense>
                     );
@@ -2025,105 +1990,7 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                     return (
                       <Suspense fallback={<TabSkeleton />}>
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h2
-                                className={`${variant === "popup" ? "text-lg" : "text-2xl"} font-bold inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
-                                style={{
-                                  color: "hsl(var(--fg-hsl))",
-                                  backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
-                                  borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                                  textShadow: "0 1px 2px rgba(0,0,0,0.25)",
-                                }}
-                              >
-                                Smart AI Recommendations
-                              </h2>
-                              <p
-                                className="text-xs mt-1 inline-flex px-2 py-0.5 rounded-lg backdrop-blur-md border"
-                                style={{
-                                  color: "hsl(var(--fg-hsl))",
-                                  backgroundColor: "hsl(var(--bg-hsl) / 0.3)",
-                                  borderColor: "hsl(var(--fg-hsl) / 0.25)",
-                                  textShadow: "0 1px 1px rgba(0,0,0,0.2)",
-                                }}
-                              >
-                                AI-powered quote suggestions
-                              </p>
-                            </div>
-                          </div>
-                          {/* Beta Header */}
-                          <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
-                              <div className="flex-1">
-                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                                  🚀 Advanced Features - Beta Version
-                                </h3>
-                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
-                                  These advanced features are currently in beta. Coming soon with full functionality:
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>AI-Powered Analytics</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Smart Predictions</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Voice Commands</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Pattern Recognition</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <SmartRecommendations
-                            userQuotes={savedQuotes.map((q) => ({
-                              id: q.id,
-                              text: q.text,
-                              author: q.author,
-                              category: q.category || "Uncategorized",
-                              tags: [],
-                            }))}
-                            userPreferences={{
-                              theme: "auto",
-                              customColors: {
-                                primary: "#7C3AED",
-                                secondary: "#A78BFA",
-                                accent: "#9333EA",
-                              },
-                              fontSize: "medium",
-                              animations: true,
-                              compactMode: false,
-                              textToSpeech: true,
-                              speechRate: 0.8,
-                              speechVolume: 80,
-                              notificationSounds: true,
-                              soundVolume: 70,
-                              dataSharing: false,
-                              analyticsEnabled: true,
-                              profileVisibility: "public",
-                              highContrast: false,
-                              screenReader: false,
-                              reducedMotion: false,
-                              pushNotifications: true,
-                              dailyReminder: true,
-                              achievementAlerts: true,
-                              autoSync: true,
-                              offlineMode: false,
-                              cacheEnabled: true,
-                              notifications: true,
-                              categories: ["motivation", "success", "wisdom"],
-                              language: "en",
-                            }}
-                            onQuoteSelect={() => {}}
-                          />
+                          {/* Advanced features removed */}
                         </div>
                       </Suspense>
                     );
@@ -2142,7 +2009,7 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                                   textShadow: "0 1px 2px rgba(0,0,0,0.25)",
                                 }}
                               >
-                                Advanced Analytics
+                                {simpleMode ? "Analytics" : "Advanced Analytics"}
                               </h2>
                               <p
                                 className="text-xs mt-1 inline-flex px-2 py-0.5 rounded-lg backdrop-blur-md border"
@@ -2153,43 +2020,19 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                                   textShadow: "0 1px 1px rgba(0,0,0,0.2)",
                                 }}
                               >
-                                Deep insights & pattern analysis
+                                {simpleMode
+                                  ? "Simple statistics"
+                                  : "Deep insights & pattern analysis"}
                               </p>
                             </div>
                           </div>
-                          {/* Beta Header */}
-                          <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
-                              <div className="flex-1">
-                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                                  🚀 Advanced Features - Beta Version
-                                </h3>
-                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
-                                  These advanced features are currently in beta. Coming soon with full functionality:
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>AI-Powered Analytics</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Smart Predictions</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Voice Commands</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Pattern Recognition</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          {/* Advanced analytics removed for privacy-first approach */}
+                          {simpleMode ? (
+                            <SimpleAnalytics variant={variant} />
+                          ) : (
+                            <>
+                              {/* Advanced analytics removed for privacy-first approach */}
+                            </>
+                          )}
                         </div>
                       </Suspense>
                     );
@@ -2197,106 +2040,7 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                     return (
                       <Suspense fallback={<TabSkeleton />}>
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h2
-                                className={`${variant === "popup" ? "text-lg" : "text-2xl"} font-bold inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
-                                style={{
-                                  color: "hsl(var(--fg-hsl))",
-                                  backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
-                                  borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                                  textShadow: "0 1px 2px rgba(0,0,0,0.25)",
-                                }}
-                              >
-                                Intelligent Categorization
-                              </h2>
-                              <p
-                                className="text-xs mt-1 inline-flex px-2 py-0.5 rounded-lg backdrop-blur-md border"
-                                style={{
-                                  color: "hsl(var(--fg-hsl))",
-                                  backgroundColor: "hsl(var(--bg-hsl) / 0.3)",
-                                  borderColor: "hsl(var(--fg-hsl) / 0.25)",
-                                  textShadow: "0 1px 1px rgba(0,0,0,0.2)",
-                                }}
-                              >
-                                AI-powered quote organization
-                              </p>
-                            </div>
-                          </div>
-                          {/* Beta Header */}
-                          <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
-                              <div className="flex-1">
-                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                                  🚀 Advanced Features - Beta Version
-                                </h3>
-                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
-                                  These advanced features are currently in beta. Coming soon with full functionality:
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>AI-Powered Analytics</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Smart Predictions</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Voice Commands</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Pattern Recognition</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <IntelligentCategorization
-                            userQuotes={savedQuotes.map((q) => ({
-                              id: q.id,
-                              text: q.text,
-                              author: q.author,
-                              category: q.category || "Uncategorized",
-                              tags: [],
-                            }))}
-                            userPreferences={{
-                              theme: "auto",
-                              customColors: {
-                                primary: "#7C3AED",
-                                secondary: "#A78BFA",
-                                accent: "#9333EA",
-                              },
-                              fontSize: "medium",
-                              animations: true,
-                              compactMode: false,
-                              textToSpeech: true,
-                              speechRate: 0.8,
-                              speechVolume: 80,
-                              notificationSounds: true,
-                              soundVolume: 70,
-                              dataSharing: false,
-                              analyticsEnabled: true,
-                              profileVisibility: "public",
-                              highContrast: false,
-                              screenReader: false,
-                              reducedMotion: false,
-                              pushNotifications: true,
-                              dailyReminder: true,
-                              achievementAlerts: true,
-                              autoSync: true,
-                              offlineMode: false,
-                              cacheEnabled: true,
-                              notifications: true,
-                              categories: ["motivation", "success", "wisdom"],
-                              language: "en",
-                            }}
-                            onQuoteUpdate={() => {}}
-                            onCategoryCreate={() => {}}
-                          />
+                          {/* Advanced features removed */}
                         </div>
                       </Suspense>
                     );
@@ -2304,104 +2048,7 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                     return (
                       <Suspense fallback={<TabSkeleton />}>
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h2
-                                className={`${variant === "popup" ? "text-lg" : "text-2xl"} font-bold inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
-                                style={{
-                                  color: "hsl(var(--fg-hsl))",
-                                  backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
-                                  borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                                  textShadow: "0 1px 2px rgba(0,0,0,0.25)",
-                                }}
-                              >
-                                Pattern Recognition
-                              </h2>
-                              <p
-                                className="text-xs mt-1 inline-flex px-2 py-0.5 rounded-lg backdrop-blur-md border"
-                                style={{
-                                  color: "hsl(var(--fg-hsl))",
-                                  backgroundColor: "hsl(var(--bg-hsl) / 0.3)",
-                                  borderColor: "hsl(var(--fg-hsl) / 0.25)",
-                                  textShadow: "0 1px 1px rgba(0,0,0,0.2)",
-                                }}
-                              >
-                                AI learning & behavior analysis
-                              </p>
-                            </div>
-                          </div>
-                          {/* Beta Header */}
-                          <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
-                              <div className="flex-1">
-                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                                  🚀 Advanced Features - Beta Version
-                                </h3>
-                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
-                                  These advanced features are currently in beta. Coming soon with full functionality:
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>AI-Powered Analytics</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Smart Predictions</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Voice Commands</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Pattern Recognition</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <PatternRecognition
-                            userQuotes={savedQuotes.map((q) => ({
-                              id: q.id,
-                              text: q.text,
-                              author: q.author,
-                              category: q.category || "Uncategorized",
-                              tags: [],
-                            }))}
-                            userPreferences={{
-                              theme: "auto",
-                              customColors: {
-                                primary: "#7C3AED",
-                                secondary: "#A78BFA",
-                                accent: "#9333EA",
-                              },
-                              fontSize: "medium",
-                              animations: true,
-                              compactMode: false,
-                              textToSpeech: true,
-                              speechRate: 0.8,
-                              speechVolume: 80,
-                              notificationSounds: true,
-                              soundVolume: 70,
-                              dataSharing: false,
-                              analyticsEnabled: true,
-                              profileVisibility: "public",
-                              highContrast: false,
-                              screenReader: false,
-                              reducedMotion: false,
-                              pushNotifications: true,
-                              dailyReminder: true,
-                              achievementAlerts: true,
-                              autoSync: true,
-                              offlineMode: false,
-                              cacheEnabled: true,
-                              notifications: true,
-                              categories: ["motivation", "success", "wisdom"],
-                              language: "en",
-                            }}
-                          />
+                          {/* Advanced features removed */}
                         </div>
                       </Suspense>
                     );
@@ -2434,9 +2081,6 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                                 Enhanced customization & preferences
                               </p>
                             </div>
-                            <Badge variant="glass" className="text-xs">
-                              Advanced
-                            </Badge>
                           </div>
                           {storage && (
                             <EnhancedSettings storage={storage as any} />
@@ -2523,94 +2167,7 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                     return (
                       <Suspense fallback={<TabSkeleton />}>
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h2
-                                className={
-                                  variant === "popup"
-                                    ? "text-lg font-bold"
-                                    : "text-2xl font-bold"
-                                }
-                              >
-                                Advanced Predictive Analytics
-                              </h2>
-                              <p className="text-xs text-muted-foreground">
-                                AI-powered forecasting & trends
-                              </p>
-                            </div>
-                          </div>
-                          {/* Beta Header */}
-                          <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mt-1.5 flex-shrink-0"></div>
-                              <div className="flex-1">
-                                <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                                  🚀 Advanced Features - Beta Version
-                                </h3>
-                                <p className="text-xs text-purple-500 dark:text-purple-300 mb-3">
-                                  These advanced features are currently in beta. Coming soon with full functionality:
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>AI-Powered Analytics</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Smart Predictions</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Voice Commands</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                                    <span>Pattern Recognition</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <AdvancedPredictions
-                            userQuotes={savedQuotes.map((q) => ({
-                              id: q.id,
-                              text: q.text,
-                              author: q.author,
-                              category: q.category || "Uncategorized",
-                              tags: [],
-                            }))}
-                            userPreferences={{
-                              theme: "auto",
-                              customColors: {
-                                primary: "#7C3AED",
-                                secondary: "#A78BFA",
-                                accent: "#9333EA",
-                              },
-                              fontSize: "medium",
-                              animations: true,
-                              compactMode: false,
-                              textToSpeech: true,
-                              speechRate: 0.8,
-                              speechVolume: 80,
-                              notificationSounds: true,
-                              soundVolume: 70,
-                              dataSharing: false,
-                              analyticsEnabled: true,
-                              profileVisibility: "public",
-                              highContrast: false,
-                              screenReader: false,
-                              reducedMotion: false,
-                              pushNotifications: true,
-                              dailyReminder: true,
-                              achievementAlerts: true,
-                              autoSync: true,
-                              offlineMode: false,
-                              cacheEnabled: true,
-                              notifications: true,
-                              categories: ["motivation", "success", "wisdom"],
-                              language: "en",
-                            }}
-                          />
+                          {/* Advanced features removed */}
                         </div>
                       </Suspense>
                     );
