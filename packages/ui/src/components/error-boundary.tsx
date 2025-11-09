@@ -48,8 +48,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-          <div className="flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full">
-            <AlertTriangle className="w-8 h-8 text-red-400" />
+          <div className="flex items-center justify-center w-16 h-16 bg-destructive/10 rounded-full border border-destructive/20">
+            <AlertTriangle className="w-8 h-8 text-destructive" aria-hidden="true" />
           </div>
 
           <div className="space-y-2">
@@ -64,11 +64,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
           <Button
             onClick={this.handleRetry}
-            variant="glass"
+            variant="outline"
             size="sm"
-            className="flex items-center space-x-2"
+            className="gap-2"
+            aria-label="Retry loading the component"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4" aria-hidden="true" />
             <span>Try Again</span>
           </Button>
         </div>

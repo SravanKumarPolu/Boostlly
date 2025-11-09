@@ -201,7 +201,7 @@ function SearchableVirtualScroll<T>({
           value={internalSearchTerm}
           onChange={(e) => setInternalSearchTerm(e.target.value)}
           className={cn(
-            "w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
+            "w-full px-4 py-2 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all duration-200",
             searchInputClassName,
           )}
         />

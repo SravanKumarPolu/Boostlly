@@ -102,6 +102,27 @@ export const TodayTab = forwardRef<
     const bgLuma = computeLuminance(palette?.bg);
     const quoteOpacity =
       bgLuma > 0.7 ? 0.28 : bgLuma > 0.5 ? 0.24 : bgLuma > 0.3 ? 0.2 : 0.18;
+    // Adaptive button style that adapts to background theme
+    // Uses CSS variables set by applyColorPalette which automatically adapt to daily background
+    // These variables are set dynamically based on the background image colors
+    const adaptiveButtonStyle: React.CSSProperties = {
+      color: "hsl(var(--fg-hsl))",
+      backgroundColor: "hsl(var(--bg-hsl) / 0.7)",
+      border: "2px solid hsl(var(--fg-hsl) / 0.4)",
+      borderColor: "hsl(var(--fg-hsl) / 0.4)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+    };
+    
+    // Store base styles as strings for hover handlers
+    const adaptiveBgColor = "hsl(var(--bg-hsl) / 0.7)";
+    const adaptiveBorderColor = "hsl(var(--fg-hsl) / 0.4)";
+    const adaptiveTextColor = "hsl(var(--fg-hsl))";
+    const adaptiveHoverBgColor = "hsl(var(--bg-hsl) / 0.85)";
+    const adaptiveHoverBorderColor = "hsl(var(--fg-hsl) / 0.5)";
+    const adaptiveActiveBgColor = "hsl(var(--bg-hsl) / 0.95)";
+    const adaptiveActiveBorderColor = "hsl(var(--fg-hsl) / 0.6)";
+
     const chipStyle = {
       color: "hsl(var(--fg-hsl))",
       backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
@@ -750,8 +771,8 @@ export const TodayTab = forwardRef<
               className="text-lg sm:text-2xl font-bold flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl backdrop-blur-xl border-2 shadow-lg w-fit max-w-full"
               style={{
                 color: textColor,
-                backgroundColor: "hsl(var(--card) / 0.85)",
-                borderColor: "hsl(var(--border) / 0.6)",
+                backgroundColor: "hsl(var(--bg-hsl) / 0.85)",
+                borderColor: "hsl(var(--fg-hsl) / 0.4)",
                 textShadow: "0 2px 4px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)",
                 boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
               }}
@@ -762,7 +783,12 @@ export const TodayTab = forwardRef<
               {quote.category && (
                 <Badge
                   variant="glass"
-                  className="text-xs px-3 py-1 rounded-full backdrop-blur-xl shadow-md"
+                  className="text-xs px-3 py-1 rounded-full backdrop-blur-xl shadow-md border-2"
+                  style={{
+                    color: "hsl(var(--fg-hsl))",
+                    backgroundColor: "hsl(var(--bg-hsl) / 0.7)",
+                    borderColor: "hsl(var(--fg-hsl) / 0.4)",
+                  }}
                 >
                   {getCategoryDisplay(quote.category)}
                 </Badge>
@@ -809,8 +835,8 @@ export const TodayTab = forwardRef<
                 className="inline-block text-base sm:text-lg md:text-xl font-medium px-4 py-2 rounded-full backdrop-blur-xl border-2 shadow-md"
                 style={{
                   color: textColor,
-                  backgroundColor: "hsl(var(--card) / 0.85)",
-                  borderColor: "hsl(var(--border) / 0.6)",
+                  backgroundColor: "hsl(var(--bg-hsl) / 0.85)",
+                  borderColor: "hsl(var(--fg-hsl) / 0.4)",
                   textShadow: "0 2px 4px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)",
                   boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
                 }}
@@ -846,13 +872,50 @@ export const TodayTab = forwardRef<
             )} */}
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons - Adaptive to background theme */}
           <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-            <Button
-              variant={isLiked ? "destructive" : "glass"}
-              size="sm"
+            <button
               onClick={handleLike}
-              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              style={
+                isLiked
+                  ? {
+                      backgroundColor: "hsl(var(--destructive))",
+                      color: "hsl(var(--destructive-foreground))",
+                      border: "2px solid hsl(var(--destructive) / 0.5)",
+                    }
+                  : {
+                      ...adaptiveButtonStyle,
+                    }
+              }
+              onMouseEnter={(e) => {
+                if (!isLiked) {
+                  e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                  e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                  e.currentTarget.style.color = adaptiveTextColor;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isLiked) {
+                  e.currentTarget.style.backgroundColor = adaptiveBgColor;
+                  e.currentTarget.style.borderColor = adaptiveBorderColor;
+                  e.currentTarget.style.color = adaptiveTextColor;
+                }
+              }}
+              onMouseDown={(e) => {
+                if (!isLiked) {
+                  e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
+                  e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
+                  e.currentTarget.style.color = adaptiveTextColor;
+                }
+              }}
+              onMouseUp={(e) => {
+                if (!isLiked) {
+                  e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                  e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                  e.currentTarget.style.color = adaptiveTextColor;
+                }
+              }}
               aria-label={isLiked ? "Unlike this quote" : "Like this quote"}
               aria-pressed={isLiked}
               title={
@@ -866,13 +929,50 @@ export const TodayTab = forwardRef<
                 aria-hidden="true"
               />
               <span>{isLiked ? "Liked" : "Like"}</span>
-            </Button>
+            </button>
 
-            <Button
-              variant={isSaved ? "default" : "glass"}
-              size="sm"
+            <button
               onClick={handleSave}
-              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              style={
+                isSaved
+                  ? {
+                      backgroundColor: "hsl(var(--primary))",
+                      color: "hsl(var(--primary-foreground))",
+                      border: "2px solid hsl(var(--primary) / 0.5)",
+                    }
+                  : {
+                      ...adaptiveButtonStyle,
+                    }
+              }
+              onMouseEnter={(e) => {
+                if (!isSaved) {
+                  e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                  e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                  e.currentTarget.style.color = adaptiveTextColor;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSaved) {
+                  e.currentTarget.style.backgroundColor = adaptiveBgColor;
+                  e.currentTarget.style.borderColor = adaptiveBorderColor;
+                  e.currentTarget.style.color = adaptiveTextColor;
+                }
+              }}
+              onMouseDown={(e) => {
+                if (!isSaved) {
+                  e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
+                  e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
+                  e.currentTarget.style.color = adaptiveTextColor;
+                }
+              }}
+              onMouseUp={(e) => {
+                if (!isSaved) {
+                  e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                  e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                  e.currentTarget.style.color = adaptiveTextColor;
+                }
+              }}
               aria-label={
                 isSaved
                   ? "Remove quote from saved quotes"
@@ -890,39 +990,96 @@ export const TodayTab = forwardRef<
                 aria-hidden="true"
               />
               <span>{isSaved ? "Saved" : "Save"}</span>
-            </Button>
+            </button>
 
-            <Button
-              variant="glass"
-              size="sm"
+            <button
               onClick={handleShare}
-              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              style={adaptiveButtonStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveBgColor;
+                e.currentTarget.style.borderColor = adaptiveBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
+                e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
               aria-label="Share this quote"
               title="Share this quote using your device's sharing options"
             >
               <Share2 className="w-4 h-4" aria-hidden="true" />
               <span>Share</span>
-            </Button>
+            </button>
 
-            <Button
-              variant="glass"
-              size="sm"
+            <button
               onClick={handleCopy}
-              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              style={adaptiveButtonStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveBgColor;
+                e.currentTarget.style.borderColor = adaptiveBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
+                e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
               aria-label="Copy quote text to clipboard"
               title="Copy this quote to your clipboard"
             >
               <Copy className="w-4 h-4" aria-hidden="true" />
               <span>Copy</span>
-            </Button>
+            </button>
 
-            <Button
-              variant="glass"
-              size="sm"
+            <button
               onClick={handleSpeak}
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              style={adaptiveButtonStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveBgColor;
+                e.currentTarget.style.borderColor = adaptiveBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
+                e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
               aria-label="Speak quote aloud using text-to-speech"
               aria-describedby="tts-description"
-              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
               title="Listen to this quote using text-to-speech"
             >
               <Volume2 className="w-4 h-4" aria-hidden="true" />
@@ -930,19 +1087,38 @@ export const TodayTab = forwardRef<
               <span id="tts-description" className="sr-only">
                 Click to hear this quote read aloud using text-to-speech
               </span>
-            </Button>
+            </button>
 
-            <Button
-              variant="glass"
-              size="sm"
+            <button
               onClick={handleSaveAsImage}
-              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              style={adaptiveButtonStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveBgColor;
+                e.currentTarget.style.borderColor = adaptiveBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
+                e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
+                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
+                e.currentTarget.style.color = adaptiveTextColor;
+              }}
               aria-label="Generate and download quote as image"
               title="Create a beautiful image of this quote and download it"
             >
               <Image className="w-4 h-4" aria-hidden="true" />
               <span>Image</span>
-            </Button>
+            </button>
           </div>
         </div>
       </div>

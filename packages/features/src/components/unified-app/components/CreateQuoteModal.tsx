@@ -117,8 +117,9 @@ export function CreateQuoteModal({
             size={variant === "popup" ? "sm" : "default"}
             onClick={onCreate}
             disabled={!newText.trim() || !newAuthor.trim()}
+            className="font-medium"
           >
-            <Plus className="w-4 h-4 mr-1" />
+            <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
             Create Quote
           </Button>
         </div>

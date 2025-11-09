@@ -277,6 +277,69 @@
       hsl(var(--background)) 0%, 
       hsl(var(--muted) / 0.3) 100%);
   }
+  
+  /* Ensure gradient buttons always have visible white text with dark background */
+  /* Override gradient to use darker primary color for better contrast */
+  button.bg-gradient-to-r[class*="from-primary"][class*="via-primary"],
+  button[class*="from-primary"][class*="via-primary"][class*="to-primary"] {
+    color: #ffffff !important;
+  }
+  
+  /* Ensure all text and icons are white */
+  button.bg-gradient-to-r[class*="from-primary"] *,
+  button[class*="from-primary"][class*="via-primary"] * {
+    color: #ffffff !important;
+  }
+  
+  button.bg-gradient-to-r[class*="from-primary"] svg,
+  button[class*="from-primary"][class*="via-primary"] svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+  
+  button.bg-gradient-to-r[class*="from-primary"] span,
+  button[class*="from-primary"][class*="via-primary"] span {
+    color: #ffffff !important;
+  }
+  
+  /* Ensure disabled state also has visible text */
+  button.bg-gradient-to-r[class*="from-primary"]:disabled,
+  button[class*="from-primary"][class*="via-primary"]:disabled {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+  
+  button.bg-gradient-to-r[class*="from-primary"]:disabled *,
+  button[class*="from-primary"][class*="via-primary"]:disabled * {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  /* Adaptive glass elements - adapt to daily background theme */
+  /* Uses CSS variables set by applyColorPalette which automatically adapt */
+  .glass-adaptive {
+    background-color: hsl(var(--bg-hsl, var(--card)) / 0.7);
+    color: hsl(var(--fg-hsl, var(--foreground)));
+    border-color: hsl(var(--fg-hsl, var(--border)) / 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  
+  .glass-adaptive:hover {
+    background-color: hsl(var(--bg-hsl, var(--card)) / 0.85);
+    border-color: hsl(var(--fg-hsl, var(--border)) / 0.5);
+  }
+  
+  /* Adaptive card - for cards over background images */
+  .card-adaptive {
+    background-color: hsl(var(--bg-hsl, var(--card)) / 0.85);
+    border-color: hsl(var(--fg-hsl, var(--border)) / 0.4);
+    color: hsl(var(--fg-hsl, var(--foreground)));
+  }
+  
+  /* Adaptive text - for text over background images */
+  .text-adaptive {
+    color: hsl(var(--fg-hsl, var(--foreground)));
+  }
 }
 
 @keyframes fadeIn {

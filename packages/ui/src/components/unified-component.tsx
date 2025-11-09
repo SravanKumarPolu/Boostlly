@@ -130,19 +130,19 @@ export function useBaseComponent(
     const stateClasses = [
       state.isDisabled && 'opacity-50 cursor-not-allowed',
       state.isLoading && 'cursor-wait',
-      state.hasError && 'border-red-500',
+      state.hasError && 'border-destructive',
       state.isHovered && enableHoverEffects && 'hover:scale-105',
-      state.isFocused && 'ring-2 ring-blue-500 ring-opacity-50',
+      state.isFocused && 'ring-2 ring-ring ring-offset-2',
       state.isPressed && 'scale-95',
     ].filter(Boolean);
 
     const variantClasses = {
-      default: 'bg-white border border-gray-300 text-gray-900',
-      primary: 'bg-blue-600 border-blue-600 text-white',
-      secondary: 'bg-gray-600 border-gray-600 text-white',
-      destructive: 'bg-red-600 border-red-600 text-white',
-      outline: 'bg-transparent border border-gray-300 text-gray-900',
-      ghost: 'bg-transparent border-transparent text-gray-900',
+      default: 'bg-card border border-border text-card-foreground',
+      primary: 'bg-primary border-primary text-primary-foreground',
+      secondary: 'bg-secondary border-secondary text-secondary-foreground',
+      destructive: 'bg-destructive border-destructive text-destructive-foreground',
+      outline: 'bg-transparent border border-border text-foreground',
+      ghost: 'bg-transparent border-transparent text-foreground',
     };
 
     const sizeClasses = {
@@ -226,15 +226,17 @@ export const BaseComponent = forwardRef<
     return (
       <>
         {state.isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="absolute inset-0 flex items-center justify-center bg-background/75 backdrop-blur-sm rounded-xl">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
           </div>
         )}
         {children}
         {state.hasError && props.error && (
           <div
             id={`${props.testId || 'component'}-error`}
-            className="absolute -bottom-6 left-0 text-xs text-red-500"
+            className="absolute -bottom-6 left-0 text-xs text-destructive"
+            role="alert"
+            aria-live="polite"
           >
             {props.error}
           </div>
@@ -393,7 +395,7 @@ export function withPerformanceOptimization<P extends object>(
       }, [enableLazyLoading]);
 
       if (enableLazyLoading && !shouldRender) {
-        return <div className="animate-pulse bg-gray-200 rounded h-8 w-full" />;
+        return <div className="animate-pulse bg-muted/50 rounded-lg h-8 w-full" />;
       }
 
       return <Component {...(props as P)} ref={ref} />;

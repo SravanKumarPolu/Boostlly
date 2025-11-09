@@ -13,7 +13,7 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-destructive-foreground shadow-sm",
         outline: "text-foreground border-border bg-transparent hover:bg-accent/10",
         glass:
-          "border-border/50 bg-card/70 backdrop-blur-xl text-foreground shadow-sm hover:bg-card/80",
+          "border-border/50 backdrop-blur-xl shadow-sm transition-all duration-200",
         gradient:
           "border-transparent bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-sm",
         success:

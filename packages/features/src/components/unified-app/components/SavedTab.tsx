@@ -48,18 +48,49 @@ export function SavedTab({
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Saved</h2>
-          <Badge variant="glass" className="text-xs">
+          <h2 
+            className="text-lg font-bold"
+            style={{
+              color: "hsl(var(--fg-hsl, var(--foreground)))",
+            }}
+          >
+            Saved
+          </h2>
+          <Badge 
+            variant="glass" 
+            className="text-xs border-2"
+            style={{
+              color: "hsl(var(--fg-hsl, var(--foreground)))",
+              backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.7)",
+              borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+            }}
+          >
             {savedQuotes.length} saved
           </Badge>
         </div>
         {savedQuotes.length === 0 ? (
-          <div className="p-10 text-center bg-card rounded-xl border border-border elevation-1">
+          <div 
+            className="p-10 text-center rounded-xl border elevation-1 backdrop-blur-xl transition-all duration-200"
+            style={{
+              backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
+              borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+            }}
+          >
             <div className="mx-auto mb-3 w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500" />
-            <p className="text-foreground font-medium">
+            <p 
+              className="font-medium"
+              style={{
+                color: "hsl(var(--fg-hsl, var(--foreground)))",
+              }}
+            >
               No items yet
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p 
+              className="text-sm"
+              style={{
+                color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.9)",
+              }}
+            >
               Save quotes to see them here.
             </p>
           </div>
@@ -68,13 +99,30 @@ export function SavedTab({
             {savedQuotes.map((quote) => (
               <div
                 key={quote.id}
-                className="p-4 bg-card rounded-xl border border-border elevation-1 hover-soft"
+                className="p-4 rounded-xl border elevation-1 hover-soft backdrop-blur-xl transition-all duration-200"
+                style={{
+                  backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
+                  borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+                }}
               >
-                <p className="text-sm italic mb-3 leading-relaxed">
+                <p 
+                  className="text-sm italic mb-3 leading-relaxed"
+                  style={{
+                    color: "hsl(var(--fg-hsl, var(--foreground)))",
+                  }}
+                >
                   &ldquo;{quote.text}&rdquo;
                 </p>
                 <div className="flex items-center justify-between">
-                  <Badge variant="glass" className="text-xs">
+                  <Badge 
+                    variant="glass" 
+                    className="text-xs border-2"
+                    style={{
+                      color: "hsl(var(--fg-hsl, var(--foreground)))",
+                      backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.7)",
+                      borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+                    }}
+                  >
                     {quote.category || "Custom"}
                   </Badge>
                   <div className="flex gap-1">
@@ -109,7 +157,13 @@ export function SavedTab({
           Saved
         </h2>
         <div className="flex items-center gap-2">
-          <div className="bg-card rounded-lg border border-border p-0.5 elevation-1">
+          <div 
+            className="rounded-lg border p-0.5 elevation-1 backdrop-blur-xl transition-all duration-200"
+            style={{
+              backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
+              borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+            }}
+          >
             <button
               onClick={() => {
                 window.dispatchEvent(
@@ -118,7 +172,14 @@ export function SavedTab({
                   }),
                 );
               }}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${savedFilter === "all" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}
+              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${savedFilter === "all" ? "bg-primary text-primary-foreground" : ""}`}
+              style={
+                savedFilter !== "all"
+                  ? {
+                      color: "hsl(var(--fg-hsl, var(--muted-foreground)))",
+                    }
+                  : undefined
+              }
             >
               All
             </button>
@@ -130,7 +191,14 @@ export function SavedTab({
                   }),
                 );
               }}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${savedFilter === "saved" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}
+              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${savedFilter === "saved" ? "bg-primary text-primary-foreground" : ""}`}
+              style={
+                savedFilter !== "saved"
+                  ? {
+                      color: "hsl(var(--fg-hsl, var(--muted-foreground)))",
+                    }
+                  : undefined
+              }
             >
               Saved
             </button>
@@ -142,7 +210,14 @@ export function SavedTab({
                   }),
                 );
               }}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${savedFilter === "liked" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}
+              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${savedFilter === "liked" ? "bg-primary text-primary-foreground" : ""}`}
+              style={
+                savedFilter !== "liked"
+                  ? {
+                      color: "hsl(var(--fg-hsl, var(--muted-foreground)))",
+                    }
+                  : undefined
+              }
             >
               Liked
             </button>
@@ -166,6 +241,9 @@ export function SavedTab({
               }}
               placeholder="Search saved..."
               className="bg-transparent px-2 py-1 text-sm outline-none"
+              style={{
+                color: "hsl(var(--fg-hsl, var(--foreground)))",
+              }}
             />
             <select
               value={savedSort}
@@ -177,24 +255,51 @@ export function SavedTab({
                 );
               }}
               className="bg-transparent text-sm outline-none"
+              style={{
+                color: "hsl(var(--fg-hsl, var(--foreground)))",
+              }}
             >
               <option value="recent">Recent</option>
               <option value="az">Author A–Z</option>
               <option value="za">Author Z–A</option>
             </select>
           </div>
-          <Badge variant="glass" className="text-xs">
+          <Badge 
+            variant="glass" 
+            className="text-xs border-2"
+            style={{
+              color: "hsl(var(--fg-hsl, var(--foreground)))",
+              backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.7)",
+              borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+            }}
+          >
             {filteredSavedQuotes.length} items
           </Badge>
         </div>
       </div>
       {filteredSavedQuotes.length === 0 ? (
-        <div className="p-10 text-center bg-card rounded-xl border border-border elevation-1">
+        <div 
+          className="p-10 text-center rounded-xl border elevation-1 backdrop-blur-xl transition-all duration-200"
+          style={{
+            backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
+            borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+          }}
+        >
           <div className="mx-auto mb-3 w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500" />
-          <p className="text-foreground font-medium">
+          <p 
+            className="font-medium"
+            style={{
+              color: "hsl(var(--fg-hsl, var(--foreground)))",
+            }}
+          >
             No items yet
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p 
+            className="text-sm"
+            style={{
+              color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.9)",
+            }}
+          >
             Save or like quotes to see them here.
           </p>
         </div>
@@ -203,23 +308,42 @@ export function SavedTab({
           {filteredSavedQuotes.map((quote) => (
             <div
               key={quote.id}
-              className="p-4 bg-card rounded-xl border border-border elevation-1 hover-soft"
+              className="p-4 rounded-xl border elevation-1 hover-soft backdrop-blur-xl transition-all duration-200"
+              style={{
+                backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
+                borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+              }}
             >
-              <p className="text-sm italic mb-3 leading-relaxed">
+              <p 
+                className="text-sm italic mb-3 leading-relaxed"
+                style={{
+                  color: "hsl(var(--fg-hsl, var(--foreground)))",
+                }}
+              >
                 &ldquo;{quote.text}&rdquo;
               </p>
               {/* Author and Source Information */}
               <div className="mb-3 space-y-2">
                 {quote.author && (
-                  <p className="text-xs text-foreground/80 font-medium">
+                  <p 
+                    className="text-xs font-medium"
+                    style={{
+                      color: "hsl(var(--fg-hsl, var(--foreground)) / 0.8)",
+                    }}
+                  >
                     — {quote.author}
                   </p>
                 )}
                 {quote.source && (
                   <div className="flex items-center">
                     <Badge
-                      variant="outline"
-                      className="text-xs px-2 py-1 bg-background/20 border-border/50 text-foreground/80"
+                      variant="glass"
+                      className="text-xs px-2 py-1 border-2"
+                      style={{
+                        color: "hsl(var(--fg-hsl, var(--foreground)) / 0.8)",
+                        backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.7)",
+                        borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+                      }}
                     >
                       🌐 {quote.source}
                     </Badge>
@@ -227,7 +351,15 @@ export function SavedTab({
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <Badge variant="glass" className="text-xs">
+                <Badge 
+                  variant="glass" 
+                  className="text-xs border-2"
+                  style={{
+                    color: "hsl(var(--fg-hsl, var(--foreground)))",
+                    backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.7)",
+                    borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+                  }}
+                >
                   {quote.category || "Custom"}
                 </Badge>
                 <div className="flex gap-1">

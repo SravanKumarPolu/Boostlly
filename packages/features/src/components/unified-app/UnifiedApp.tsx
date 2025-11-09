@@ -15,6 +15,7 @@ import { AppFooter } from './AppFooter';
 import { UnifiedAppProps } from './types';
 import { Home, Search, FolderOpen, Settings } from 'lucide-react';
 import { createPlatformStorage } from './utils/storage-utils';
+import { useAutoTheme } from '@boostlly/core';
 
 /**
  * Main Unified App Component
@@ -27,6 +28,9 @@ export function UnifiedApp({
 }: UnifiedAppProps) {
   const [platformStorage, setPlatformStorage] = useState<any>(null);
   const { appState, setActiveTab } = useAppState(platformStorage);
+  
+  // Auto-theme for daily background images - adapts colors based on background
+  const { palette } = useAutoTheme();
 
   // Initialize platform storage if not provided
   useEffect(() => {
@@ -73,6 +77,7 @@ export function UnifiedApp({
                 savedSort="recent"
                 filteredSavedQuotes={[]}
                 simpleMode={appState.simpleMode}
+                palette={palette || undefined}
                 onRemoveQuote={() => {}}
                 onAddToCollection={() => {}}
                 onSetSavedFilter={() => {}}

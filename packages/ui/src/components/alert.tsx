@@ -11,12 +11,12 @@ const alertVariants = cva(
         default:
           "bg-background/10 backdrop-blur-sm border-border text-foreground",
         destructive:
-          "border-red-400/30 bg-red-500/20 backdrop-blur-sm text-red-100 [&>svg]:text-red-400",
+          "border-destructive/50 bg-destructive/10 backdrop-blur-sm text-destructive [&>svg]:text-destructive",
         warning:
-          "border-yellow-400/30 bg-yellow-500/20 backdrop-blur-sm text-yellow-100 [&>svg]:text-yellow-400",
+          "border-yellow-600/50 bg-yellow-600/10 backdrop-blur-sm text-yellow-900 dark:text-yellow-100 [&>svg]:text-yellow-600 dark:[&>svg]:text-yellow-400",
         success:
-          "border-green-400/30 bg-green-500/20 backdrop-blur-sm text-green-100 [&>svg]:text-green-400",
-        info: "border-blue-400/30 bg-blue-500/20 backdrop-blur-sm text-blue-100 [&>svg]:text-blue-400",
+          "border-green-600/50 bg-green-600/10 backdrop-blur-sm text-green-900 dark:text-green-100 [&>svg]:text-green-600 dark:[&>svg]:text-green-400",
+        info: "border-blue-600/50 bg-blue-600/10 backdrop-blur-sm text-blue-900 dark:text-blue-100 [&>svg]:text-blue-600 dark:[&>svg]:text-blue-400",
       },
     },
     defaultVariants: {
@@ -55,9 +55,10 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="absolute right-2 top-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="absolute right-2 top-2 rounded-md p-1 opacity-70 ring-offset-background transition-all duration-200 hover:opacity-100 hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            aria-label="Dismiss alert"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">Dismiss</span>
           </button>
         )}

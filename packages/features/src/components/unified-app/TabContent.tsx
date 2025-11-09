@@ -212,15 +212,31 @@ export function TabContent({
                         ? "text-lg font-bold"
                         : "text-2xl font-bold"
                     }
+                    style={{
+                      color: palette?.fg || "hsl(var(--fg-hsl, var(--foreground)))",
+                    }}
                   >
                     API Explorer
                   </h2>
-                  <p className="text-xs text-muted-foreground">
+                  <p 
+                    className="text-xs"
+                    style={{
+                      color: palette?.fg || "hsl(var(--fg-hsl, var(--muted-foreground)))",
+                    }}
+                  >
                     Enhanced external sources
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="glass" className="text-xs">
+                  <Badge 
+                    variant="glass" 
+                    className="text-xs border-2"
+                    style={{
+                      color: "hsl(var(--fg-hsl, var(--foreground)))",
+                      backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.7)",
+                      borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+                    }}
+                  >
                     6 APIs
                   </Badge>
                   {variant === "popup" && (
@@ -265,7 +281,7 @@ export function TabContent({
                     : "text-2xl font-bold"
                 }
                 style={{
-                  color: palette?.fg || "hsl(var(--foreground))",
+                  color: palette?.fg || "hsl(var(--fg-hsl, var(--foreground)))",
                 }}
               >
                 Your Quotes
@@ -288,14 +304,31 @@ export function TabContent({
               );
               if (customQuotes.length === 0) {
                 return (
-                  <div className="p-10 text-center bg-card rounded-xl border border-border elevation-1">
+                  <div 
+                    className="p-10 text-center rounded-xl border elevation-1 backdrop-blur-xl transition-all duration-200"
+                    style={{
+                      backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
+                      borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+                      color: "hsl(var(--fg-hsl, var(--foreground)))",
+                    }}
+                  >
                     <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
                       <span className="text-white text-2xl">+</span>
                     </div>
-                    <p className="text-foreground font-medium mb-2">
+                    <p 
+                      className="font-medium mb-2"
+                      style={{
+                        color: "hsl(var(--fg-hsl, var(--foreground)))",
+                      }}
+                    >
                       No custom quotes yet
                     </p>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <p 
+                      className="text-sm mb-4"
+                      style={{
+                        color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.9)",
+                      }}
+                    >
                       Create your own personalized quotes and they'll appear here and in your daily rotation.
                     </p>
                     <Button
@@ -313,9 +346,18 @@ export function TabContent({
                   {customQuotes.map((quote) => (
                     <div
                       key={quote.id}
-                      className="p-4 bg-card rounded-xl border border-border elevation-1 hover-soft group relative"
+                      className="p-4 rounded-xl border elevation-1 hover-soft group relative backdrop-blur-xl transition-all duration-200"
+                      style={{
+                        backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
+                        borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+                      }}
                     >
-                      <p className="text-sm italic mb-3 leading-relaxed">
+                      <p 
+                        className="text-sm italic mb-3 leading-relaxed"
+                        style={{
+                          color: "hsl(var(--fg-hsl, var(--foreground)))",
+                        }}
+                      >
                         &ldquo;{quote.text}&rdquo;
                       </p>
                       <div className="flex items-center justify-between">
@@ -325,7 +367,7 @@ export function TabContent({
                             style={{
                               color:
                                 palette?.fg ||
-                                "hsl(var(--foreground))",
+                                "hsl(var(--fg-hsl, var(--foreground)))",
                             }}
                           >
                             — {quote.author}
@@ -338,6 +380,9 @@ export function TabContent({
                             className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => speakQuote(quote, storage)}
                             aria-label={`Speak quote aloud`}
+                            style={{
+                              color: "hsl(var(--fg-hsl, var(--foreground)))",
+                            }}
                           >
                             <span className="text-xs">🔊</span>
                           </Button>
@@ -347,6 +392,9 @@ export function TabContent({
                             className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => saveQuoteAsImage(quote)}
                             aria-label={`Save quote as image`}
+                            style={{
+                              color: "hsl(var(--fg-hsl, var(--foreground)))",
+                            }}
                           >
                             <span className="text-xs">🖼️</span>
                           </Button>
@@ -356,6 +404,9 @@ export function TabContent({
                             className="w-6 h-6"
                             onClick={() => onRemoveQuote(quote.id)}
                             aria-label={`Delete quote`}
+                            style={{
+                              color: "hsl(var(--fg-hsl, var(--foreground)))",
+                            }}
                           >
                             <span className="text-xs">✕</span>
                           </Button>
@@ -654,9 +705,19 @@ export function TabContent({
                 </h2>
               </div>
               <div className="text-center py-8">
-                <Mail className="w-16 h-16 text-indigo-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">Get Daily Motivation</h3>
-                <p className="text-gray-500 mb-6">Subscribe to receive inspiring quotes and motivational articles delivered to your inbox daily.</p>
+                <Mail className="w-16 h-16 mx-auto mb-4" style={{ color: palette?.fg || "hsl(var(--foreground))" }} />
+                <h3 
+                  className="text-xl font-semibold mb-2"
+                  style={{ color: palette?.fg || "hsl(var(--foreground))" }}
+                >
+                  Get Daily Motivation
+                </h3>
+                <p 
+                  className="mb-6"
+                  style={{ color: palette?.fg || "hsl(var(--muted-foreground))" }}
+                >
+                  Subscribe to receive inspiring quotes and motivational articles delivered to your inbox daily.
+                </p>
                 <Button asChild>
                   <a href="/newsletter" target="_blank" rel="noopener noreferrer">
                     Subscribe to Newsletter
