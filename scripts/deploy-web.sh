@@ -52,10 +52,19 @@ pnpm --filter @boostlly/ui run build
 pnpm --filter @boostlly/platform-web run build
 
 print_status "Building web application..."
+print_status "Note: Version numbers will be automatically updated during build"
 NODE_ENV=production pnpm --filter @boostlly/web run build
 
 print_status "Running post-build fixes..."
 node scripts/fix-emojis.js
+
+print_status "Verifying version files..."
+if [ -f "$PROJECT_ROOT/apps/web/out/version.json" ]; then
+    print_success "Version file exists in build output"
+    cat "$PROJECT_ROOT/apps/web/out/version.json"
+else
+    print_warning "Version file not found in build output (may need manual update)"
+fi
 
 # Verify build output
 WEB_OUT_DIR="$PROJECT_ROOT/apps/web/out"

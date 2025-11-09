@@ -337,20 +337,41 @@ const nextConfig = {
         headers: securityHeaders,
       });
 
-      // All other routes
+      // HTML pages - never cache to ensure users always get latest version
+      headers.push({
+        source: "/(.*\\.html|/|/[^.]*$)",
+        headers: [
+          ...securityHeaders,
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate, max-age=0",
+          },
+          {
+            key: "Pragma",
+            value: "no-cache",
+          },
+          {
+            key: "Expires",
+            value: "0",
+          },
+        ],
+      });
+
+      // All other routes (non-HTML)
       if (process.env.NODE_ENV === "development") {
         headers.push({
-          source: "/(.*)",
+          source: "/(.*\\.(?!html$)[^.]*$)",
           headers: [...securityHeaders, ...developmentHeaders],
         });
       } else {
+        // For static assets, use shorter cache with revalidation
         headers.push({
-          source: "/(.*)",
+          source: "/(.*\\.(?!html$)[^.]*$)",
           headers: [
             ...securityHeaders,
             {
               key: "Cache-Control",
-              value: "public, max-age=3600, s-maxage=86400",
+              value: "public, max-age=0, must-revalidate",
             },
           ],
         });

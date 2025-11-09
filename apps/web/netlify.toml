@@ -1,0 +1,64 @@
+# Netlify Configuration for Boostlly Web App
+# This ensures proper deployment and cache control
+
+[build]
+  # Build command - version update is handled in package.json prebuild hook
+  command = "cd ../.. && pnpm --filter @boostlly/web run build"
+  # Output directory
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "18"
+  PNPM_VERSION = "10.14.0"
+
+# Redirect rules for SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"], Country = ["US"]}
+
+# Headers are handled by public/_headers file
+# But we can also set some here for additional control
+
+[[headers]]
+  # Apply security headers to all paths
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), browsing-topics=()"
+
+[[headers]]
+  # Never cache HTML files
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate, max-age=0"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  # Never cache service worker
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate, max-age=0"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  # Never cache version.json
+  for = "/version.json"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate, max-age=0"
+
+[[headers]]
+  # Cache static assets with long TTL (they have contenthash)
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Plugins
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+

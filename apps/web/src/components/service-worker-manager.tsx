@@ -160,11 +160,25 @@ export const ServiceWorkerManager: React.FC = () => {
 
   const doRegister = async () => {
     try {
+      // Fetch version.json to get cache buster
+      let cacheBust = Date.now().toString();
+      try {
+        const versionResponse = await fetch(`/version.json?t=${Date.now()}`, {
+          cache: "no-store",
+        });
+        if (versionResponse.ok) {
+          const versionData = await versionResponse.json();
+          cacheBust = versionData.cacheBuster || cacheBust;
+        }
+      } catch (e) {
+        // Fallback to timestamp if version.json unavailable
+        console.warn("[SW] Could not fetch version.json for cache busting", e);
+      }
+
       // Add cache-busting parameter to force fetch of new service worker
-      const cacheBust = Date.now();
       const registration = await navigator.serviceWorker.register(`/sw.js?v=${cacheBust}`, {
         scope: "/",
-        updateViaCache: "none",
+        updateViaCache: "none", // Critical: never use cached service worker
       });
 
       setSwState((prev) => ({
