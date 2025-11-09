@@ -3,17 +3,21 @@
 # Located in root for monorepo support
 
 [build]
-  # Base directory for the web app
-  base = "apps/web"
-  # Build command - uses netlify-build.sh script
-  # This ensures all dependencies are built before the web app
+  # Base directory - set to root for monorepo workspace support
+  # This ensures pnpm workspace is properly recognized
+  base = "."
+  # Build command - uses netlify-build.sh script from root
+  # The script handles pnpm workspace and builds all dependencies
   command = "bash netlify-build.sh"
-  # Output directory (relative to base directory)
-  publish = "out"
+  # Output directory - relative to base (root)
+  publish = "apps/web/out"
 
 [build.environment]
+  # Ensure we use the correct Node.js and pnpm versions
   NODE_VERSION = "18"
   PNPM_VERSION = "10.14.0"
+  # Enable pnpm for Netlify (helps with workspace dependencies)
+  PNPM_FLAGS = "--shamefully-hoist"
 
 # Redirect rules for SPA - catch all routes and serve index.html
 [[redirects]]

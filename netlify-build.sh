@@ -1,43 +1,25 @@
 #!/bin/bash
-# Netlify Build Script for Boostlly Web App
-# This script ensures all dependencies are built before the web app
-# Runs from apps/web directory (Netlify base directory)
+# Netlify Build Script for Boostlly Web App (Root Version)
+# This script builds the web app from the repository root
+# Use this if building from root instead of apps/web directory
 
 set -e  # Exit on any error
 
-echo "🚀 Starting Netlify build..."
+echo "🚀 Starting Netlify build from repository root..."
 echo "📁 Current directory: $(pwd)"
 
-# Get the script directory and project root
-# Netlify sets base directory to apps/web, so we need to go up two levels
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WEB_DIR="$SCRIPT_DIR"
-
-# Try to find project root by looking for pnpm-workspace.yaml
-# Go up directories until we find it
-PROJECT_ROOT="$SCRIPT_DIR"
-while [ "$PROJECT_ROOT" != "/" ] && [ ! -f "$PROJECT_ROOT/pnpm-workspace.yaml" ]; do
-  PROJECT_ROOT="$(dirname "$PROJECT_ROOT")"
-done
-
-# If we didn't find it, try going up two levels (fallback)
-if [ ! -f "$PROJECT_ROOT/pnpm-workspace.yaml" ]; then
-  PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-fi
-
-# Verify we found the workspace root
-if [ ! -f "$PROJECT_ROOT/pnpm-workspace.yaml" ]; then
-  echo "❌ Error: Could not find pnpm-workspace.yaml"
-  echo "   Looked in: $PROJECT_ROOT"
-  echo "   Script dir: $SCRIPT_DIR"
+# Verify we're in the project root
+if [ ! -f "pnpm-workspace.yaml" ]; then
+  echo "❌ Error: pnpm-workspace.yaml not found. Are we in the project root?"
+  echo "   Current directory: $(pwd)"
   exit 1
 fi
 
+PROJECT_ROOT="$(pwd)"
+WEB_DIR="$PROJECT_ROOT/apps/web"
+
 echo "📁 Project root: $PROJECT_ROOT"
 echo "📁 Web directory: $WEB_DIR"
-
-# Change to project root for workspace operations
-cd "$PROJECT_ROOT"
 
 # Enable Corepack (Node.js 18+ includes pnpm via Corepack)
 if command -v corepack &> /dev/null; then
