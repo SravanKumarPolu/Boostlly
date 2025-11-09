@@ -136,23 +136,23 @@ export function UnifiedQuoteCard({
   const cardClasses = useMemo(() => {
     const baseClasses = [
       'relative',
-      'bg-white',
+      'bg-card',
       'border',
-      'border-gray-200',
-      'rounded-lg',
+      'border-border',
+      'rounded-xl',
       'shadow-sm',
       'transition-all',
-      'duration-300',
-      'ease-in-out',
+      'duration-200',
+      'ease-out',
     ];
 
     const variantClasses = {
       default: 'p-6',
       minimal: 'p-4',
       detailed: 'p-8',
-      compact: 'p-3',
-      featured: 'p-8 border-2 border-blue-200 bg-blue-50',
-      grid: 'p-4 aspect-square flex flex-col justify-center',
+      compact: 'p-4',
+      featured: 'p-8 border-2 border-primary/30 bg-primary/5 shadow-md',
+      grid: 'p-6 aspect-square flex flex-col justify-center',
     };
 
     const sizeClasses = {
@@ -163,10 +163,10 @@ export function UnifiedQuoteCard({
     };
 
     const stateClasses = [
-      isHovered && enableHoverEffects && 'shadow-lg scale-105',
-      isLiked && 'border-red-200 bg-red-50',
-      isSaved && 'border-green-200 bg-green-50',
-      isPlaying && 'border-blue-300 bg-blue-50',
+      isHovered && enableHoverEffects && 'shadow-md hover:shadow-lg -translate-y-1 border-border/80',
+      isLiked && 'border-destructive/30 bg-destructive/5',
+      isSaved && 'border-primary/30 bg-primary/5',
+      isPlaying && 'border-accent/30 bg-accent/5',
     ].filter(Boolean);
 
     return cn(
@@ -241,9 +241,9 @@ export function UnifiedQuoteCard({
       case 'minimal':
         return (
           <div className="space-y-2">
-            <p className="font-medium text-gray-900">{quote.text}</p>
+            <p className="font-medium text-card-foreground leading-relaxed">{quote.text}</p>
             {quote.author && (
-              <p className="text-sm text-gray-600">— {quote.author}</p>
+              <p className="text-sm text-muted-foreground">— {quote.author}</p>
             )}
           </div>
         );
@@ -251,13 +251,13 @@ export function UnifiedQuoteCard({
       case 'detailed':
         return (
           <div className="space-y-4">
-            <p className="text-lg font-medium text-gray-900 leading-relaxed">
+            <p className="text-lg font-medium text-card-foreground leading-relaxed">
               "{quote.text}"
             </p>
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {quote.author && (
-                  <p className="font-medium text-gray-700">— {quote.author}</p>
+                  <p className="font-medium text-card-foreground">— {quote.author}</p>
                 )}
                 {showCategory && quote.category && (
                   <Badge variant="secondary" className="text-xs">
@@ -272,7 +272,7 @@ export function UnifiedQuoteCard({
               )}
             </div>
             {showTags && quote.tags && quote.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-2">
                 {quote.tags.map((tag, index) => (
                   <Badge key={index} variant="outline" className="text-xs">
                     {tag}
@@ -285,12 +285,12 @@ export function UnifiedQuoteCard({
       
       case 'compact':
         return (
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-gray-900 line-clamp-2">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-card-foreground line-clamp-2 leading-relaxed">
               {quote.text}
             </p>
             {quote.author && (
-              <p className="text-xs text-gray-600">— {quote.author}</p>
+              <p className="text-xs text-muted-foreground">— {quote.author}</p>
             )}
           </div>
         );
@@ -298,13 +298,13 @@ export function UnifiedQuoteCard({
       case 'featured':
         return (
           <div className="space-y-4">
-            <p className="text-xl font-medium text-gray-900 leading-relaxed">
+            <p className="text-xl font-semibold text-card-foreground leading-relaxed">
               "{quote.text}"
             </p>
             <div className="flex items-center justify-between">
               <div className="space-y-2">
                 {quote.author && (
-                  <p className="font-semibold text-gray-700">— {quote.author}</p>
+                  <p className="font-semibold text-card-foreground">— {quote.author}</p>
                 )}
                 {showCategory && quote.category && (
                   <Badge variant="secondary" className="text-sm">
@@ -324,11 +324,11 @@ export function UnifiedQuoteCard({
       case 'grid':
         return (
           <div className="space-y-3 text-center">
-            <p className="font-medium text-gray-900 leading-tight">
+            <p className="font-medium text-card-foreground leading-relaxed">
               {quote.text}
             </p>
             {quote.author && (
-              <p className="text-sm text-gray-600">— {quote.author}</p>
+              <p className="text-sm text-muted-foreground">— {quote.author}</p>
             )}
             {showCategory && quote.category && (
               <Badge variant="secondary" className="text-xs">
@@ -341,13 +341,13 @@ export function UnifiedQuoteCard({
       default:
         return (
           <div className="space-y-3">
-            <p className="font-medium text-gray-900 leading-relaxed">
+            <p className="font-medium text-card-foreground leading-relaxed">
               "{quote.text}"
             </p>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 {quote.author && (
-                  <p className="text-sm text-gray-600">— {quote.author}</p>
+                  <p className="text-sm text-muted-foreground">— {quote.author}</p>
                 )}
                 {showCategory && quote.category && (
                   <Badge variant="secondary" className="text-xs">
@@ -428,17 +428,18 @@ export function UnifiedQuoteCard({
     if (actions.length === 0) return null;
 
     return (
-      <div className="flex items-center gap-2 mt-4">
+      <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border/50">
         {actions.map((action, index) => (
           <Button
             key={index}
             size="sm"
             variant={action?.variant as any}
             onClick={action?.onClick}
-            className={cn('flex items-center gap-1', action?.className)}
+            className={cn('flex items-center gap-2', action?.className)}
             title={action?.label}
+            aria-label={action?.label}
           >
-            {action?.icon && <action.icon className="w-4 h-4" />}
+            {action?.icon && <action.icon className="w-4 h-4" aria-hidden="true" />}
             {variant !== 'compact' && (
               <span className="text-xs">{action?.label}</span>
             )}

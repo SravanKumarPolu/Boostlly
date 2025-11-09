@@ -726,32 +726,34 @@ export const TodayTab = forwardRef<
     }
 
     return (
-      <div className="w-full max-w-2xl mx-auto relative overflow-hidden rounded-xl shadow-2xl">
+      <div className="w-full max-w-2xl mx-auto relative overflow-hidden rounded-2xl shadow-2xl border border-border/20">
         {/* Picsum Background Image */}
         {imageUrl && (
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 transition-transform duration-700 ease-out"
             style={{
               backgroundImage: `url(${imageUrl})`,
             }}
           />
         )}
 
-        {/* Slightly stronger overlay to ensure contrast over bright images */}
-        <div className="absolute inset-0 bg-background/25" />
-        {/* Top gradient wash for header readability over busy images */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background/35 to-transparent" />
+        {/* Enhanced overlay for better contrast - WCAG AA+ compliant */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/30 to-background/50" />
+        {/* Top and bottom gradient washes for better text readability */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background/50 via-background/30 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background/50 via-background/30 to-transparent" />
 
         {/* Content Card */}
         <div className="relative z-10 p-4 sm:p-8">
           <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2 mb-8">
             <h2
-              className="text-lg sm:text-2xl font-bold flex items-center px-2.5 py-1 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl backdrop-blur-md border w-fit max-w-full"
+              className="text-lg sm:text-2xl font-bold flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl backdrop-blur-xl border-2 shadow-lg w-fit max-w-full"
               style={{
                 color: textColor,
-                backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
-                borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                textShadow: "0 1px 2px rgba(0,0,0,0.25)",
+                backgroundColor: "hsl(var(--card) / 0.85)",
+                borderColor: "hsl(var(--border) / 0.6)",
+                textShadow: "0 2px 4px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)",
+                boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
               }}
             >
               <span className="whitespace-nowrap">Today's Boost</span>
@@ -759,13 +761,8 @@ export const TodayTab = forwardRef<
             <div className="flex items-center gap-2 justify-center sm:justify-start">
               {quote.category && (
                 <Badge
-                  variant="outline"
-                  className="text-[10px] sm:text-xs px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full backdrop-blur-md"
-                  style={{
-                    color: "hsl(var(--fg-hsl))",
-                    backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
-                    borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                  }}
+                  variant="glass"
+                  className="text-xs px-3 py-1 rounded-full backdrop-blur-xl shadow-md"
                 >
                   {getCategoryDisplay(quote.category)}
                 </Badge>
@@ -796,7 +793,10 @@ export const TodayTab = forwardRef<
             <blockquote
               className="text-xl sm:text-2xl md:text-3xl font-medium leading-relaxed pt-6 sm:pt-8 pb-10 sm:pb-12 px-4 sm:px-8 text-center italic today-quote-text"
               data-current-quote={quote.text}
-              style={{ color: textColor }}
+              style={{ 
+                color: textColor,
+                textShadow: "0 2px 8px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3)",
+              }}
             >
               {quote.text}
             </blockquote>
@@ -806,12 +806,13 @@ export const TodayTab = forwardRef<
           <div className="text-center mb-8">
             {showAuthor && (
               <p
-                className="inline-block text-base sm:text-lg md:text-xl font-medium px-3 py-1 rounded-full backdrop-blur-md"
+                className="inline-block text-base sm:text-lg md:text-xl font-medium px-4 py-2 rounded-full backdrop-blur-xl border-2 shadow-md"
                 style={{
-                  color: "hsl(var(--fg-hsl))",
-                  backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
-                  border: "1px solid",
-                  borderColor: "hsl(var(--fg-hsl) / 0.3)",
+                  color: textColor,
+                  backgroundColor: "hsl(var(--card) / 0.85)",
+                  borderColor: "hsl(var(--border) / 0.6)",
+                  textShadow: "0 2px 4px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
                 }}
               >
                 — {quote.author || "Unknown"}
@@ -846,25 +847,12 @@ export const TodayTab = forwardRef<
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
             <Button
-              variant="secondary"
+              variant={isLiked ? "destructive" : "glass"}
               size="sm"
               onClick={handleLike}
-              className={`${
-                isLiked
-                  ? "rounded-2xl border shadow bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                  : "rounded-2xl border backdrop-blur-md"
-              } transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
-              style={
-                isLiked
-                  ? ({
-                      backgroundColor: "hsl(var(--destructive))",
-                      color: "hsl(var(--destructive-foreground))",
-                      borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                    } as any)
-                  : (chipStyle as any as any)
-              }
+              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
               aria-label={isLiked ? "Unlike this quote" : "Like this quote"}
               aria-pressed={isLiked}
               title={
@@ -874,30 +862,17 @@ export const TodayTab = forwardRef<
               }
             >
               <Heart
-                className={`w-4 h-4 mr-2 ${isLiked ? "fill-current" : ""}`}
+                className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`}
                 aria-hidden="true"
               />
               <span>{isLiked ? "Liked" : "Like"}</span>
             </Button>
 
             <Button
-              variant="secondary"
+              variant={isSaved ? "default" : "glass"}
               size="sm"
               onClick={handleSave}
-              className={`${
-                isSaved
-                  ? "rounded-2xl border shadow bg-primary hover:bg-primary/90 text-primary-foreground"
-                  : "rounded-2xl border backdrop-blur-md"
-              } transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
-              style={
-                isSaved
-                  ? ({
-                      backgroundColor: "hsl(var(--primary))",
-                      color: "hsl(var(--primary-foreground))",
-                      borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                    } as any)
-                  : (chipStyle as any as any)
-              }
+              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
               aria-label={
                 isSaved
                   ? "Remove quote from saved quotes"
@@ -911,49 +886,46 @@ export const TodayTab = forwardRef<
               }
             >
               <ThumbsUp
-                className={`w-4 h-4 mr-2 ${isSaved ? "fill-current" : ""}`}
+                className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`}
                 aria-hidden="true"
               />
               <span>{isSaved ? "Saved" : "Save"}</span>
             </Button>
 
             <Button
-              variant="secondary"
+              variant="glass"
               size="sm"
               onClick={handleShare}
-              className="rounded-2xl border backdrop-blur-md transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              style={chipStyle as any}
+              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
               aria-label="Share this quote"
               title="Share this quote using your device's sharing options"
             >
-              <Share2 className="w-4 h-4 mr-2" aria-hidden="true" />
+              <Share2 className="w-4 h-4" aria-hidden="true" />
               <span>Share</span>
             </Button>
 
             <Button
-              variant="secondary"
+              variant="glass"
               size="sm"
               onClick={handleCopy}
-              className="rounded-2xl border backdrop-blur-md transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              style={chipStyle as any}
+              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
               aria-label="Copy quote text to clipboard"
               title="Copy this quote to your clipboard"
             >
-              <Copy className="w-4 h-4 mr-2" aria-hidden="true" />
+              <Copy className="w-4 h-4" aria-hidden="true" />
               <span>Copy</span>
             </Button>
 
             <Button
-              variant="secondary"
+              variant="glass"
               size="sm"
               onClick={handleSpeak}
               aria-label="Speak quote aloud using text-to-speech"
               aria-describedby="tts-description"
-              className="rounded-2xl border backdrop-blur-md transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              style={chipStyle as any}
+              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
               title="Listen to this quote using text-to-speech"
             >
-              <Volume2 className="w-4 h-4 mr-2" aria-hidden="true" />
+              <Volume2 className="w-4 h-4" aria-hidden="true" />
               <span>Read</span>
               <span id="tts-description" className="sr-only">
                 Click to hear this quote read aloud using text-to-speech
@@ -961,15 +933,14 @@ export const TodayTab = forwardRef<
             </Button>
 
             <Button
-              variant="secondary"
+              variant="glass"
               size="sm"
               onClick={handleSaveAsImage}
-              className="rounded-2xl border backdrop-blur-md transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              style={chipStyle as any}
+              className="gap-2 shadow-md hover:shadow-lg backdrop-blur-xl min-w-[100px]"
               aria-label="Generate and download quote as image"
               title="Create a beautiful image of this quote and download it"
             >
-              <Image className="w-4 h-4 mr-2" aria-hidden="true" />
+              <Image className="w-4 h-4" aria-hidden="true" />
               <span>Image</span>
             </Button>
           </div>

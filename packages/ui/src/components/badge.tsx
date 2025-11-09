@@ -3,21 +3,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-accent text-accent-foreground",
-        secondary: "border-transparent bg-secondary text-secondary-foreground",
+        default: "border-transparent bg-primary text-primary-foreground shadow-sm",
+        secondary: "border-transparent bg-secondary text-secondary-foreground shadow-sm",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground",
-        outline: "text-foreground border-border",
+          "border-transparent bg-destructive text-destructive-foreground shadow-sm",
+        outline: "text-foreground border-border bg-transparent hover:bg-accent/10",
         glass:
-          "border-border bg-card/60 backdrop-blur-xl text-foreground shadow-lg hover:bg-card/70",
+          "border-border/50 bg-card/70 backdrop-blur-xl text-foreground shadow-sm hover:bg-card/80",
         gradient:
-          "border-transparent bg-gradient-to-r from-purple-500 to-blue-500 text-accent-foreground",
+          "border-transparent bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-sm",
         success:
-          "border-transparent bg-gradient-to-r from-green-500 to-emerald-500 text-accent-foreground",
+          "border-transparent bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-sm",
       },
     },
     defaultVariants: {

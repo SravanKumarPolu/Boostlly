@@ -28,29 +28,31 @@ export function AppFooter({
 }: AppFooterProps) {
   if (variant === 'popup') {
     return (
-      <footer className="flex items-center justify-center p-2 border-t bg-muted/50">
-        <span className="text-xs text-muted-foreground">
-          Made with <Heart className="w-3 h-3 inline mx-1" /> by Boostlly Team
+      <footer className="flex items-center justify-center p-3 border-t border-border/50 bg-background/95 backdrop-blur-sm">
+        <span className="text-xs text-muted-foreground flex items-center gap-1">
+          Made with <Heart className="w-3 h-3 inline text-destructive" aria-label="love" /> by Boostlly Team
         </span>
       </footer>
     );
   }
 
   return (
-    <footer className="flex items-center justify-between p-4 border-t bg-muted/50">
-      <div className="flex items-center space-x-4">
-        <span className="text-sm text-muted-foreground">
-          Made with <Heart className="w-4 h-4 inline mx-1" /> by Boostlly Team
+    <footer className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 md:p-6 border-t border-border/50 bg-background/95 backdrop-blur-sm">
+      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1">
+          Made with <Heart className="w-4 h-4 inline text-destructive" aria-label="love" /> by Boostlly Team
         </span>
-        <span className="text-xs text-muted-foreground">
+        <span className="hidden sm:inline text-xs">
           Version 0.1.0
         </span>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           size="sm"
           onClick={onFeedbackClick}
+          className="text-xs"
+          aria-label="Provide feedback"
         >
           Feedback
         </Button>
@@ -58,8 +60,10 @@ export function AppFooter({
           variant="ghost"
           size="sm"
           onClick={onHelpClick}
+          className="text-xs gap-1"
+          aria-label="Get help"
         >
-          <ExternalLink className="w-4 h-4 mr-1" />
+          <ExternalLink className="w-3 h-3" aria-hidden="true" />
           Help
         </Button>
       </div>

@@ -51,7 +51,16 @@ export function UnifiedApp({
           />
           
           <div className="flex-1 overflow-auto">
-            <Suspense fallback={<div>Loading...</div>}>
+            <Suspense fallback={
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center space-y-4">
+                  <div className="animate-pulse">
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Loading...</p>
+                </div>
+              </div>
+            }>
               <TabContent
                 activeTab={appState.activeTab}
                 variant={variant}

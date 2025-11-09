@@ -46,23 +46,29 @@ export function Navigation({
   // Removed getTabClasses - now using NavigationButton component
 
   return (
-    <nav className={`${getNavigationClasses()} ${className}`} role="tablist">
+    <nav 
+      className={`${getNavigationClasses()} ${className}`} 
+      role="tablist"
+      aria-label="Main navigation"
+    >
       {tabs.map((tab) => (
         <NavigationButton
           key={tab.id}
           isActive={activeTab === tab.id}
           isDisabled={tab.disabled}
           onClick={() => !tab.disabled && onTabChange(tab.id)}
-          icon={<tab.icon className="w-4 h-4" />}
+          icon={<tab.icon className="w-4 h-4" aria-hidden="true" />}
+          aria-label={tab.label}
+          aria-current={activeTab === tab.id ? 'page' : undefined}
         >
-          <span className="font-medium">{tab.label}</span>
+          <span>{tab.label}</span>
           {tab.count !== undefined && tab.count > 0 && (
-            <Badge variant="secondary" className="ml-1">
+            <Badge variant="secondary" className="ml-1 text-xs">
               {tab.count}
             </Badge>
           )}
           {tab.badge && (
-            <Badge variant="outline" className="ml-1">
+            <Badge variant="outline" className="ml-1 text-xs">
               {tab.badge}
             </Badge>
           )}

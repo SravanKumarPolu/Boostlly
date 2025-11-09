@@ -28,18 +28,19 @@ export function AppHeader({
 }: AppHeaderProps) {
   if (variant === 'popup') {
     return (
-      <header className="flex items-center justify-between p-3 border-b bg-background">
-        <div className="flex items-center space-x-2">
-          <h1 className="text-lg font-semibold">Boostlly</h1>
+      <header className="flex items-center justify-between p-4 border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-bold tracking-tight text-foreground">Boostlly</h1>
         </div>
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={onSettingsClick}
-            className="p-2"
+            className="h-9 w-9 p-0"
+            aria-label="Open settings"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4 h-4" aria-hidden="true" />
           </Button>
         </div>
       </header>
@@ -47,27 +48,32 @@ export function AppHeader({
   }
 
   return (
-    <header className="flex items-center justify-between p-4 border-b bg-background">
-      <div className="flex items-center space-x-4">
-        <h1 className="text-2xl font-bold">Boostlly</h1>
-        <span className="text-sm text-muted-foreground">
+    <header className="flex items-center justify-between p-4 md:p-6 border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+      <div className="flex items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Boostlly</h1>
+        <span className="hidden sm:inline-flex text-sm text-muted-foreground font-medium">
           Daily Motivation
         </span>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-2">
         <Button
           variant="ghost"
+          size="icon"
           onClick={onMenuClick}
-          className="md:hidden"
+          className="md:hidden h-9 w-9"
+          aria-label="Open menu"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-5 h-5" aria-hidden="true" />
         </Button>
         <Button
           variant="outline"
+          size="sm"
           onClick={onSettingsClick}
+          className="gap-2"
+          aria-label="Open settings"
         >
-          <Settings className="w-4 h-4 mr-2" />
-          Settings
+          <Settings className="w-4 h-4" aria-hidden="true" />
+          <span className="hidden sm:inline">Settings</span>
         </Button>
       </div>
     </header>
