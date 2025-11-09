@@ -13,7 +13,7 @@ import { TabContent } from './TabContent';
 import { AppHeader } from './AppHeader';
 import { AppFooter } from './AppFooter';
 import { UnifiedAppProps } from './types';
-import { Home, Search, FolderOpen, BarChart3, Settings } from 'lucide-react';
+import { Home, Search, FolderOpen, Settings } from 'lucide-react';
 import { createPlatformStorage } from './utils/storage-utils';
 
 /**
@@ -88,19 +88,13 @@ export function UnifiedApp({
  * Get navigation tabs based on variant
  */
 function getNavigationTabs(variant: 'web' | 'popup') {
+  // Only core features - no advanced features
   const baseTabs = [
     { id: 'today', label: 'Today', icon: Home },
     { id: 'search', label: 'Search', icon: Search },
     { id: 'collections', label: 'Collections', icon: FolderOpen },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
-
-  if (variant === 'web') {
-    return [
-      ...baseTabs,
-      { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-      { id: 'settings', label: 'Settings', icon: Settings },
-    ];
-  }
 
   return baseTabs;
 }

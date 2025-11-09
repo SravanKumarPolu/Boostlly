@@ -38,7 +38,7 @@ interface VoiceCommand {
   phrase: string;
   action: string;
   description: string;
-  category: "navigation" | "quotes" | "settings" | "analytics";
+  category: "navigation" | "quotes" | "settings";
   confidence: number;
 }
 
@@ -98,20 +98,6 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
       confidence: 0.9,
     },
     {
-      phrase: "show analytics",
-      action: "navigate",
-      description: "Navigate to Analytics tab",
-      category: "navigation",
-      confidence: 0.9,
-    },
-    {
-      phrase: "open api",
-      action: "navigate",
-      description: "Navigate to API tab",
-      category: "navigation",
-      confidence: 0.9,
-    },
-    {
       phrase: "open saved",
       action: "navigate",
       description: "Navigate to Saved tab",
@@ -147,44 +133,9 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
       confidence: 0.9,
     },
     {
-      phrase: "open smart ai",
-      action: "navigate",
-      description: "Navigate to Smart AI tab",
-      category: "navigation",
-      confidence: 0.9,
-    },
-    {
-      phrase: "open analytics",
-      action: "navigate",
-      description: "Navigate to Analytics tab",
-      category: "navigation",
-      confidence: 0.9,
-    },
-    {
-      phrase: "open categories",
-      action: "navigate",
-      description: "Navigate to Categories tab",
-      category: "navigation",
-      confidence: 0.9,
-    },
-    {
-      phrase: "open patterns",
-      action: "navigate",
-      description: "Navigate to Patterns tab",
-      category: "navigation",
-      confidence: 0.9,
-    },
-    {
       phrase: "open voice",
       action: "navigate",
       description: "Navigate to Voice tab",
-      category: "navigation",
-      confidence: 0.9,
-    },
-    {
-      phrase: "open predictions",
-      action: "navigate",
-      description: "Navigate to Predictions tab",
       category: "navigation",
       confidence: 0.9,
     },
@@ -254,35 +205,6 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
       confidence: 0.8,
     },
 
-    // Smart commands
-    {
-      phrase: "smart recommendations",
-      action: "navigate",
-      description: "Open Smart AI tab",
-      category: "analytics",
-      confidence: 0.7,
-    },
-    {
-      phrase: "show patterns",
-      action: "navigate",
-      description: "Open Pattern Recognition tab",
-      category: "analytics",
-      confidence: 0.7,
-    },
-    {
-      phrase: "analyze behavior",
-      action: "navigate",
-      description: "Open Advanced Analytics tab",
-      category: "analytics",
-      confidence: 0.7,
-    },
-    {
-      phrase: "categorize quotes",
-      action: "navigate",
-      description: "Open Intelligent Categorization tab",
-      category: "analytics",
-      confidence: 0.7,
-    },
 
     // Settings commands
     {
@@ -637,22 +559,10 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
           onNavigate("community-stats");
         else if (command.phrase.includes("collections"))
           onNavigate("collections");
-        else if (command.phrase.includes("api")) onNavigate("api");
         else if (command.phrase.includes("saved")) onNavigate("saved");
         else if (command.phrase.includes("your")) onNavigate("create");
         else if (command.phrase.includes("stats")) onNavigate("stats");
-        else if (command.phrase.includes("smart")) onNavigate("smart");
-        else if (command.phrase.includes("analytics")) onNavigate("analytics");
-        else if (
-          command.phrase.includes("categorize") ||
-          command.phrase.includes("categories")
-        )
-          onNavigate("categorization");
-        else if (command.phrase.includes("patterns")) onNavigate("patterns");
         else if (command.phrase.includes("voice")) onNavigate("voice");
-        else if (command.phrase.includes("predictions"))
-          onNavigate("predictions");
-        else if (command.phrase.includes("sync")) onNavigate("sync");
         else if (command.phrase.includes("settings")) onNavigate("settings");
         break;
       case "read": {
@@ -956,13 +866,12 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
 
       {/* Voice Commands Reference */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {["navigation", "quotes", "analytics", "settings"].map((category) => (
+        {["navigation", "quotes", "settings"].map((category) => (
           <Card key={category} className="border-l-4 border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 {category === "navigation" && <Target className="w-4 h-4" />}
                 {category === "quotes" && <BookOpen className="w-4 h-4" />}
-                {category === "analytics" && <Brain className="w-4 h-4" />}
                 {category === "settings" && <Settings className="w-4 h-4" />}
                 {category.charAt(0).toUpperCase() + category.slice(1)} Commands
               </CardTitle>

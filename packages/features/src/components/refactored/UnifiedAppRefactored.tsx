@@ -5,15 +5,12 @@ import { Navigation } from '../navigation/Navigation';
 import { SearchContainer } from '../search/SearchContainer';
 import { TodayTab } from '../today-tab';
 import { CollectionsTab } from '../collections-tab';
-import { APIExplorer } from '../api-explorer';
 import {
   Home,
   Search,
   FolderOpen,
-  Globe,
   Heart,
   BarChart3,
-  TrendingUp,
   Volume2,
   Settings as SettingsIcon,
   Plus,
@@ -48,29 +45,17 @@ export function UnifiedAppRefactored({
 }: UnifiedAppRefactoredProps) {
   const { appState, setActiveTab } = useAppState(storage);
 
-  // Define navigation tabs based on variant and simple mode
-  const allTabs = [
+  // Navigation tabs - only core features, no advanced features
+  const navigationTabs = [
     { id: 'today', label: 'Today', icon: Home },
     { id: 'search', label: 'Search', icon: Search },
     { id: 'collections', label: 'Collections', icon: FolderOpen },
-    { id: 'api', label: 'API', icon: Globe },
     { id: 'saved', label: 'Saved', icon: Heart },
     { id: 'create', label: 'Your Quotes', icon: Plus },
     { id: 'stats', label: 'Stats', icon: BarChart3 },
-    { id: 'smart', label: 'Smart AI', icon: TrendingUp },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'categorization', label: 'Categories', icon: FolderOpen },
-    { id: 'patterns', label: 'Patterns', icon: TrendingUp },
     { id: 'voice', label: 'Voice', icon: Volume2 },
-    { id: 'predictions', label: 'Predictions', icon: TrendingUp },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
-
-  const navigationTabs = appState.simpleMode
-    ? allTabs.filter(tab => 
-        ['today', 'search', 'collections', 'saved', 'create', 'voice', 'settings'].includes(tab.id)
-      )
-    : allTabs;
 
   // Render content based on active tab
   const renderContent = () => {
@@ -102,9 +87,6 @@ export function UnifiedAppRefactored({
           />
         );
       
-      case 'api':
-        return <APIExplorer storage={storage} />;
-      
       case 'saved':
         return (
           <Section
@@ -135,61 +117,11 @@ export function UnifiedAppRefactored({
           </Section>
         );
       
-      case 'smart':
-        return (
-          <Section
-            title="Smart AI"
-            description="AI-powered recommendations and insights."
-          >
-            <div>Coming soon...</div>
-          </Section>
-        );
-      
-      case 'analytics':
-        return (
-          <Section
-            title="Analytics"
-            description="Advanced analytics and insights."
-          >
-            <div>Coming soon...</div>
-          </Section>
-        );
-      
-      case 'categorization':
-        return (
-          <Section
-            title="Categories"
-            description="Intelligent categorization features."
-          >
-            <div>Coming soon...</div>
-          </Section>
-        );
-      
-      case 'patterns':
-        return (
-          <Section
-            title="Patterns"
-            description="Pattern recognition and analysis."
-          >
-            <div>Coming soon...</div>
-          </Section>
-        );
-      
       case 'voice':
         return (
           <Section
             title="Voice Commands"
             description="Voice control features."
-          >
-            <div>Coming soon...</div>
-          </Section>
-        );
-      
-      case 'predictions':
-        return (
-          <Section
-            title="Predictions"
-            description="AI-powered predictions and forecasts."
           >
             <div>Coming soon...</div>
           </Section>

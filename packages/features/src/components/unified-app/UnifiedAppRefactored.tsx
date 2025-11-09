@@ -23,14 +23,11 @@ import {
   Home,
   Search,
   FolderOpen,
-  Globe,
   Heart,
   BarChart3,
   Volume2,
   Settings as SettingsIcon,
   Plus,
-  BookOpen,
-  Mail,
 } from "lucide-react";
 import { GlobalVoiceListener } from "../global-voice-listener";
 import { Navigation } from "./components/Navigation";
@@ -236,36 +233,17 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
     appState.savedSort,
   ]);
 
-  // Navigation tabs
-  const allNavigationTabs: NavigationTab[] = [
+  // Navigation tabs - only core features, no advanced features
+  const navigationTabs: NavigationTab[] = [
     { id: "today", label: "Today", icon: Home },
     { id: "search", label: "Search", icon: Search },
     { id: "collections", label: "Collections", icon: FolderOpen },
-    { id: "articles", label: "Articles", icon: BookOpen },
-    { id: "newsletter", label: "Newsletter", icon: Mail },
-    { id: "api", label: "API", icon: Globe },
     { id: "saved", label: "Saved", icon: Heart },
     { id: "create", label: "Your Quotes", icon: Plus },
     { id: "stats", label: "Stats", icon: BarChart3 },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "voice", label: "Voice", icon: Volume2 },
     { id: "settings", label: "Settings", icon: SettingsIcon },
   ];
-
-  const navigationTabs = appState.simpleMode
-    ? allNavigationTabs.filter((tab) =>
-        [
-          "today",
-          "search",
-          "collections",
-          "saved",
-          "create",
-          "voice",
-          "stats",
-          "settings",
-        ].includes(tab.id),
-      )
-    : allNavigationTabs;
 
   // Handle create quote
   async function handleCreateQuote() {
@@ -349,7 +327,7 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
             variant={variant}
             tabs={navigationTabs}
             activeTab={appState.activeTab}
-            simpleMode={appState.simpleMode}
+            simpleMode={true}
             onTabChange={appState.setActiveTab}
             todayTabRef={todayTabRef}
             forceRefreshLists={appState.forceRefreshLists}
@@ -373,7 +351,7 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
                 savedSearch={appState.savedSearch}
                 savedSort={appState.savedSort}
                 filteredSavedQuotes={filteredSavedQuotes}
-                simpleMode={appState.simpleMode}
+                simpleMode={true}
                 palette={palette || undefined}
                 todayTabRef={todayTabRef}
                 onRemoveQuote={handleRemoveQuote}

@@ -22,7 +22,8 @@ export function useUnifiedAppState(storage: StorageLike | null) {
   const [savedFilter, setSavedFilter] = useState<"all" | "saved" | "liked">("all");
   const [savedSearch, setSavedSearch] = useState("");
   const [savedSort, setSavedSort] = useState<"recent" | "az" | "za">("recent");
-  const [simpleMode, setSimpleMode] = useState<boolean>(false);
+  // simpleMode is now permanently true - advanced features removed
+  const [simpleMode] = useState<boolean>(true);
 
   const collectionService = useMemo(() => {
     if (!storage) return null;
@@ -51,11 +52,9 @@ export function useUnifiedAppState(storage: StorageLike | null) {
         ).getAllCollections();
         setCollections(allCollections);
 
-        // Load simple mode setting
-        const simpleModeSetting = await (storage as any).get("simpleMode");
-        setSimpleMode(
-          typeof simpleModeSetting === "boolean" ? simpleModeSetting : true,
-        );
+        // Simple mode is now permanently enabled - advanced features removed
+        // Always save simpleMode as true to ensure consistency
+        await (storage as any).set("simpleMode", true);
       } catch (error) {
         logError("Failed to load data:", { error: error });
       }
@@ -204,38 +203,17 @@ export function useUnifiedAppState(storage: StorageLike | null) {
     };
   }, [storage]);
 
-  // Listen for simple mode changes
+  // Simple mode is now permanently enabled - no need to listen for changes
+  // Ensure simpleMode is always true in storage
   useEffect(() => {
-    const onSimpleModeChange = async () => {
-      if (!storage) return;
+    if (!storage) return;
+    (async () => {
       try {
-        const simpleModeSetting = await (storage as any).get("simpleMode");
-        setSimpleMode(
-          typeof simpleModeSetting === "boolean" ? simpleModeSetting : true,
-        );
+        await (storage as any).set("simpleMode", true);
       } catch (error) {
-        logError("Failed to load simple mode setting:", { error: error });
+        logError("Failed to set simple mode:", { error: error });
       }
-    };
-
-    // Listen for storage changes (for cross-tab sync)
-    if (storage && typeof (storage as any).onChanged === "function") {
-      (storage as any).onChanged.addListener((changes: any) => {
-        if (changes.simpleMode) {
-          setSimpleMode(changes.simpleMode.newValue || false);
-        }
-      });
-    }
-
-    // Also listen for custom events
-    window.addEventListener("boostlly:simpleMode:changed", onSimpleModeChange);
-
-    return () => {
-      window.removeEventListener(
-        "boostlly:simpleMode:changed",
-        onSimpleModeChange,
-      );
-    };
+    })();
   }, [storage]);
 
   async function saveSavedQuotes(next: SavedQuote[]) {
@@ -313,7 +291,6 @@ export function useUnifiedAppState(storage: StorageLike | null) {
     savedSort,
     setSavedSort,
     simpleMode,
-    setSimpleMode,
     collectionService,
     saveSavedQuotes,
     saveLikedQuotes,

@@ -83,7 +83,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
     accent: "#9333EA", // Purple
   } as const;
   const [preferences, setPreferences] = useState<UserPreferences>({
-    simpleMode: true,
+    simpleMode: true, // Always true - advanced features removed
     customColors: { ...defaultPalette },
     fontSize: "medium",
     animations: true,
@@ -252,9 +252,8 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
       if (Object.prototype.hasOwnProperty.call(newPrefs, "speechVolume")) {
         await storage.set("speechVolume", updated.speechVolume);
       }
-      if (Object.prototype.hasOwnProperty.call(newPrefs, "simpleMode")) {
-        await storage.set("simpleMode", updated.simpleMode);
-      }
+      // Simple mode is now permanently enabled - always save as true
+      await storage.set("simpleMode", true);
       if (Object.prototype.hasOwnProperty.call(newPrefs, "apiProxy")) {
         await storage.set("apiProxy", updated.apiProxy ?? true);
         try {
@@ -289,14 +288,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
           );
         }
 
-        // Broadcast simple mode changes
-        if (Object.prototype.hasOwnProperty.call(newPrefs, "simpleMode")) {
-          window.dispatchEvent(
-            new CustomEvent("boostlly:simpleMode:changed", {
-              detail: { simpleMode: updated.simpleMode },
-            }),
-          );
-        }
+        // Simple mode is now permanently enabled - no need to broadcast changes
 
         // Broadcast general preferences that other screens consume
         const prefDetail: any = {};
@@ -413,7 +405,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
       confirm("Are you sure you want to reset all preferences to defaults?")
     ) {
       const defaults: UserPreferences = {
-        simpleMode: true,
+        simpleMode: true, // Always true - advanced features removed
         customColors: { ...defaultPalette },
         fontSize: "medium",
         animations: true,
@@ -450,44 +442,6 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground mb-2">
-                Simple Mode
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Hide advanced features for a cleaner, simpler experience
-              </p>
-            </div>
-            <div className="flex-shrink-0 pt-1">
-              <Switch
-                checked={preferences.simpleMode}
-                onCheckedChange={(checked) => {
-                  setPreferences((prev) => ({ ...prev, simpleMode: checked }));
-                  savePreferences({ ...preferences, simpleMode: checked });
-                }}
-                className="data-[state=checked]:bg-primary"
-              />
-            </div>
-          </div>
-
-          {preferences.simpleMode && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm">
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                <div>
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                    Simple Mode Active
-                  </p>
-                  <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
-                    Advanced features like Voice Commands, AI Analytics, Pattern
-                    Recognition, and API Explorer are now hidden. You can switch
-                    back anytime in Settings.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
