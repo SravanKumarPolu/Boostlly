@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/update-version.js",
-    "build": "npm run clean && npm run prebuild && NODE_ENV=production next build && npm run postbuild",
+    "build": "pnpm run clean && pnpm run prebuild && NODE_ENV=production next build && pnpm run postbuild",
     "postbuild": "node scripts/update-version.js",
-    "build:web": "npm run clean && npm run prebuild && NODE_ENV=production next build && npm run postbuild",
+    "build:web": "pnpm run clean && pnpm run prebuild && NODE_ENV=production next build && pnpm run postbuild",
     "preview:web": "next start -p 3000",
     "analyze:web": "npm run clean && ANALYZE=true NODE_ENV=production next build",
     "start": "next start",

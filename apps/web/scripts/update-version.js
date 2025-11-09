@@ -18,6 +18,11 @@ const cacheBuster = Math.random().toString(36).substring(2, 9);
 
 // Read package.json to get current version
 const packageJsonPath = path.join(__dirname, '..', 'package.json');
+if (!fs.existsSync(packageJsonPath)) {
+  console.error(`❌ Error: package.json not found at ${packageJsonPath}`);
+  process.exit(1);
+}
+
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 const version = packageJson.version || '0.1.0';
 
@@ -28,6 +33,14 @@ console.log(`   Cache Buster: ${cacheBuster}`);
 
 // Update version.json
 const versionJsonPath = path.join(__dirname, '..', 'public', 'version.json');
+const publicDir = path.dirname(versionJsonPath);
+
+// Ensure public directory exists
+if (!fs.existsSync(publicDir)) {
+  console.log(`📁 Creating public directory: ${publicDir}`);
+  fs.mkdirSync(publicDir, { recursive: true });
+}
+
 const versionData = {
   version,
   buildTime,
@@ -41,7 +54,10 @@ console.log(`✅ Updated ${versionJsonPath}`);
 
 // Update sw.js
 const swJsPath = path.join(__dirname, '..', 'public', 'sw.js');
-let swContent = fs.readFileSync(swJsPath, 'utf8');
+if (!fs.existsSync(swJsPath)) {
+  console.warn(`⚠️  Warning: sw.js not found at ${swJsPath}, skipping update`);
+} else {
+  let swContent = fs.readFileSync(swJsPath, 'utf8');
 
 // Remove old comment lines with timestamps (clean up multiple auto-updated comments)
 swContent = swContent.replace(
@@ -62,21 +78,27 @@ swContent = swContent.replace(
   `const BUILD_TIME = "${buildTimeFormatted}"; // Format: YYYYMMDDHHmmss`
 );
 
-fs.writeFileSync(swJsPath, swContent);
-console.log(`✅ Updated ${swJsPath}`);
-
-// Also update the out directory if it exists (for post-build updates)
-const outVersionJsonPath = path.join(__dirname, '..', 'out', 'version.json');
-const outSwJsPath = path.join(__dirname, '..', 'out', 'sw.js');
-
-if (fs.existsSync(outVersionJsonPath)) {
-  fs.writeFileSync(outVersionJsonPath, JSON.stringify(versionData, null, 2) + '\n');
-  console.log(`✅ Updated ${outVersionJsonPath}`);
+  fs.writeFileSync(swJsPath, swContent);
+  console.log(`✅ Updated ${swJsPath}`);
 }
 
-if (fs.existsSync(outSwJsPath)) {
-  fs.writeFileSync(outSwJsPath, swContent);
-  console.log(`✅ Updated ${outSwJsPath}`);
+// Also update the out directory if it exists (for post-build updates)
+const outDir = path.join(__dirname, '..', 'out');
+if (fs.existsSync(outDir)) {
+  const outVersionJsonPath = path.join(outDir, 'version.json');
+  const outSwJsPath = path.join(outDir, 'sw.js');
+  
+  if (fs.existsSync(outVersionJsonPath) || fs.existsSync(path.join(outDir, 'index.html'))) {
+    // Only update if out directory has been built
+    fs.writeFileSync(outVersionJsonPath, JSON.stringify(versionData, null, 2) + '\n');
+    console.log(`✅ Updated ${outVersionJsonPath}`);
+    
+    if (fs.existsSync(outSwJsPath) && fs.existsSync(swJsPath)) {
+      const swContent = fs.readFileSync(swJsPath, 'utf8');
+      fs.writeFileSync(outSwJsPath, swContent);
+      console.log(`✅ Updated ${outSwJsPath}`);
+    }
+  }
 }
 
 console.log(`\n✨ Version update complete!`);
