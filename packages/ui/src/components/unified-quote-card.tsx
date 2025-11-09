@@ -476,6 +476,7 @@ export function UnifiedQuoteCard({
     <div
       className={cn(cardClasses, animationClasses)}
       data-testid={testId}
+      data-card="true"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...accessibilityProps}

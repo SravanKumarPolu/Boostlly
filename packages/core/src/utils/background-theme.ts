@@ -233,7 +233,83 @@ function getFallbackPalette(): ColorPalette {
 }
 
 /**
+ * Derive a primary color from the palette that ensures good contrast
+ * Uses accent color but adjusts for better visibility
+ */
+function derivePrimaryColor(accent: string, bg: string): string {
+  const accentRgb = hexToRgb(accent);
+  const bgRgb = hexToRgb(bg);
+  if (!accentRgb || !bgRgb) return accent;
+
+  // Check if accent has good contrast on background
+  const contrast = getContrastRatio(accent, bg);
+  
+  // If contrast is good (>= 4.5), use accent as-is
+  if (contrast >= 4.5) {
+    return accent;
+  }
+
+  // Otherwise, adjust accent to ensure good contrast
+  // Make it darker if background is light, lighter if background is dark
+  const bgLuminance = getLuminance(bg);
+  const isDarkBg = bgLuminance < 0.5;
+
+  if (isDarkBg) {
+    // Lighten the accent for dark backgrounds
+    return lightenColor(accent, 0.3);
+  } else {
+    // Darken the accent for light backgrounds
+    return darkenColor(accent, 0.3);
+  }
+}
+
+/**
+ * Lighten a color by a specified amount
+ */
+function lightenColor(color: string, amount: number): string {
+  const rgb = hexToRgb(color);
+  if (!rgb) return color;
+
+  const { r, g, b } = rgb;
+  const newR = Math.min(255, Math.round(r + (255 - r) * amount));
+  const newG = Math.min(255, Math.round(g + (255 - g) * amount));
+  const newB = Math.min(255, Math.round(b + (255 - b) * amount));
+
+  return rgbToHex(newR, newG, newB);
+}
+
+/**
+ * Derive card background color - slightly lighter/darker than bg for subtle contrast
+ */
+function deriveCardColor(bg: string, isDark: boolean): string {
+  const bgRgb = hexToRgb(bg);
+  if (!bgRgb) return bg;
+
+  const bgLuminance = getLuminance(bg);
+  
+  // For dark backgrounds, make card slightly lighter
+  // For light backgrounds, make card slightly darker
+  if (bgLuminance < 0.5) {
+    // Dark background - lighten card
+    return lightenColor(bg, 0.05);
+  } else {
+    // Light background - darken card slightly
+    return darkenColor(bg, 0.02);
+  }
+}
+
+/**
+ * Get optimal foreground color for a given background
+ */
+function getOptimalForeground(bg: string): string {
+  const bgLuminance = getLuminance(bg);
+  // Return white for dark backgrounds, black for light backgrounds
+  return bgLuminance < 0.5 ? "#ffffff" : "#000000";
+}
+
+/**
  * Apply color palette to CSS variables with automatic contrast computation
+ * Enhanced to update --primary, --card, and related variables for buttons and cards
  */
 export function applyColorPalette(palette: ColorPalette): void {
   if (typeof document === "undefined") return;
@@ -243,70 +319,129 @@ export function applyColorPalette(palette: ColorPalette): void {
   // Ensure proper contrast before applying
   const { fg: safeFg, bg: safeBg } = ensureContrast(palette.fg, palette.bg);
 
+  // Derive primary color from accent (for buttons)
+  const primaryColor = derivePrimaryColor(palette.accent, safeBg);
+  
+  // Derive card background color
+  const cardBg = deriveCardColor(safeBg, getLuminance(safeBg) < 0.5);
+  
+  // Get optimal foreground for primary (button text)
+  const primaryFg = getOptimalForeground(primaryColor);
+  
+  // Get optimal foreground for card (card text)
+  const cardFg = getOptimalForeground(cardBg);
+
   // Apply safe colors
   root.style.setProperty("--bg", safeBg);
   root.style.setProperty("--fg", safeFg);
   root.style.setProperty("--muted", palette.muted);
   root.style.setProperty("--accent", palette.accent);
 
-  // Also set Tailwind-compatible variables for automatic contrast
-  root.style.setProperty("--foreground", safeFg);
-  root.style.setProperty("--background", safeBg);
-  root.style.setProperty("--muted-foreground", palette.muted);
-  root.style.setProperty("--accent", palette.accent);
-
-  // Compute and apply contrast ratios
-  const contrastRatio = getContrastRatio(safeFg, safeBg);
-  root.style.setProperty("--contrast-ratio", contrastRatio.toString());
-
-  // Set contrast compliance indicators
-  root.style.setProperty("--contrast-aa", (contrastRatio >= 4.5).toString());
-  root.style.setProperty("--contrast-aaa", (contrastRatio >= 7.0).toString());
-
-  // Also set HSL values for better CSS integration
+  // Convert all colors to RGB first, then to HSL for Tailwind compatibility
   const bgRgb = hexToRgb(safeBg);
   const fgRgb = hexToRgb(safeFg);
+  const primaryRgb = hexToRgb(primaryColor);
+  const primaryFgRgb = hexToRgb(primaryFg);
+  const cardRgb = hexToRgb(cardBg);
+  const cardFgRgb = hexToRgb(cardFg);
   const mutedRgb = hexToRgb(palette.muted);
   const accentRgb = hexToRgb(palette.accent);
 
+  // Set background and foreground - in HSL format for Tailwind
   if (bgRgb) {
     const bgHsl = rgbToHsl(bgRgb.r, bgRgb.g, bgRgb.b);
+    root.style.setProperty("--background", `${bgHsl.h} ${bgHsl.s}% ${bgHsl.l}%`);
     root.style.setProperty("--bg-hsl", `${bgHsl.h} ${bgHsl.s}% ${bgHsl.l}%`);
+    root.style.setProperty("--background-hsl", `${bgHsl.h} ${bgHsl.s}% ${bgHsl.l}%`);
   }
 
   if (fgRgb) {
     const fgHsl = rgbToHsl(fgRgb.r, fgRgb.g, fgRgb.b);
+    root.style.setProperty("--foreground", `${fgHsl.h} ${fgHsl.s}% ${fgHsl.l}%`);
     root.style.setProperty("--fg-hsl", `${fgHsl.h} ${fgHsl.s}% ${fgHsl.l}%`);
-    // Also set Tailwind-compatible foreground HSL
-    root.style.setProperty(
-      "--foreground-hsl",
-      `${fgHsl.h} ${fgHsl.s}% ${fgHsl.l}%`,
-    );
+    root.style.setProperty("--foreground-hsl", `${fgHsl.h} ${fgHsl.s}% ${fgHsl.l}%`);
   }
 
+  // Set primary color for buttons (derived from accent) - in HSL format for Tailwind
+  if (primaryRgb) {
+    const primaryHsl = rgbToHsl(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    root.style.setProperty("--primary", `${primaryHsl.h} ${primaryHsl.s}% ${primaryHsl.l}%`);
+    root.style.setProperty("--primary-hsl", `${primaryHsl.h} ${primaryHsl.s}% ${primaryHsl.l}%`);
+  }
+  if (primaryFgRgb) {
+    const primaryFgHsl = rgbToHsl(primaryFgRgb.r, primaryFgRgb.g, primaryFgRgb.b);
+    root.style.setProperty("--primary-foreground", `${primaryFgHsl.h} ${primaryFgHsl.s}% ${primaryFgHsl.l}%`);
+  }
+
+  // Set card colors (for cards that overlay the background) - in HSL format for Tailwind
+  if (cardRgb) {
+    const cardHsl = rgbToHsl(cardRgb.r, cardRgb.g, cardRgb.b);
+    root.style.setProperty("--card", `${cardHsl.h} ${cardHsl.s}% ${cardHsl.l}%`);
+    root.style.setProperty("--card-hsl", `${cardHsl.h} ${cardHsl.s}% ${cardHsl.l}%`);
+  }
+  if (cardFgRgb) {
+    const cardFgHsl = rgbToHsl(cardFgRgb.r, cardFgRgb.g, cardFgRgb.b);
+    root.style.setProperty("--card-foreground", `${cardFgHsl.h} ${cardFgHsl.s}% ${cardFgHsl.l}%`);
+  }
+
+  // Set muted and accent colors - in HSL format for Tailwind
   if (mutedRgb) {
     const mutedHsl = rgbToHsl(mutedRgb.r, mutedRgb.g, mutedRgb.b);
-    root.style.setProperty(
-      "--muted-hsl",
-      `${mutedHsl.h} ${mutedHsl.s}% ${mutedHsl.l}%`,
-    );
-    // Also set Tailwind-compatible muted foreground HSL
-    root.style.setProperty(
-      "--muted-foreground-hsl",
-      `${mutedHsl.h} ${mutedHsl.s}% ${mutedHsl.l}%`,
-    );
+    root.style.setProperty("--muted-foreground", `${mutedHsl.h} ${mutedHsl.s}% ${mutedHsl.l}%`);
+    root.style.setProperty("--muted-hsl", `${mutedHsl.h} ${mutedHsl.s}% ${mutedHsl.l}%`);
+    root.style.setProperty("--muted-foreground-hsl", `${mutedHsl.h} ${mutedHsl.s}% ${mutedHsl.l}%`);
+    // Also set muted color (background)
+    root.style.setProperty("--muted", `${mutedHsl.h} ${mutedHsl.s}% ${mutedHsl.l}%`);
   }
-
+  
   if (accentRgb) {
     const accentHsl = rgbToHsl(accentRgb.r, accentRgb.g, accentRgb.b);
-    root.style.setProperty(
-      "--accent-hsl",
-      `${accentHsl.h} ${accentHsl.s}% ${accentHsl.l}%`,
-    );
+    root.style.setProperty("--accent", `${accentHsl.h} ${accentHsl.s}% ${accentHsl.l}%`);
+    root.style.setProperty("--accent-hsl", `${accentHsl.h} ${accentHsl.s}% ${accentHsl.l}%`);
   }
 
+  // Set border color - ensure good contrast with background
+  // Border should be visible but not too harsh
+  if (bgRgb && fgRgb) {
+    const bgHsl = rgbToHsl(bgRgb.r, bgRgb.g, bgRgb.b);
+    const fgHsl = rgbToHsl(fgRgb.r, fgRgb.g, fgRgb.b);
+    
+    // Calculate border color that has good contrast with background
+    // For light backgrounds, use darker borders; for dark backgrounds, use lighter borders
+    let borderLightness: number;
+    if (bgHsl.l > 70) {
+      // Light background - use darker border (30-40% lightness)
+      borderLightness = 35;
+    } else if (bgHsl.l < 30) {
+      // Dark background - use lighter border (60-70% lightness)
+      borderLightness = 65;
+    } else {
+      // Medium background - use mid-tone border
+      borderLightness = bgHsl.l > 50 ? 40 : 60;
+    }
+    
+    // Use similar hue to foreground but with adjusted lightness
+    root.style.setProperty("--border", `${fgHsl.h} ${Math.min(30, fgHsl.s)}% ${borderLightness}%`);
+    root.style.setProperty("--input", `${fgHsl.h} ${Math.min(30, fgHsl.s)}% ${borderLightness}%`);
+  }
+
+  // Compute and apply contrast ratios
+  const contrastRatio = getContrastRatio(safeFg, safeBg);
+  const primaryContrast = getContrastRatio(primaryFg, primaryColor);
+  const cardContrast = getContrastRatio(cardFg, cardBg);
+  
+  root.style.setProperty("--contrast-ratio", contrastRatio.toString());
+  root.style.setProperty("--primary-contrast", primaryContrast.toString());
+  root.style.setProperty("--card-contrast", cardContrast.toString());
+
+  // Set contrast compliance indicators
+  root.style.setProperty("--contrast-aa", (contrastRatio >= 4.5).toString());
+  root.style.setProperty("--contrast-aaa", (contrastRatio >= 7.0).toString());
+  root.style.setProperty("--primary-contrast-aa", (primaryContrast >= 4.5).toString());
+  root.style.setProperty("--card-contrast-aa", (cardContrast >= 4.5).toString());
+
   // Set additional accessibility variables
-  setAccessibilityVariables(safeFg, safeBg, palette.accent);
+  setAccessibilityVariables(safeFg, safeBg, palette.accent, primaryColor, cardBg);
 }
 
 /**
@@ -316,14 +451,28 @@ function setAccessibilityVariables(
   fg: string,
   bg: string,
   accent: string,
+  primary: string,
+  card: string,
 ): void {
   if (typeof document === "undefined") return;
 
   const root = document.documentElement;
 
-  // Focus ring colors with proper contrast
-  const focusRingColor = ensureContrast(accent, bg).fg;
-  root.style.setProperty("--focus-ring-color", focusRingColor);
+  // Focus ring colors with proper contrast (use primary for buttons) - in HSL format
+  const primaryRgb = hexToRgb(primary);
+  if (primaryRgb) {
+    const primaryHsl = rgbToHsl(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    // Ring color should match primary for consistency
+    root.style.setProperty("--ring", `${primaryHsl.h} ${primaryHsl.s}% ${primaryHsl.l}%`);
+    
+    // Focus ring color with better contrast
+    const focusRingColor = ensureContrast(primary, bg).fg;
+    const focusRingRgb = hexToRgb(focusRingColor);
+    if (focusRingRgb) {
+      const focusRingHsl = rgbToHsl(focusRingRgb.r, focusRingRgb.g, focusRingRgb.b);
+      root.style.setProperty("--focus-ring-color", `${focusRingHsl.h} ${focusRingHsl.s}% ${focusRingHsl.l}%`);
+    }
+  }
 
   // High contrast mode support
   const highContrastFg = getContrastRatio(fg, bg) < 7.0 ? "#ffffff" : fg;
@@ -331,11 +480,65 @@ function setAccessibilityVariables(
   root.style.setProperty("--high-contrast-fg", highContrastFg);
   root.style.setProperty("--high-contrast-bg", highContrastBg);
 
-  // Button contrast variants
-  const buttonFg = ensureContrast(fg, bg).fg;
-  const buttonBg = ensureContrast(fg, bg).bg;
-  root.style.setProperty("--button-fg", buttonFg);
-  root.style.setProperty("--button-bg", buttonBg);
+  // Button contrast variants - ensure buttons have proper contrast
+  // Note: Primary and primary-foreground are already set in applyColorPalette
+  // This is just for additional button-specific variables if needed
+  const primaryFg = getOptimalForeground(primary);
+  const primaryContrast = getContrastRatio(primaryFg, primary);
+  
+  // Set button-specific variables in HSL format
+  if (primaryContrast >= 4.5) {
+    const primaryFgRgb = hexToRgb(primaryFg);
+    const primaryRgb = hexToRgb(primary);
+    if (primaryFgRgb && primaryRgb) {
+      const primaryFgHsl = rgbToHsl(primaryFgRgb.r, primaryFgRgb.g, primaryFgRgb.b);
+      const primaryHsl = rgbToHsl(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      root.style.setProperty("--button-fg-hsl", `${primaryFgHsl.h} ${primaryFgHsl.s}% ${primaryFgHsl.l}%`);
+      root.style.setProperty("--button-bg-hsl", `${primaryHsl.h} ${primaryHsl.s}% ${primaryHsl.l}%`);
+    }
+  }
+
+  // Card button contrast - buttons inside cards need to contrast with card background
+  // Derive button colors that work well on card background (not page background)
+  const cardFg = getOptimalForeground(card);
+  const cardLuminance = getLuminance(card);
+  const isDarkCard = cardLuminance < 0.5;
+  
+  // For buttons inside cards, use the primary color but ensure it contrasts with card
+  // If primary doesn't contrast well with card, adjust it
+  const primaryOnCardContrast = getContrastRatio(primary, card);
+  
+  let cardButtonBg = primary;
+  if (primaryOnCardContrast < 4.5) {
+    // Primary doesn't contrast well with card, derive a better color
+    // For dark cards, use a lighter version of primary
+    // For light cards, use a darker version of primary
+    if (isDarkCard) {
+      cardButtonBg = lightenColor(primary, 0.4);
+    } else {
+      cardButtonBg = darkenColor(primary, 0.4);
+    }
+    
+    // Ensure the adjusted color still contrasts well
+    const adjustedContrast = getContrastRatio(cardButtonBg, card);
+    if (adjustedContrast < 4.5) {
+      // If still not enough contrast, use a more contrasting color
+      cardButtonBg = isDarkCard ? "#ffffff" : "#000000";
+    }
+  }
+  
+  // Get optimal foreground for button (text color on button)
+  const cardButtonFg = getOptimalForeground(cardButtonBg);
+  
+  const cardButtonBgRgb = hexToRgb(cardButtonBg);
+  const cardButtonFgRgb = hexToRgb(cardButtonFg);
+  
+  if (cardButtonBgRgb && cardButtonFgRgb) {
+    const cardButtonBgHsl = rgbToHsl(cardButtonBgRgb.r, cardButtonBgRgb.g, cardButtonBgRgb.b);
+    const cardButtonFgHsl = rgbToHsl(cardButtonFgRgb.r, cardButtonFgRgb.g, cardButtonFgRgb.b);
+    root.style.setProperty("--card-button-bg-hsl", `${cardButtonBgHsl.h} ${cardButtonBgHsl.s}% ${cardButtonBgHsl.l}%`);
+    root.style.setProperty("--card-button-fg-hsl", `${cardButtonFgHsl.h} ${cardButtonFgHsl.s}% ${cardButtonFgHsl.l}%`);
+  }
 }
 
 /**

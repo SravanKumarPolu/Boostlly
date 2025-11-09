@@ -278,67 +278,102 @@
       hsl(var(--muted) / 0.3) 100%);
   }
   
-  /* Ensure gradient buttons always have visible white text with dark background */
-  /* Override gradient to use darker primary color for better contrast */
-  button.bg-gradient-to-r[class*="from-primary"][class*="via-primary"],
-  button[class*="from-primary"][class*="via-primary"][class*="to-primary"] {
-    color: #ffffff !important;
-  }
-  
-  /* Ensure all text and icons are white */
-  button.bg-gradient-to-r[class*="from-primary"] *,
-  button[class*="from-primary"][class*="via-primary"] * {
-    color: #ffffff !important;
-  }
-  
-  button.bg-gradient-to-r[class*="from-primary"] svg,
-  button[class*="from-primary"][class*="via-primary"] svg {
-    color: #ffffff !important;
-    stroke: #ffffff !important;
-  }
-  
-  button.bg-gradient-to-r[class*="from-primary"] span,
-  button[class*="from-primary"][class*="via-primary"] span {
-    color: #ffffff !important;
-  }
-  
-  /* Ensure disabled state also has visible text */
-  button.bg-gradient-to-r[class*="from-primary"]:disabled,
-  button[class*="from-primary"][class*="via-primary"]:disabled {
-    color: #ffffff !important;
-    opacity: 1 !important;
-  }
-  
-  button.bg-gradient-to-r[class*="from-primary"]:disabled *,
-  button[class*="from-primary"][class*="via-primary"]:disabled * {
-    color: rgba(255, 255, 255, 0.9) !important;
-  }
+  /* Gradient buttons now use adaptive primary-foreground color via CSS variables */
+  /* No need for hardcoded white text - theme system ensures proper contrast */
   
   /* Adaptive glass elements - adapt to daily background theme */
   /* Uses CSS variables set by applyColorPalette which automatically adapt */
   .glass-adaptive {
-    background-color: hsl(var(--bg-hsl, var(--card)) / 0.7);
-    color: hsl(var(--fg-hsl, var(--foreground)));
-    border-color: hsl(var(--fg-hsl, var(--border)) / 0.4);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background-color: hsl(var(--card) / 0.7);
+    color: hsl(var(--card-foreground));
+    border-color: hsl(var(--border) / 0.4);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
   }
   
   .glass-adaptive:hover {
-    background-color: hsl(var(--bg-hsl, var(--card)) / 0.85);
-    border-color: hsl(var(--fg-hsl, var(--border)) / 0.5);
+    background-color: hsl(var(--card) / 0.85);
+    border-color: hsl(var(--border) / 0.5);
   }
   
-  /* Adaptive card - for cards over background images */
+  /* Adaptive card - for cards over background images with glassmorphism */
   .card-adaptive {
-    background-color: hsl(var(--bg-hsl, var(--card)) / 0.85);
-    border-color: hsl(var(--fg-hsl, var(--border)) / 0.4);
-    color: hsl(var(--fg-hsl, var(--foreground)));
+    background-color: hsl(var(--card) / 0.85);
+    border-color: hsl(var(--border) / 0.4);
+    color: hsl(var(--card-foreground));
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-adaptive:hover {
+    background-color: hsl(var(--card) / 0.9);
+    border-color: hsl(var(--border) / 0.6);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.15);
   }
   
   /* Adaptive text - for text over background images */
   .text-adaptive {
-    color: hsl(var(--fg-hsl, var(--foreground)));
+    color: hsl(var(--foreground));
+  }
+  
+  /* Buttons inside cards - automatically adapt to card background for proper contrast */
+  /* Buttons inside cards should contrast with card background, not page background */
+  /* Cards are automatically detected via [data-card="true"] attribute and .bg-card class */
+  
+  /* Primary buttons inside cards use card-button colors for proper contrast */
+  /* These colors are derived from the daily background theme and ensure WCAG AA contrast */
+  [data-card="true"] button.bg-primary,
+  .bg-card button.bg-primary,
+  .card-adaptive button.bg-primary,
+  .glass-adaptive button.bg-primary {
+    /* Use card-button colors (derived to contrast with card background) */
+    /* Fall back to primary if card-button colors aren't available */
+    background-color: hsl(var(--card-button-bg-hsl, var(--primary))) !important;
+    color: hsl(var(--card-button-fg-hsl, var(--primary-foreground))) !important;
+    box-shadow: 0 2px 8px hsl(var(--card-button-bg-hsl, var(--primary)) / 0.3);
+  }
+  
+  [data-card="true"] button.bg-primary:hover,
+  .bg-card button.bg-primary:hover,
+  .card-adaptive button.bg-primary:hover,
+  .glass-adaptive button.bg-primary:hover,
+  [data-card="true"] button.bg-primary:focus-visible,
+  .bg-card button.bg-primary:focus-visible,
+  .card-adaptive button.bg-primary:focus-visible,
+  .glass-adaptive button.bg-primary:focus-visible {
+    background-color: hsl(var(--card-button-bg-hsl, var(--primary)) / 0.9) !important;
+    color: hsl(var(--card-button-fg-hsl, var(--primary-foreground))) !important;
+    box-shadow: 0 4px 12px hsl(var(--card-button-bg-hsl, var(--primary)) / 0.4);
+  }
+  
+  /* Buttons with text-primary-foreground inside cards */
+  [data-card="true"] button.text-primary-foreground,
+  .bg-card button.text-primary-foreground,
+  .card-adaptive button.text-primary-foreground,
+  .glass-adaptive button.text-primary-foreground {
+    color: hsl(var(--card-button-fg-hsl, var(--primary-foreground))) !important;
+  }
+  
+  /* Gradient buttons inside cards */
+  [data-card="true"] button[class*="from-primary"],
+  .bg-card button[class*="from-primary"],
+  .card-adaptive button[class*="from-primary"],
+  .glass-adaptive button[class*="from-primary"] {
+    /* Gradient buttons should also adapt when inside cards */
+    background-image: linear-gradient(to right, 
+      hsl(var(--card-button-bg-hsl, var(--primary))), 
+      hsl(var(--card-button-bg-hsl, var(--primary)) / 0.95), 
+      hsl(var(--card-button-bg-hsl, var(--primary)))) !important;
+    color: hsl(var(--card-button-fg-hsl, var(--primary-foreground))) !important;
+  }
+  
+  /* Ensure minimum tap target size for accessibility (WCAG AA) */
+  [data-card="true"] button,
+  .bg-card button,
+  .card-adaptive button,
+  .glass-adaptive button {
+    min-height: 44px; /* WCAG AA: minimum 44x44px tap target */
   }
 }
 

@@ -21,16 +21,16 @@ const buttonVariants = cva(
         glass:
           "bg-card/70 backdrop-blur-xl border border-border/50 text-foreground shadow-lg hover:bg-card/80 hover:shadow-xl hover:text-foreground focus-visible:bg-card/85 focus-visible:shadow-xl focus-visible:text-foreground active:bg-card/90 active:text-foreground active:shadow-lg disabled:bg-card/40 disabled:text-muted-foreground disabled:opacity-100",
         gradient:
-          "bg-gradient-to-r from-primary via-primary/95 to-primary text-white border-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:text-white focus-visible:shadow-xl focus-visible:shadow-primary/40 focus-visible:text-white active:shadow-md active:text-white active:from-primary/98 active:via-primary/98 active:to-primary/98 disabled:from-primary/45 disabled:via-primary/45 disabled:to-primary/45 disabled:text-white/90 disabled:shadow-none",
+          "bg-gradient-to-r from-primary via-primary/95 to-primary text-primary-foreground border-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:text-primary-foreground focus-visible:shadow-xl focus-visible:shadow-primary/40 focus-visible:text-primary-foreground active:shadow-md active:text-primary-foreground active:from-primary/98 active:via-primary/98 active:to-primary/98 disabled:from-primary/45 disabled:via-primary/45 disabled:to-primary/45 disabled:text-primary-foreground/70 disabled:shadow-none",
         success:
           "bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0 shadow-md shadow-green-600/20 hover:shadow-lg hover:shadow-green-600/30 hover:text-white focus-visible:shadow-xl focus-visible:shadow-green-600/40 focus-visible:text-white active:shadow-md active:text-white active:from-green-700 active:to-emerald-700 disabled:from-green-600/40 disabled:to-emerald-600/40 disabled:text-white/80 disabled:opacity-100 disabled:shadow-none",
       },
       size: {
-        default: "h-11 px-6 py-2.5 text-sm",
-        sm: "h-9 rounded-lg px-4 py-2 text-xs",
-        lg: "h-12 rounded-xl px-8 py-3 text-base",
-        xl: "h-14 rounded-2xl px-10 py-4 text-lg",
-        icon: "h-11 w-11 rounded-xl",
+        default: "h-11 min-h-[44px] px-6 py-2.5 text-sm", // WCAG AA: minimum 44x44px tap target
+        sm: "h-9 min-h-[36px] rounded-lg px-4 py-2 text-xs", // Smaller but still accessible
+        lg: "h-12 min-h-[44px] rounded-xl px-8 py-3 text-base",
+        xl: "h-14 min-h-[44px] rounded-2xl px-10 py-4 text-lg",
+        icon: "h-11 w-11 min-h-[44px] min-w-[44px] rounded-xl", // WCAG AA: 44x44px for icon buttons
       },
     },
     defaultVariants: {
@@ -64,22 +64,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
-    // For gradient buttons, ensure white text is always visible via inline style
-    const isGradient = variant === "gradient";
-    const gradientStyle = isGradient 
-      ? {
-          ...style,
-          color: '#ffffff',
-        }
-      : style;
-
+    // Buttons now automatically adapt via CSS variables (--primary, --primary-foreground)
+    // No need for inline styles as Tailwind handles the theme adaptation
     return (
       <button
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         aria-label={ariaLabel}
         aria-describedby={ariaDescribedBy}
-        style={gradientStyle}
+        style={style}
         disabled={disabled}
         {...props}
       >
