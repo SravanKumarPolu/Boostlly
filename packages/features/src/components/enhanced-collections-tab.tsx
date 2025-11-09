@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   CollectionService,
+  useAutoTheme,
   logError,
   logDebug,
   logWarning,
@@ -163,6 +164,9 @@ export function EnhancedCollectionsTab({
   const updateCollectionsStreak = useUpdateCollectionsStreak();
   const unlockBadge = useUnlockBadge();
   const incrementCollections = useIncrementCollections();
+
+  // Use auto-theme palette for dynamic contrast
+  const { palette } = useAutoTheme();
 
   // Local state for UI
   const [selectedCollection, setSelectedCollection] = useState<any>(null);
@@ -412,69 +416,92 @@ export function EnhancedCollectionsTab({
   );
 
   // Enhanced Summary Cards Component
-  const SummaryCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-accent/15">
-              <FolderOpen className="w-6 h-6 text-foreground" />
+  const SummaryCards = () => {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+        <Card className="overflow-hidden">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-accent/15 shrink-0">
+                <FolderOpen className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: palette?.fg || "hsl(var(--foreground))" }} />
+              </div>
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 shrink-0" />
             </div>
-            <TrendingUp className="w-5 h-5 text-green-400" />
-          </div>
-          <h3 className="text-2xl font-bold text-foreground mb-1">
-            {collections.length}
-          </h3>
-          <p className="text-muted-foreground text-sm">Collections</p>
-          <div className="mt-3 text-xs text-muted-foreground/60">
-            {collections.length > 0
-              ? `${collections.filter((c) => c.isDefault).length} default, ${collections.filter((c) => !c.isDefault).length} custom`
-              : "Start organizing"}
-          </div>
-        </CardContent>
-      </Card>
+            <h3 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: palette?.fg || "hsl(var(--foreground))" }}>
+              {collections.length}
+            </h3>
+            <p className="text-sm font-medium mb-2" style={{ color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 85%, transparent)` : "hsl(var(--muted-foreground) / 0.9)" }}>
+              Collections
+            </p>
+            <div 
+              className="text-xs sm:text-sm leading-relaxed"
+              style={{ 
+                color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 75%, transparent)` : "hsl(var(--muted-foreground) / 0.85)"
+              }}
+            >
+              {collections.length > 0
+                ? `${collections.filter((c) => c.isDefault).length} default, ${collections.filter((c) => !c.isDefault).length} custom`
+                : "Start organizing"}
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-accent/15">
-              <FileText className="w-6 h-6 text-foreground" />
+        <Card className="overflow-hidden">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-accent/15 shrink-0">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: palette?.fg || "hsl(var(--foreground))" }} />
+              </div>
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 shrink-0" />
             </div>
-            <ArrowRight className="w-5 h-5 text-green-400" />
-          </div>
-          <h3 className="text-2xl font-bold text-foreground mb-1">
-            {totalQuotes}
-          </h3>
-          <p className="text-muted-foreground text-sm">Total Quotes</p>
-          <div className="mt-3 text-xs text-muted-foreground/60">
-            {totalQuotes > 0
-              ? `Across ${collections.length} collections`
-              : "Add quotes to collections"}
-          </div>
-        </CardContent>
-      </Card>
+            <h3 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: palette?.fg || "hsl(var(--foreground))" }}>
+              {totalQuotes}
+            </h3>
+            <p className="text-sm font-medium mb-2" style={{ color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 85%, transparent)` : "hsl(var(--muted-foreground) / 0.9)" }}>
+              Total Quotes
+            </p>
+            <div 
+              className="text-xs sm:text-sm leading-relaxed"
+              style={{ 
+                color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 75%, transparent)` : "hsl(var(--muted-foreground) / 0.85)"
+              }}
+            >
+              {totalQuotes > 0
+                ? `Across ${collections.length} collections`
+                : "Add quotes to collections"}
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-accent/15">
-              <Heart className="w-6 h-6 text-foreground" />
+        <Card className="overflow-hidden sm:col-span-2 lg:col-span-1">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-accent/15 shrink-0">
+                <Heart className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: palette?.fg || "hsl(var(--foreground))" }} />
+              </div>
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 shrink-0" />
             </div>
-            <CheckCircle className="w-5 h-5 text-red-400" />
-          </div>
-          <h3 className="text-2xl font-bold text-foreground mb-1">
-            {likedQuotesCount}
-          </h3>
-          <p className="text-muted-foreground text-sm">Liked Quotes</p>
-          <div className="mt-3 text-xs text-muted-foreground/60">
-            {likedQuotesCount > 0
-              ? "Your favorite quotes"
-              : "Like quotes to see them here"}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+            <h3 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: palette?.fg || "hsl(var(--foreground))" }}>
+              {likedQuotesCount}
+            </h3>
+            <p className="text-sm font-medium mb-2" style={{ color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 85%, transparent)` : "hsl(var(--muted-foreground) / 0.9)" }}>
+              Liked Quotes
+            </p>
+            <div 
+              className="text-xs sm:text-sm leading-relaxed"
+              style={{ 
+                color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 75%, transparent)` : "hsl(var(--muted-foreground) / 0.85)"
+              }}
+            >
+              {likedQuotesCount > 0
+                ? "Your favorite quotes"
+                : "Like quotes to see them here"}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
   // Enhanced Collection Card Component
   const CollectionCard = ({ collection }: { collection: any }) => {

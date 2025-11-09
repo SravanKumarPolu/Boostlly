@@ -497,18 +497,27 @@ export function CollectionsTab({
       </div>
 
       {/* Enhanced Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="relative p-6 bg-card rounded-2xl border border-border transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                <FolderOpen className="w-6 h-6 text-foreground" />
+          <div className="relative p-4 sm:p-6 bg-card rounded-2xl border border-border transition-all duration-300 overflow-hidden">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shrink-0">
+                <FolderOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold mb-1">{collections.length}</h3>
-            <p className="text-muted-foreground text-sm">Collections</p>
-            <div className="mt-3 text-xs text-muted-foreground">
+            <h3 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: palette?.fg || "hsl(var(--foreground))" }}>
+              {collections.length}
+            </h3>
+            <p className="text-sm font-medium mb-2" style={{ color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 85%, transparent)` : "hsl(var(--muted-foreground) / 0.9)" }}>
+              Collections
+            </p>
+            <div 
+              className="text-xs sm:text-sm leading-relaxed"
+              style={{ 
+                color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 75%, transparent)` : "hsl(var(--muted-foreground) / 0.85)"
+              }}
+            >
               {collections.length > 0
                 ? `${collections.filter((c) => c.isDefault).length} default, ${collections.filter((c) => !c.isDefault).length} custom`
                 : "Start organizing"}
@@ -517,32 +526,50 @@ export function CollectionsTab({
         </div>
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="relative p-6 bg-card rounded-2xl border border-border transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                <ThumbsUp className="w-6 h-6 text-foreground" />
+          <div className="relative p-4 sm:p-6 bg-card rounded-2xl border border-border transition-all duration-300 overflow-hidden">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shrink-0">
+                <ThumbsUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold mb-1">{totalQuotes}</h3>
-            <p className="text-muted-foreground text-sm">Total Quotes</p>
-            <div className="mt-3 text-xs text-muted-foreground">
+            <h3 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: palette?.fg || "hsl(var(--foreground))" }}>
+              {totalQuotes}
+            </h3>
+            <p className="text-sm font-medium mb-2" style={{ color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 85%, transparent)` : "hsl(var(--muted-foreground) / 0.9)" }}>
+              Total Quotes
+            </p>
+            <div 
+              className="text-xs sm:text-sm leading-relaxed"
+              style={{ 
+                color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 75%, transparent)` : "hsl(var(--muted-foreground) / 0.85)"
+              }}
+            >
               {totalQuotes > 0
                 ? `Across ${collections.length} collections`
                 : "Add quotes to collections"}
             </div>
           </div>
         </div>
-        <div className="relative group">
+        <div className="relative group sm:col-span-2 lg:col-span-1">
           <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 to-pink-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="relative p-6 bg-card rounded-2xl border border-border transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <Heart className="w-6 h-6 text-foreground" />
+          <div className="relative p-4 sm:p-6 bg-card rounded-2xl border border-border transition-all duration-300 overflow-hidden">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl flex items-center justify-center shrink-0">
+                <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold mb-1">{likedQuotesCount}</h3>
-            <p className="text-muted-foreground text-sm">Liked Quotes</p>
-            <div className="mt-3 text-xs text-muted-foreground">
+            <h3 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: palette?.fg || "hsl(var(--foreground))" }}>
+              {likedQuotesCount}
+            </h3>
+            <p className="text-sm font-medium mb-2" style={{ color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 85%, transparent)` : "hsl(var(--muted-foreground) / 0.9)" }}>
+              Liked Quotes
+            </p>
+            <div 
+              className="text-xs sm:text-sm leading-relaxed"
+              style={{ 
+                color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 75%, transparent)` : "hsl(var(--muted-foreground) / 0.85)"
+              }}
+            >
               {likedQuotesCount > 0
                 ? "Your favorite quotes"
                 : "Like quotes to see them here"}

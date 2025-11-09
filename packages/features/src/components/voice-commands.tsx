@@ -759,53 +759,58 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-6 px-2 sm:px-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <h2
-            className="text-xl font-bold flex items-center gap-2"
+            className="text-lg sm:text-xl font-bold flex items-center gap-2"
             style={{ color: palette?.fg || "hsl(var(--foreground))" }}
           >
-            <Mic className="w-6 h-6 text-blue-400" />
-            Voice Commands & Speech Integration
+            <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 shrink-0" />
+            <span className="break-words">Voice Commands & Speech Integration</span>
           </h2>
           <p
-            className="text-sm"
-            style={{ color: palette?.fg || "hsl(var(--foreground))" }}
+            className="text-xs sm:text-sm mt-1"
+            style={{ color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 80%, transparent)` : "hsl(var(--foreground) / 0.8)" }}
           >
             Control your extension using voice commands and text-to-speech
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-xs sm:text-sm shrink-0">
           <div
             className="flex items-center gap-1"
             style={{ color: palette?.fg || "hsl(var(--foreground))" }}
           >
             <Command
-              className="w-4 h-4"
+              className="w-3 h-3 sm:w-4 sm:h-4 shrink-0"
               style={{ color: palette?.fg || "hsl(var(--foreground))" }}
             />
-            {voiceCommands.length} commands available
+            <span className="whitespace-nowrap">{voiceCommands.length} commands available</span>
           </div>
         </div>
       </div>
 
       {/* Voice Control Panel */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mic className="w-5 h-5" />
-            Voice Control Center
+      <Card className="overflow-hidden">
+        <CardHeader className="px-3 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Mic className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+            <span>Voice Control Center</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 sm:px-6">
           <div className="grid grid-cols-1 gap-6">
             {/* Start/Stop Listening */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="text-sm">
                 <div className="font-medium">Microphone</div>
-                <div className="text-muted-foreground">
+                <div 
+                  className="text-sm mt-1"
+                  style={{ 
+                    color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 70%, transparent)` : "hsl(var(--muted-foreground) / 0.9)"
+                  }}
+                >
                   {isListening
                     ? "Listening..."
                     : isSupported
@@ -813,13 +818,14 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
                       : "Not supported"}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={isListening ? "default" : "outline"}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant={isListening ? "default" : "outline"} className="shrink-0">
                   {isListening ? "Live" : "Stopped"}
                 </Badge>
                 <Button
                   onClick={toggleListening}
                   variant={isListening ? "outline" : "default"}
+                  className="flex-1 sm:flex-initial min-w-0 text-xs sm:text-sm"
                 >
                   {isListening ? "Stop Listening" : "Start Listening"}
                 </Button>
@@ -828,9 +834,9 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
 
             {/* Text-to-Speech */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="text-sm font-medium">Text-to-Speech</span>
-                <Badge variant={isSpeaking ? "default" : "outline"}>
+                <Badge variant={isSpeaking ? "default" : "outline"} className="shrink-0">
                   {isSpeaking ? "Speaking" : "Ready"}
                 </Badge>
               </div>
@@ -851,12 +857,12 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span>Speech Rate</span>
-                  <span>{voiceSettings.rate.toFixed(1)}x</span>
+                  <span className="font-medium">Speech Rate</span>
+                  <span className="font-medium">{voiceSettings.rate.toFixed(1)}x</span>
                 </div>
                 <Progress
                   value={((voiceSettings.rate - 0.5) / 1.5) * 100}
-                  className="h-2"
+                  className="h-2 w-full"
                 />
               </div>
             </div>
@@ -867,21 +873,28 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
       {/* Voice Commands Reference */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {["navigation", "quotes", "settings"].map((category) => (
-          <Card key={category} className="border-l-4 border-border">
-            <CardHeader className="pb-3">
+          <Card key={category} className="border-l-4 border-border overflow-hidden">
+            <CardHeader className="pb-3 px-3 sm:px-6">
               <CardTitle className="text-sm flex items-center gap-2">
-                {category === "navigation" && <Target className="w-4 h-4" />}
-                {category === "quotes" && <BookOpen className="w-4 h-4" />}
-                {category === "settings" && <Settings className="w-4 h-4" />}
-                {category.charAt(0).toUpperCase() + category.slice(1)} Commands
+                {category === "navigation" && <Target className="w-4 h-4 shrink-0" />}
+                {category === "quotes" && <BookOpen className="w-4 h-4 shrink-0" />}
+                {category === "settings" && <Settings className="w-4 h-4 shrink-0" />}
+                <span className="break-words">{category.charAt(0).toUpperCase() + category.slice(1)} Commands</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+            <CardContent className="pt-0 px-3 sm:px-6">
+              <div className="space-y-3 max-h-60 overflow-y-auto">
                 {getCommandsByCategory(category).map((command, index) => (
-                  <div key={index} className="text-xs">
-                    <div className="font-medium">"{command.phrase}"</div>
-                    <div className="text-muted-foreground">
+                  <div key={index} className="text-xs pb-2 border-b border-border/50 last:border-0">
+                    <div className="font-medium mb-1" style={{ color: palette?.fg || "hsl(var(--foreground))" }}>
+                      "{command.phrase}"
+                    </div>
+                    <div 
+                      className="text-xs leading-relaxed"
+                      style={{ 
+                        color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 75%, transparent)` : "hsl(var(--muted-foreground) / 0.85)"
+                      }}
+                    >
                       {command.description}
                     </div>
                   </div>
@@ -893,14 +906,14 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
       </div>
 
       {/* Command History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Recent Commands
+      <Card className="overflow-hidden">
+        <CardHeader className="px-3 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+            <span>Recent Commands</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 sm:px-6">
           <div className="space-y-3 max-h-60 overflow-y-auto">
             {commandHistory
               .slice(-10)
@@ -908,27 +921,37 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
               .map((result, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-accent/20 rounded-lg border border-border"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-accent/20 rounded-lg border border-border"
                 >
-                  <div className="flex items-center gap-3">
-                    <Command className="w-4 h-4 text-blue-400" />
-                    <div>
-                      <div className="text-sm">{result.transcript}</div>
-                      <div className="text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <Command className="w-4 h-4 text-blue-400 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm break-words">{result.transcript}</div>
+                      <div 
+                        className="text-xs mt-1"
+                        style={{ 
+                          color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 70%, transparent)` : "hsl(var(--muted-foreground) / 0.85)"
+                        }}
+                      >
                         {result.timestamp.toLocaleTimeString()} • Confidence:{" "}
                         {Math.round(result.confidence * 100)}%
                       </div>
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs shrink-0 self-start sm:self-auto">
                     {Math.round(result.confidence * 100)}%
                   </Badge>
                 </div>
               ))}
             {commandHistory.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
+              <div 
+                className="text-center py-8"
+                style={{ 
+                  color: palette?.fg ? `color-mix(in srgb, ${palette.fg} 60%, transparent)` : "hsl(var(--muted-foreground) / 0.7)"
+                }}
+              >
                 <Mic className="w-8 h-8 mx-auto mb-2" />
-                <p>
+                <p className="text-sm">
                   No commands yet. Start speaking to see your command history!
                 </p>
               </div>
@@ -938,15 +961,15 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
       </Card>
 
       {/* Voice Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Voice Settings
+      <Card className="overflow-hidden">
+        <CardHeader className="px-3 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+            <span>Voice Settings</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <CardContent className="px-3 sm:px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             <div className="space-y-4">
               <h3 className="font-medium text-foreground">Speech Rate</h3>
               <div className="space-y-2">
