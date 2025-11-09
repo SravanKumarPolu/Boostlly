@@ -51,9 +51,10 @@ dist/
 
 # Gatsby files
 .cache/
-# Allow tracking source files in apps/web/public (Next.js needs these)
-!apps/web/public/
 public/
+# But allow tracking source files in apps/web/public (Next.js needs these)
+!apps/web/public/
+!apps/web/public/**
 
 # Serverless directories
 .serverless/
