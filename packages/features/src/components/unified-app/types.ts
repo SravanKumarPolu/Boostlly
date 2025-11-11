@@ -35,6 +35,7 @@ export interface NavigationTab {
   id: string;
   label: string;
   icon: LucideIcon | any;
+  iconSrc?: string; // Optional image icon source (e.g., rocket icon)
 }
 
 export interface AppState {
