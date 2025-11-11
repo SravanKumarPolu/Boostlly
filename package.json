@@ -19,7 +19,8 @@
     "type-check": "pnpm --recursive run type-check",
     "lint": "pnpm --recursive run lint",
     "clean": "pnpm --recursive run clean",
-    "cleanup": "node scripts/project-cleanup.js"
+    "cleanup": "node scripts/project-cleanup.js",
+    "verify": "node scripts/verify-setup.js"
   },
   "devDependencies": {
     "chokidar": "^4.0.3",
