@@ -50,3 +50,6 @@ export * from "./utils/code-splitting";
 
 // Unified Components
 export * from "./components/unified-search";
+
+// Statistics and Analytics
+export { Statistics } from "./components/statistics/Statistics";

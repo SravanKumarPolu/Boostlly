@@ -455,14 +455,60 @@
     box-shadow: 0 0 0 4px hsl(var(--focus-ring-color, var(--ring)) / 0.2);
   }
   
-  /* High contrast mode support */
+  /* High contrast mode support - WCAG AAA compliance */
   @media (prefers-contrast: high) {
+    :root {
+      /* Force maximum contrast in high contrast mode */
+      --foreground: 0 0% 0%;
+      --background: 0 0% 100%;
+      --primary: 0 0% 0%;
+      --primary-foreground: 0 0% 100%;
+      --card: 0 0% 100%;
+      --card-foreground: 0 0% 0%;
+      --border: 0 0% 0%;
+      --muted-foreground: 0 0% 30%;
+    }
+    
+    .dark {
+      --foreground: 0 0% 100%;
+      --background: 0 0% 0%;
+      --primary: 0 0% 100%;
+      --primary-foreground: 0 0% 0%;
+      --card: 0 0% 0%;
+      --card-foreground: 0 0% 100%;
+      --border: 0 0% 100%;
+      --muted-foreground: 0 0% 70%;
+    }
+    
+    /* Ensure all text uses high contrast colors */
+    body {
+      color: hsl(var(--high-contrast-fg, var(--foreground))) !important;
+      background-color: hsl(var(--high-contrast-bg, var(--background))) !important;
+    }
+    
     .high-contrast-text {
-      color: hsl(var(--high-contrast-fg));
+      color: hsl(var(--high-contrast-fg, var(--foreground))) !important;
     }
     
     .high-contrast-bg {
-      background-color: hsl(var(--high-contrast-bg));
+      background-color: hsl(var(--high-contrast-bg, var(--background))) !important;
+    }
+    
+    /* Ensure buttons have high contrast */
+    button {
+      border: 2px solid hsl(var(--foreground)) !important;
+    }
+    
+    /* Ensure links are highly visible */
+    a {
+      text-decoration: underline !important;
+      text-decoration-thickness: 2px !important;
+    }
+    
+    /* Ensure focus indicators are highly visible */
+    *:focus-visible {
+      outline: 3px solid hsl(var(--foreground)) !important;
+      outline-offset: 2px !important;
     }
   }
   
@@ -472,6 +518,190 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+    }
+  }
+  
+  /* Mobile-specific text contrast enhancements */
+  /* Stronger text shadows on mobile for better readability over background images */
+  @media (max-width: 768px) {
+    .quote-text-mobile-contrast {
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 
+                   0 3px 8px rgba(0, 0, 0, 0.8), 
+                   0 2px 4px rgba(0, 0, 0, 0.7),
+                   0 1px 2px rgba(0, 0, 0, 0.6) !important;
+      font-weight: 600; /* Slightly bolder on mobile for better visibility */
+    }
+    
+    /* Ensure author text also has strong contrast on mobile */
+    .quote-author-mobile-contrast {
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 
+                   0 1px 4px rgba(0, 0, 0, 0.7) !important;
+    }
+    
+    /* Statistics cards - enhanced contrast on mobile */
+    .stats-card-mobile-contrast {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+      background: rgba(0, 0, 0, 0.5) !important; /* Darker base for better contrast */
+    }
+    
+    /* Icon colors and shadows - very visible on mobile */
+    .stats-icon-blue {
+      color: #3b82f6 !important; /* Bright blue */
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.8)) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.5)) !important;
+    }
+    
+    .stats-icon-green {
+      color: #10b981 !important; /* Bright green */
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.8)) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.5)) !important;
+    }
+    
+    .stats-icon-purple {
+      color: #a855f7 !important; /* Bright purple */
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.8)) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.5)) !important;
+    }
+    
+    .stats-icon-yellow {
+      color: #eab308 !important; /* Bright yellow */
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.8)) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.5)) !important;
+    }
+    
+    /* Value colors - dark, saturated for maximum contrast */
+    .stats-value-blue {
+      color: #1e40af !important; /* Dark blue */
+      text-shadow: 0 4px 12px rgba(255, 255, 255, 1),
+                   0 2px 8px rgba(59, 130, 246, 0.8),
+                   0 1px 4px rgba(0, 0, 0, 0.6) !important;
+      font-weight: 900 !important;
+    }
+    
+    .stats-value-green {
+      color: #15803d !important; /* Dark green */
+      text-shadow: 0 4px 12px rgba(255, 255, 255, 1),
+                   0 2px 8px rgba(16, 185, 129, 0.8),
+                   0 1px 4px rgba(0, 0, 0, 0.6) !important;
+      font-weight: 900 !important;
+    }
+    
+    .stats-value-purple {
+      color: #7e22ce !important; /* Dark purple */
+      text-shadow: 0 4px 12px rgba(255, 255, 255, 1),
+                   0 2px 8px rgba(168, 85, 247, 0.8),
+                   0 1px 4px rgba(0, 0, 0, 0.6) !important;
+      font-weight: 900 !important;
+    }
+    
+    .stats-value-yellow {
+      color: #a16207 !important; /* Dark yellow/brown */
+      text-shadow: 0 4px 12px rgba(255, 255, 255, 1),
+                   0 2px 8px rgba(234, 179, 8, 0.8),
+                   0 1px 4px rgba(0, 0, 0, 0.6) !important;
+      font-weight: 900 !important;
+    }
+    
+    /* Label colors - darker for better readability */
+    .stats-label-blue {
+      color: #1e3a8a !important; /* Very dark blue */
+      text-shadow: 0 2px 8px rgba(255, 255, 255, 0.9),
+                   0 1px 4px rgba(59, 130, 246, 0.6),
+                   0 1px 2px rgba(0, 0, 0, 0.5) !important;
+      font-weight: 700 !important;
+    }
+    
+    .stats-label-green {
+      color: #14532d !important; /* Very dark green */
+      text-shadow: 0 2px 8px rgba(255, 255, 255, 0.9),
+                   0 1px 4px rgba(16, 185, 129, 0.6),
+                   0 1px 2px rgba(0, 0, 0, 0.5) !important;
+      font-weight: 700 !important;
+    }
+    
+    .stats-label-purple {
+      color: #581c87 !important; /* Very dark purple */
+      text-shadow: 0 2px 8px rgba(255, 255, 255, 0.9),
+                   0 1px 4px rgba(168, 85, 247, 0.6),
+                   0 1px 2px rgba(0, 0, 0, 0.5) !important;
+      font-weight: 700 !important;
+    }
+    
+    .stats-label-yellow {
+      color: #854d0e !important; /* Very dark yellow/brown */
+      text-shadow: 0 2px 8px rgba(255, 255, 255, 0.9),
+                   0 1px 4px rgba(234, 179, 8, 0.6),
+                   0 1px 2px rgba(0, 0, 0, 0.5) !important;
+      font-weight: 700 !important;
+    }
+    
+    /* Desktop - lighter colors */
+    @media (min-width: 768px) {
+      .stats-icon-blue { color: #60a5fa !important; }
+      .stats-icon-green { color: #34d399 !important; }
+      .stats-icon-purple { color: #c084fc !important; }
+      .stats-icon-yellow { color: #fbbf24 !important; }
+      
+      .stats-value-blue { color: #3b82f6 !important; }
+      .stats-value-green { color: #10b981 !important; }
+      .stats-value-purple { color: #a855f7 !important; }
+      .stats-value-yellow { color: #eab308 !important; }
+      
+      .stats-label-blue { color: #93c5fd !important; }
+      .stats-label-green { color: #6ee7b7 !important; }
+      .stats-label-purple { color: #d8b4fe !important; }
+      .stats-label-yellow { color: #fcd34d !important; }
+    }
+    
+    /* Statistics info card - enhanced contrast on mobile */
+    .stats-info-card-mobile-contrast {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+      border-width: 2px !important;
+      background-color: rgba(0, 0, 0, 0.6) !important; /* Much darker background */
+      backdrop-filter: blur(12px) !important;
+    }
+    
+    .stats-info-text {
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7),
+                   0 1px 3px rgba(255, 255, 255, 0.3) !important;
+      font-weight: 600 !important; /* Bolder for better readability */
+      color: rgba(255, 255, 255, 0.95) !important; /* Near-white text */
+    }
+    
+    /* Statistics header and subtitle - enhanced contrast on mobile */
+    .stats-header-mobile-contrast {
+      background-color: rgba(0, 0, 0, 0.7) !important;
+      border-width: 2px !important;
+      backdrop-filter: blur(12px) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .stats-header-mobile-contrast * {
+      color: rgba(255, 255, 255, 0.95) !important;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7), 0 1px 3px rgba(255, 255, 255, 0.2) !important;
+    }
+    
+    .stats-subtitle-mobile-contrast {
+      background-color: rgba(0, 0, 0, 0.65) !important;
+      border-width: 2px !important;
+      backdrop-filter: blur(12px) !important;
+    }
+    
+    .stats-subtitle-mobile-contrast * {
+      color: rgba(255, 255, 255, 0.9) !important;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6) !important;
+    }
+    
+    /* Global text contrast improvements on mobile when background images are present */
+    body[style*="background-image"] .text-foreground,
+    body[style*="background-image"] h1,
+    body[style*="background-image"] h2,
+    body[style*="background-image"] h3,
+    body[style*="background-image"] p {
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Ensure header text has good contrast on mobile */
+    body[style*="background-image"] header h1,
+    body[style*="background-image"] header h2 {
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7), 
+                   0 1px 3px rgba(0, 0, 0, 0.6);
     }
   }
 }

@@ -15,11 +15,12 @@ import { AdvancedSearch } from '../advanced-search';
 import { APIExplorer } from '../api-explorer';
 import { EnhancedSettings } from '../enhanced-settings';
 import { VoiceCommands } from '../voice-commands';
-import { SimpleAnalytics } from '../simple-analytics';
 import { SavedTab } from './components/SavedTab';
+import { Statistics } from '../statistics/Statistics';
 import { openInOptionsPage } from './utils/platform-utils';
 import { speakQuote, saveQuoteAsImage } from './utils/quote-actions';
 import { Variant, SavedQuote, StorageLike } from './types';
+import { ColorPalette } from '@boostlly/core';
 
 interface TabContentProps {
   activeTab: string;
@@ -33,7 +34,7 @@ interface TabContentProps {
   savedSort: "recent" | "az" | "za";
   filteredSavedQuotes: SavedQuote[];
   simpleMode: boolean;
-  palette?: { fg?: string };
+  palette?: ColorPalette;
   todayTabRef?: React.RefObject<{
     refresh: () => void;
     getQuote: () => any;
@@ -422,52 +423,11 @@ export function TabContent({
       case "stats":
         return (
           <Suspense fallback={<TabSkeleton />}>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2
-                    className={`${variant === "popup" ? "text-lg" : "text-2xl"} font-bold inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
-                    style={{
-                      color: "hsl(var(--fg-hsl))",
-                      backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
-                      borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                      textShadow: "0 1px 2px rgba(0,0,0,0.25)",
-                    }}
-                  >
-                    {simpleMode ? "Statistics" : "Analytics"}
-                  </h2>
-                  <p
-                    className="text-xs mt-1 inline-flex px-2 py-0.5 rounded-lg backdrop-blur-md border"
-                    style={{
-                      color: "hsl(var(--fg-hsl))",
-                      backgroundColor: "hsl(var(--bg-hsl) / 0.3)",
-                      borderColor: "hsl(var(--fg-hsl) / 0.25)",
-                      textShadow: "0 1px 1px rgba(0,0,0,0.2)",
-                    }}
-                  >
-                    {simpleMode
-                      ? "Simple statistics"
-                      : "Enhanced insights & statistics"}
-                  </p>
-                </div>
-                {variant === "popup" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={openInOptionsPage}
-                  >
-                    Open in Options
-                  </Button>
-                )}
-              </div>
-              {simpleMode ? (
-                <SimpleAnalytics variant={variant} />
-              ) : (
-                <>
-                  {/* Analytics removed for privacy-first approach */}
-                </>
-              )}
-            </div>
+            <Statistics 
+              storage={storage}
+              variant={variant}
+              palette={palette}
+            />
           </Suspense>
         );
       case "smart":
@@ -495,28 +455,15 @@ export function TabContent({
                   >
                     {simpleMode ? "Analytics" : "Advanced Analytics"}
                   </h2>
-                  <p
-                    className="text-xs mt-1 inline-flex px-2 py-0.5 rounded-lg backdrop-blur-md border"
-                    style={{
-                      color: "hsl(var(--fg-hsl))",
-                      backgroundColor: "hsl(var(--bg-hsl) / 0.3)",
-                      borderColor: "hsl(var(--fg-hsl) / 0.25)",
-                      textShadow: "0 1px 1px rgba(0,0,0,0.2)",
-                    }}
-                  >
-                    {simpleMode
-                      ? "Simple statistics"
-                      : "Deep insights & pattern analysis"}
+                </div>
+              </div>
+              <div className="flex items-center justify-center min-h-[200px]">
+                <div className="text-center space-y-2">
+                  <p className="text-muted-foreground">
+                    Analytics and insights coming soon.
                   </p>
                 </div>
               </div>
-              {simpleMode ? (
-                <SimpleAnalytics variant={variant} />
-              ) : (
-                <>
-                  {/* Advanced analytics removed for privacy-first approach */}
-                </>
-              )}
             </div>
           </Suspense>
         );
@@ -567,7 +514,7 @@ export function TabContent({
                 </div>
               </div>
               {storage && (
-                <EnhancedSettings storage={storage as any} />
+                <EnhancedSettings storage={storage as any} palette={palette} />
               )}
             </div>
           </Suspense>

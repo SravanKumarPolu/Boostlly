@@ -29,10 +29,13 @@ export function useAutoTheme() {
     error: null,
   });
 
+  // Track the last loaded date key to detect date changes
+  const [lastLoadedDateKey, setLastLoadedDateKey] = useState<string | null>(null);
+
   /**
    * Load image and extract colors
    */
-  const loadImage = useCallback(async (imageUrl: string) => {
+  const loadImage = useCallback(async (imageUrl: string, dateKey?: string) => {
     setState((prev) => ({
       ...prev,
       isLoading: true,
@@ -77,6 +80,11 @@ export function useAutoTheme() {
         isAnalyzing: false,
         error: null,
       }));
+      
+      // Update last loaded date key if provided
+      if (dateKey) {
+        setLastLoadedDateKey(dateKey);
+      }
     } catch (error) {
       logWarning(
         "AutoTheme: Image loading failed, but URL set for browser to handle",
@@ -106,7 +114,7 @@ export function useAutoTheme() {
       seed,
       imageUrl,
     });
-    loadImage(imageUrl);
+    loadImage(imageUrl, dateKey);
   }, [loadImage]);
 
   /**
@@ -123,17 +131,65 @@ export function useAutoTheme() {
         seed,
         imageUrl,
       });
-      loadImage(imageUrl);
+      loadImage(imageUrl, dateKey);
     },
     [loadImage],
   );
 
   /**
-   * Load image on mount
+   * Load image on mount and check for date changes
    */
   useEffect(() => {
     loadTodayImage();
   }, [loadTodayImage]);
+  
+  /**
+   * Check for date changes and reload image if needed
+   * This ensures the background changes when a new day starts
+   */
+  useEffect(() => {
+    // Only set up date checking after we've initially loaded
+    // This prevents infinite loops and unnecessary checks
+    if (lastLoadedDateKey === null) {
+      return;
+    }
+    
+    // Check for date changes periodically (every hour)
+    const checkDateChange = () => {
+      const currentDateKey = getDateKey();
+      
+      // Only reload if the date has actually changed
+      if (lastLoadedDateKey !== currentDateKey) {
+        logDebug("AutoTheme: Date changed, reloading image", {
+          oldDate: lastLoadedDateKey,
+          newDate: currentDateKey,
+        });
+        loadTodayImage();
+      }
+    };
+    
+    // Check every hour to catch date changes
+    const intervalId = setInterval(checkDateChange, 60 * 60 * 1000);
+    
+    // Also check when the page becomes visible (user might have switched tabs)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkDateChange();
+      }
+    };
+    
+    // Only add listener in browser environment
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+    
+    return () => {
+      clearInterval(intervalId);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+    };
+  }, [lastLoadedDateKey, loadTodayImage]);
 
   return {
     ...state,

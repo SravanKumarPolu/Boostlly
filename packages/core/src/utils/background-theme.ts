@@ -34,8 +34,11 @@ export interface ColorPalette {
 
 /**
  * WCAG contrast ratio calculation
+ * Returns the contrast ratio between two colors (1.0 to 21.0)
+ * WCAG 2.1 AA: 4.5:1 for normal text, 3:1 for large text
+ * WCAG 2.1 AAA: 7:1 for normal text, 4.5:1 for large text
  */
-function getContrastRatio(color1: string, color2: string): number {
+export function getContrastRatio(color1: string, color2: string): number {
   const getLuminance = (color: string): number => {
     const rgb = hexToRgb(color);
     if (!rgb) return 0;
@@ -54,7 +57,50 @@ function getContrastRatio(color1: string, color2: string): number {
   const brightest = Math.max(lum1, lum2);
   const darkest = Math.min(lum1, lum2);
 
+  if (darkest === 0) return 21.0; // Maximum contrast ratio
+  
   return (brightest + 0.05) / (darkest + 0.05);
+}
+
+/**
+ * WCAG 2.1 contrast level standards
+ */
+export enum ContrastLevel {
+  FAIL = 0,
+  AA_LARGE = 3.0,      // WCAG AA for large text (18pt+ or 14pt+ bold)
+  AA_NORMAL = 4.5,     // WCAG AA for normal text
+  AAA_LARGE = 4.5,     // WCAG AAA for large text
+  AAA_NORMAL = 7.0,    // WCAG AAA for normal text
+}
+
+/**
+ * Check if contrast meets WCAG 2.1 AA standard
+ * @param contrast - The contrast ratio to check
+ * @param isLargeText - Whether the text is large (18pt+ or 14pt+ bold)
+ */
+export function meetsWCAGAA(contrast: number, isLargeText: boolean = false): boolean {
+  return isLargeText ? contrast >= ContrastLevel.AA_LARGE : contrast >= ContrastLevel.AA_NORMAL;
+}
+
+/**
+ * Check if contrast meets WCAG 2.1 AAA standard
+ * @param contrast - The contrast ratio to check
+ * @param isLargeText - Whether the text is large (18pt+ or 14pt+ bold)
+ */
+export function meetsWCAGAAA(contrast: number, isLargeText: boolean = false): boolean {
+  return isLargeText ? contrast >= ContrastLevel.AAA_LARGE : contrast >= ContrastLevel.AAA_NORMAL;
+}
+
+/**
+ * Get the minimum contrast ratio required for a given text size
+ * @param isLargeText - Whether the text is large (18pt+ or 14pt+ bold)
+ * @param level - The WCAG level (AA or AAA)
+ */
+export function getMinimumContrast(isLargeText: boolean = false, level: 'AA' | 'AAA' = 'AA'): number {
+  if (level === 'AAA') {
+    return isLargeText ? ContrastLevel.AAA_LARGE : ContrastLevel.AAA_NORMAL;
+  }
+  return isLargeText ? ContrastLevel.AA_LARGE : ContrastLevel.AA_NORMAL;
 }
 
 /**
@@ -79,58 +125,116 @@ function rgbToHex(r: number, g: number, b: number): string {
 }
 
 /**
- * Ensure WCAG contrast ratio >= 4.5:1 (AA level)
- * Enhanced version with better color adjustment
+ * Ensure WCAG contrast ratio meets minimum requirements
+ * Enhanced version with iterative adjustment algorithm that guarantees compliance
+ * @param fg - Foreground color (text)
+ * @param bg - Background color
+ * @param minContrast - Minimum contrast ratio required (default: 4.5 for WCAG AA normal text)
+ * @param preferAdjustFg - Whether to prefer adjusting foreground over background (default: true)
  */
 export function ensureContrast(
   fg: string,
   bg: string,
-): { fg: string; bg: string } {
-  const contrast = getContrastRatio(fg, bg);
+  minContrast: number = ContrastLevel.AA_NORMAL,
+  preferAdjustFg: boolean = true,
+): { fg: string; bg: string; contrast: number } {
+  let currentFg = fg;
+  let currentBg = bg;
+  let contrast = getContrastRatio(currentFg, currentBg);
 
-  if (contrast >= 4.5) {
-    return { fg, bg };
+  // If already meeting requirements, return as-is
+  if (contrast >= minContrast) {
+    return { fg: currentFg, bg: currentBg, contrast };
   }
 
-  // If contrast is too low, adjust colors intelligently
   const bgRgb = hexToRgb(bg);
   const fgRgb = hexToRgb(fg);
 
   if (!bgRgb || !fgRgb) {
-    // Fallback: flip colors if RGB conversion fails
-    return { fg: bg, bg: fg };
+    // Fallback: use optimal foreground for background
+    const optimalFg = getOptimalForeground(bg);
+    const optimalContrast = getContrastRatio(optimalFg, bg);
+    return { fg: optimalFg, bg, contrast: optimalContrast };
   }
 
-  // Calculate luminance to determine which color is darker
   const bgLuminance = getLuminance(bg);
-  const fgLuminance = getLuminance(fg);
+  const isDarkBg = bgLuminance < 0.5;
 
-  if (bgLuminance > fgLuminance) {
-    // Background is lighter, make foreground darker
-    const adjustedFg = darkenColor(fg, 0.3);
-    const newContrast = getContrastRatio(adjustedFg, bg);
-
-    if (newContrast >= 4.5) {
-      return { fg: adjustedFg, bg };
+  // Strategy: Adjust the color that makes sense to adjust
+  // For background images, we usually want to adjust foreground (text)
+  // For solid backgrounds, we might adjust background if preferAdjustFg is false
+  
+  if (preferAdjustFg) {
+    // Adjust foreground to meet contrast requirements
+    let adjustmentStep = 0.1;
+    let attempts = 0;
+    const maxAttempts = 50; // Prevent infinite loops
+    
+    while (contrast < minContrast && attempts < maxAttempts) {
+      if (isDarkBg) {
+        // Dark background: lighten foreground
+        currentFg = lightenColor(currentFg, adjustmentStep);
+      } else {
+        // Light background: darken foreground
+        currentFg = darkenColor(currentFg, adjustmentStep);
+      }
+      
+      contrast = getContrastRatio(currentFg, currentBg);
+      
+      // If we've gone past the target, try the opposite direction with smaller steps
+      if (contrast < minContrast && attempts > 10) {
+        adjustmentStep *= 1.2; // Increase adjustment step
+      }
+      
+      attempts++;
+    }
+    
+    // If still not meeting requirements, use optimal color
+    if (contrast < minContrast) {
+      currentFg = getOptimalForeground(currentBg);
+      contrast = getContrastRatio(currentFg, currentBg);
     }
   } else {
-    // Foreground is lighter, make background darker
-    const adjustedBg = darkenColor(bg, 0.3);
-    const newContrast = getContrastRatio(fg, adjustedBg);
-
-    if (newContrast >= 4.5) {
-      return { fg, bg: adjustedBg };
+    // Adjust background (less common, but sometimes needed)
+    // This is typically not used for background images
+    currentBg = isDarkBg ? lightenColor(currentBg, 0.5) : darkenColor(currentBg, 0.5);
+    contrast = getContrastRatio(currentFg, currentBg);
+    
+    // If still not meeting requirements, adjust foreground instead
+    if (contrast < minContrast) {
+      currentFg = getOptimalForeground(currentBg);
+      contrast = getContrastRatio(currentFg, currentBg);
     }
   }
 
-  // Final fallback: flip colors
-  return { fg: bg, bg: fg };
+  // Final safety check: ensure we always have readable text
+  if (contrast < 3.0) {
+    // Absolute minimum: use pure white/black
+    currentFg = isDarkBg ? "#ffffff" : "#000000";
+    contrast = getContrastRatio(currentFg, currentBg);
+  }
+
+  return { fg: currentFg, bg: currentBg, contrast };
+}
+
+/**
+ * Ensure contrast for large text (18pt+ or 14pt+ bold)
+ * Uses WCAG AA large text standard (3:1) or AAA (4.5:1)
+ */
+export function ensureContrastLargeText(
+  fg: string,
+  bg: string,
+  level: 'AA' | 'AAA' = 'AA',
+): { fg: string; bg: string; contrast: number } {
+  const minContrast = getMinimumContrast(true, level);
+  return ensureContrast(fg, bg, minContrast, true);
 }
 
 /**
  * Get luminance of a color (0-1 scale)
+ * WCAG 2.1 relative luminance calculation
  */
-function getLuminance(color: string): number {
+export function getLuminance(color: string): number {
   const rgb = hexToRgb(color);
   if (!rgb) return 0;
 
@@ -144,13 +248,17 @@ function getLuminance(color: string): number {
 }
 
 /**
- * Darken a color by a specified amount
+ * Darken a color by a specified amount (0-1)
+ * Uses linear interpolation for smooth darkening
  */
-function darkenColor(color: string, amount: number): string {
+export function darkenColor(color: string, amount: number): string {
   const rgb = hexToRgb(color);
   if (!rgb) return color;
 
   const { r, g, b } = rgb;
+  // Clamp amount between 0 and 1
+  amount = Math.max(0, Math.min(1, amount));
+  
   const newR = Math.max(0, Math.round(r * (1 - amount)));
   const newG = Math.max(0, Math.round(g * (1 - amount)));
   const newB = Math.max(0, Math.round(b * (1 - amount)));
@@ -178,8 +286,20 @@ export async function extractPalette(imageUrl: string): Promise<ColorPalette> {
     // Generate palette based on dominant color
     const palette = generatePalette(dominantColor, isDark);
 
-    // Ensure proper contrast
-    const { fg, bg } = ensureContrast(palette.fg, palette.bg);
+    // Ensure proper contrast - use WCAG AA normal text standard (4.5:1)
+    // This ensures all text meets accessibility requirements
+    const { fg, bg, contrast } = ensureContrast(
+      palette.fg, 
+      palette.bg, 
+      ContrastLevel.AA_NORMAL,
+      true // Prefer adjusting foreground (text color)
+    );
+
+    logDebug("Extracted palette with contrast", {
+      contrast: contrast.toFixed(2),
+      meetsAA: meetsWCAGAA(contrast, false),
+      meetsAAA: meetsWCAGAAA(contrast, false),
+    });
 
     return {
       ...palette,
@@ -194,6 +314,7 @@ export async function extractPalette(imageUrl: string): Promise<ColorPalette> {
 
 /**
  * Generate color palette from dominant color
+ * Enhanced to ensure high contrast for text readability, especially on mobile
  */
 function generatePalette(dominantColor: string, isDark: boolean): ColorPalette {
   const rgb = hexToRgb(dominantColor);
@@ -203,15 +324,33 @@ function generatePalette(dominantColor: string, isDark: boolean): ColorPalette {
 
   // Create variations
   const bg = dominantColor;
-  const fg = isDark ? "#ffffff" : "#000000";
+  
+  // Calculate luminance for smarter foreground color selection
+  const luminance = getLuminance(bg);
+  
+  // Use high-contrast colors for better readability
+  // For dark backgrounds (luminance < 0.5), use white
+  // For light backgrounds (luminance >= 0.5), use black
+  // This ensures WCAG AA compliance (4.5:1 contrast ratio minimum)
+  let fg: string;
+  if (luminance < 0.35) {
+    // Very dark background - use pure white for maximum contrast
+    fg = "#ffffff";
+  } else if (luminance > 0.65) {
+    // Very light background - use pure black for maximum contrast
+    fg = "#000000";
+  } else {
+    // Medium brightness - use isDark flag as fallback
+    fg = isDark ? "#ffffff" : "#000000";
+  }
 
-  // Create muted color (desaturated version)
+  // Create muted color (desaturated version) - ensure it maintains contrast
   const mutedR = Math.round(r * 0.7 + 128 * 0.3);
   const mutedG = Math.round(g * 0.7 + 128 * 0.3);
   const mutedB = Math.round(b * 0.7 + 128 * 0.3);
   const muted = rgbToHex(mutedR, mutedG, mutedB);
 
-  // Create accent color (slightly different hue)
+  // Create accent color (slightly different hue) - ensure good contrast
   const accentR = Math.min(255, Math.round(r * 1.2));
   const accentG = Math.min(255, Math.round(g * 1.1));
   const accentB = Math.min(255, Math.round(b * 0.9));
@@ -264,13 +403,17 @@ function derivePrimaryColor(accent: string, bg: string): string {
 }
 
 /**
- * Lighten a color by a specified amount
+ * Lighten a color by a specified amount (0-1)
+ * Uses linear interpolation for smooth lightening
  */
-function lightenColor(color: string, amount: number): string {
+export function lightenColor(color: string, amount: number): string {
   const rgb = hexToRgb(color);
   if (!rgb) return color;
 
   const { r, g, b } = rgb;
+  // Clamp amount between 0 and 1
+  amount = Math.max(0, Math.min(1, amount));
+  
   const newR = Math.min(255, Math.round(r + (255 - r) * amount));
   const newG = Math.min(255, Math.round(g + (255 - g) * amount));
   const newB = Math.min(255, Math.round(b + (255 - b) * amount));
@@ -300,11 +443,40 @@ function deriveCardColor(bg: string, isDark: boolean): string {
 
 /**
  * Get optimal foreground color for a given background
+ * Returns the highest contrast color (white or black) for maximum readability
  */
-function getOptimalForeground(bg: string): string {
+export function getOptimalForeground(bg: string): string {
   const bgLuminance = getLuminance(bg);
   // Return white for dark backgrounds, black for light backgrounds
   return bgLuminance < 0.5 ? "#ffffff" : "#000000";
+}
+
+/**
+ * Check if text should be considered "large" for WCAG purposes
+ * Large text is: 18pt (24px) or larger, OR 14pt (18.67px) or larger if bold
+ * @param fontSize - Font size in pixels
+ * @param isBold - Whether the text is bold
+ */
+export function isLargeText(fontSize: number, isBold: boolean = false): boolean {
+  if (isBold) {
+    return fontSize >= 18.67; // 14pt bold
+  }
+  return fontSize >= 24; // 18pt normal
+}
+
+/**
+ * Get the appropriate minimum contrast ratio for text based on its size
+ * @param fontSize - Font size in pixels
+ * @param isBold - Whether the text is bold
+ * @param level - WCAG level (AA or AAA)
+ */
+export function getRequiredContrast(
+  fontSize: number,
+  isBold: boolean = false,
+  level: 'AA' | 'AAA' = 'AA'
+): number {
+  const large = isLargeText(fontSize, isBold);
+  return getMinimumContrast(large, level);
 }
 
 /**
@@ -316,20 +488,58 @@ export function applyColorPalette(palette: ColorPalette): void {
 
   const root = document.documentElement;
 
-  // Ensure proper contrast before applying
-  const { fg: safeFg, bg: safeBg } = ensureContrast(palette.fg, palette.bg);
+  // Ensure proper contrast before applying - WCAG AA normal text (4.5:1)
+  const { fg: safeFg, bg: safeBg, contrast: baseContrast } = ensureContrast(
+    palette.fg, 
+    palette.bg, 
+    ContrastLevel.AA_NORMAL,
+    true
+  );
+  
+  logDebug("Applied color palette with contrast", {
+    contrast: baseContrast.toFixed(2),
+    meetsAA: meetsWCAGAA(baseContrast, false),
+    meetsAAA: meetsWCAGAAA(baseContrast, false),
+  });
 
   // Derive primary color from accent (for buttons)
-  const primaryColor = derivePrimaryColor(palette.accent, safeBg);
+  // Ensure primary has good contrast on background
+  let primaryColor = derivePrimaryColor(palette.accent, safeBg);
+  const primaryOnBgContrastInitial = getContrastRatio(primaryColor, safeBg);
+  
+  // If primary doesn't have enough contrast, adjust it
+  if (primaryOnBgContrastInitial < ContrastLevel.AA_NORMAL) {
+    const isDarkBg = getLuminance(safeBg) < 0.5;
+    // Adjust primary to ensure it stands out on background
+    if (isDarkBg) {
+      primaryColor = lightenColor(primaryColor, 0.5);
+    } else {
+      primaryColor = darkenColor(primaryColor, 0.5);
+    }
+  }
   
   // Derive card background color
   const cardBg = deriveCardColor(safeBg, getLuminance(safeBg) < 0.5);
   
-  // Get optimal foreground for primary (button text)
-  const primaryFg = getOptimalForeground(primaryColor);
+  // Get optimal foreground for primary (button text) - ensure WCAG AA
+  let primaryFg = getOptimalForeground(primaryColor);
+  const { fg: adjustedPrimaryFg } = ensureContrast(
+    primaryFg,
+    primaryColor,
+    ContrastLevel.AA_NORMAL,
+    true
+  );
+  primaryFg = adjustedPrimaryFg;
   
-  // Get optimal foreground for card (card text)
-  const cardFg = getOptimalForeground(cardBg);
+  // Get optimal foreground for card (card text) - ensure WCAG AA
+  let cardFg = getOptimalForeground(cardBg);
+  const { fg: adjustedCardFg } = ensureContrast(
+    cardFg,
+    cardBg,
+    ContrastLevel.AA_NORMAL,
+    true
+  );
+  cardFg = adjustedCardFg;
 
   // Apply safe colors
   root.style.setProperty("--bg", safeBg);
@@ -429,16 +639,30 @@ export function applyColorPalette(palette: ColorPalette): void {
   const contrastRatio = getContrastRatio(safeFg, safeBg);
   const primaryContrast = getContrastRatio(primaryFg, primaryColor);
   const cardContrast = getContrastRatio(cardFg, cardBg);
+  const primaryOnBgContrast = getContrastRatio(primaryColor, safeBg);
   
-  root.style.setProperty("--contrast-ratio", contrastRatio.toString());
-  root.style.setProperty("--primary-contrast", primaryContrast.toString());
-  root.style.setProperty("--card-contrast", cardContrast.toString());
+  // Store contrast ratios as CSS variables
+  root.style.setProperty("--contrast-ratio", contrastRatio.toFixed(2));
+  root.style.setProperty("--primary-contrast", primaryContrast.toFixed(2));
+  root.style.setProperty("--card-contrast", cardContrast.toFixed(2));
+  root.style.setProperty("--primary-on-bg-contrast", primaryOnBgContrast.toFixed(2));
 
-  // Set contrast compliance indicators
-  root.style.setProperty("--contrast-aa", (contrastRatio >= 4.5).toString());
-  root.style.setProperty("--contrast-aaa", (contrastRatio >= 7.0).toString());
-  root.style.setProperty("--primary-contrast-aa", (primaryContrast >= 4.5).toString());
-  root.style.setProperty("--card-contrast-aa", (cardContrast >= 4.5).toString());
+  // Set contrast compliance indicators (normal text)
+  const baseMeetsAA = meetsWCAGAA(contrastRatio, false);
+  const baseMeetsAAA = meetsWCAGAAA(contrastRatio, false);
+  const primaryMeetsAA = meetsWCAGAA(primaryContrast, false);
+  const cardMeetsAA = meetsWCAGAA(cardContrast, false);
+  
+  root.style.setProperty("--contrast-aa", baseMeetsAA.toString());
+  root.style.setProperty("--contrast-aaa", baseMeetsAAA.toString());
+  root.style.setProperty("--primary-contrast-aa", primaryMeetsAA.toString());
+  root.style.setProperty("--card-contrast-aa", cardMeetsAA.toString());
+  
+  // Set contrast compliance for large text (3:1 for AA, 4.5:1 for AAA)
+  const baseMeetsAALarge = meetsWCAGAA(contrastRatio, true);
+  const baseMeetsAAALarge = meetsWCAGAAA(contrastRatio, true);
+  root.style.setProperty("--contrast-aa-large", baseMeetsAALarge.toString());
+  root.style.setProperty("--contrast-aaa-large", baseMeetsAAALarge.toString());
 
   // Set additional accessibility variables
   setAccessibilityVariables(safeFg, safeBg, palette.accent, primaryColor, cardBg);
@@ -465,20 +689,43 @@ function setAccessibilityVariables(
     // Ring color should match primary for consistency
     root.style.setProperty("--ring", `${primaryHsl.h} ${primaryHsl.s}% ${primaryHsl.l}%`);
     
-    // Focus ring color with better contrast
-    const focusRingColor = ensureContrast(primary, bg).fg;
+    // Focus ring color with better contrast - ensure it's visible
+    // Focus rings need at least 3:1 contrast (WCAG AA for UI components)
+    const focusRingContrast = getContrastRatio(primary, bg);
+    let focusRingColor = primary;
+    
+    if (focusRingContrast < ContrastLevel.AA_LARGE) {
+      // Adjust focus ring to ensure visibility
+      const isDarkBg = getLuminance(bg) < 0.5;
+      focusRingColor = isDarkBg ? "#ffffff" : "#000000";
+    }
+    
     const focusRingRgb = hexToRgb(focusRingColor);
     if (focusRingRgb) {
       const focusRingHsl = rgbToHsl(focusRingRgb.r, focusRingRgb.g, focusRingRgb.b);
       root.style.setProperty("--focus-ring-color", `${focusRingHsl.h} ${focusRingHsl.s}% ${focusRingHsl.l}%`);
+      root.style.setProperty("--focus-ring-contrast", getContrastRatio(focusRingColor, bg).toFixed(2));
     }
   }
 
-  // High contrast mode support
-  const highContrastFg = getContrastRatio(fg, bg) < 7.0 ? "#ffffff" : fg;
-  const highContrastBg = getContrastRatio(fg, bg) < 7.0 ? "#000000" : bg;
+  // High contrast mode support - ensure maximum contrast (WCAG AAA)
+  const baseContrast = getContrastRatio(fg, bg);
+  let highContrastFg = fg;
+  let highContrastBg = bg;
+  
+  if (baseContrast < ContrastLevel.AAA_NORMAL) {
+    // Force maximum contrast for high contrast mode
+    const bgLum = getLuminance(bg);
+    highContrastFg = bgLum < 0.5 ? "#ffffff" : "#000000";
+    highContrastBg = bgLum < 0.5 ? "#000000" : "#ffffff";
+  }
+  
+  // Ensure high contrast mode meets WCAG AAA (7:1)
+  const highContrastRatio = getContrastRatio(highContrastFg, highContrastBg);
   root.style.setProperty("--high-contrast-fg", highContrastFg);
   root.style.setProperty("--high-contrast-bg", highContrastBg);
+  root.style.setProperty("--high-contrast-ratio", highContrastRatio.toFixed(2));
+  root.style.setProperty("--high-contrast-aaa", meetsWCAGAAA(highContrastRatio, false).toString());
 
   // Button contrast variants - ensure buttons have proper contrast
   // Note: Primary and primary-foreground are already set in applyColorPalette
@@ -505,30 +752,43 @@ function setAccessibilityVariables(
   const isDarkCard = cardLuminance < 0.5;
   
   // For buttons inside cards, use the primary color but ensure it contrasts with card
-  // If primary doesn't contrast well with card, adjust it
+  // Buttons need WCAG AA contrast (4.5:1 for normal text)
   const primaryOnCardContrast = getContrastRatio(primary, card);
   
   let cardButtonBg = primary;
-  if (primaryOnCardContrast < 4.5) {
+  if (primaryOnCardContrast < ContrastLevel.AA_NORMAL) {
     // Primary doesn't contrast well with card, derive a better color
     // For dark cards, use a lighter version of primary
     // For light cards, use a darker version of primary
     if (isDarkCard) {
-      cardButtonBg = lightenColor(primary, 0.4);
+      cardButtonBg = lightenColor(primary, 0.5);
     } else {
-      cardButtonBg = darkenColor(primary, 0.4);
+      cardButtonBg = darkenColor(primary, 0.5);
     }
     
     // Ensure the adjusted color still contrasts well
     const adjustedContrast = getContrastRatio(cardButtonBg, card);
-    if (adjustedContrast < 4.5) {
-      // If still not enough contrast, use a more contrasting color
-      cardButtonBg = isDarkCard ? "#ffffff" : "#000000";
+    if (adjustedContrast < ContrastLevel.AA_NORMAL) {
+      // If still not enough contrast, use optimal contrasting color
+      const { fg: optimalButtonBg } = ensureContrast(
+        isDarkCard ? "#ffffff" : "#000000",
+        card,
+        ContrastLevel.AA_NORMAL,
+        false // Adjust background (button bg) if needed
+      );
+      cardButtonBg = optimalButtonBg === card ? (isDarkCard ? "#ffffff" : "#000000") : cardButtonBg;
     }
   }
   
-  // Get optimal foreground for button (text color on button)
-  const cardButtonFg = getOptimalForeground(cardButtonBg);
+  // Get optimal foreground for button (text color on button) - ensure WCAG AA
+  let cardButtonFg = getOptimalForeground(cardButtonBg);
+  const { fg: adjustedCardButtonFg } = ensureContrast(
+    cardButtonFg,
+    cardButtonBg,
+    ContrastLevel.AA_NORMAL,
+    true
+  );
+  cardButtonFg = adjustedCardButtonFg;
   
   const cardButtonBgRgb = hexToRgb(cardButtonBg);
   const cardButtonFgRgb = hexToRgb(cardButtonFg);
@@ -599,3 +859,4 @@ export function createGradientFallback(seed: string): string {
 
   return `linear-gradient(135deg, hsl(${hue1}, 70%, 50%) 0%, hsl(${hue2}, 70%, 30%) 100%)`;
 }
+

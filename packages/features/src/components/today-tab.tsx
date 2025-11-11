@@ -76,9 +76,7 @@ export const TodayTab = forwardRef<
     const { imageUrl, palette } = useAutoTheme();
 
     // Get contrast-safe colors from the palette
-    const textColor = palette?.fg || "hsl(var(--foreground))";
-
-    // Dynamically scale decorative quote opacity based on background brightness
+    // For mobile, always use high-contrast colors (white or black) for better readability
     const computeLuminance = (hex?: string): number => {
       if (!hex || !hex.startsWith("#")) return 0.5;
       const clean = hex.replace("#", "");
@@ -100,6 +98,38 @@ export const TodayTab = forwardRef<
       return 0.2126 * rl + 0.7152 * gl + 0.0722 * bl;
     };
     const bgLuma = computeLuminance(palette?.bg);
+    
+    // Determine text color based on background brightness
+    // With the dark overlay on mobile, prefer high-contrast colors (white/black)
+    // for maximum readability over background images
+    let textColor: string;
+    if (palette?.fg) {
+      // Use palette color as base, but optimize for contrast
+      // Since we have a dark overlay, prefer lighter text for better visibility
+      if (bgLuma > 0.65) {
+        // Very light background - use black text for maximum contrast
+        textColor = "#000000";
+      } else if (bgLuma < 0.35) {
+        // Very dark background - use white text for maximum contrast
+        textColor = "#ffffff";
+      } else {
+        // Medium brightness - prefer white text due to dark overlay,
+        // but fall back to palette color if it provides good contrast
+        // Check if palette.fg is light (good for dark overlay) or dark
+        const fgLuma = computeLuminance(palette.fg);
+        if (fgLuma > 0.5) {
+          // Palette foreground is light - use it (good for dark overlay)
+          textColor = palette.fg;
+        } else {
+          // Palette foreground is dark - use white instead (better with dark overlay)
+          textColor = "#ffffff";
+        }
+      }
+    } else {
+      // Fallback: use white for maximum contrast with dark overlay
+      textColor = "#ffffff";
+    }
+    
     const quoteOpacity =
       bgLuma > 0.7 ? 0.28 : bgLuma > 0.5 ? 0.24 : bgLuma > 0.3 ? 0.2 : 0.18;
     // Adaptive button style that adapts to background theme
@@ -759,10 +789,13 @@ export const TodayTab = forwardRef<
         )}
 
         {/* Enhanced overlay for better contrast - WCAG AA+ compliant */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/30 to-background/50" />
-        {/* Top and bottom gradient washes for better text readability */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background/50 via-background/30 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background/50 via-background/30 to-transparent" />
+        {/* Mobile: Stronger overlay for better text readability on smaller screens */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/60 md:from-background/40 md:via-background/30 md:to-background/50" />
+        {/* Top and bottom gradient washes for better text readability - stronger on mobile */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/70 via-black/50 to-transparent md:from-background/50 md:via-background/30 md:to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 via-black/50 to-transparent md:from-background/50 md:via-background/30 md:to-transparent" />
+        {/* Additional mobile-specific darker overlay for text area */}
+        <div className="pointer-events-none absolute inset-0 bg-black/20 md:hidden" />
 
         {/* Content Card */}
         <div className="relative z-10 p-4 sm:p-8">
@@ -817,11 +850,13 @@ export const TodayTab = forwardRef<
               "
             </div>
             <blockquote
-              className="text-xl sm:text-2xl md:text-3xl font-medium leading-relaxed pt-6 sm:pt-8 pb-10 sm:pb-12 px-4 sm:px-8 text-center italic today-quote-text"
+              className="text-xl sm:text-2xl md:text-3xl font-medium leading-relaxed pt-6 sm:pt-8 pb-10 sm:pb-12 px-4 sm:px-8 text-center italic today-quote-text quote-text-mobile-contrast"
               data-current-quote={quote.text}
               style={{ 
                 color: textColor,
-                textShadow: "0 2px 8px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3)",
+                // Strong text shadow for better contrast on all devices
+                // Mobile will get even stronger shadow via CSS class
+                textShadow: "0 3px 10px rgba(0,0,0,0.7), 0 2px 5px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)",
               }}
             >
               {quote.text}
@@ -832,12 +867,12 @@ export const TodayTab = forwardRef<
           <div className="text-center mb-8">
             {showAuthor && (
               <p
-                className="inline-block text-base sm:text-lg md:text-xl font-medium px-4 py-2 rounded-full backdrop-blur-xl border-2 shadow-md"
+                className="inline-block text-base sm:text-lg md:text-xl font-medium px-4 py-2 rounded-full backdrop-blur-xl border-2 shadow-md quote-author-mobile-contrast"
                 style={{
                   color: textColor,
                   backgroundColor: "hsl(var(--bg-hsl) / 0.85)",
                   borderColor: "hsl(var(--fg-hsl) / 0.4)",
-                  textShadow: "0 2px 4px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)",
+                  textShadow: "0 2px 6px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5)",
                   boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
                 }}
               >

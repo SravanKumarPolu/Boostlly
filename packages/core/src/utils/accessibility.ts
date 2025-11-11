@@ -94,6 +94,27 @@ export function prefersHighContrast(): boolean {
 }
 
 /**
+ * Check if user prefers reduced contrast (not commonly used, but for completeness)
+ */
+export function prefersReducedContrast(): boolean {
+  if (typeof window === "undefined") return false;
+
+  return window.matchMedia("(prefers-contrast: less)").matches;
+}
+
+/**
+ * Get user's contrast preference
+ * Returns 'high', 'normal', or 'low'
+ */
+export function getContrastPreference(): 'high' | 'normal' | 'low' {
+  if (typeof window === "undefined") return 'normal';
+  
+  if (prefersHighContrast()) return 'high';
+  if (prefersReducedContrast()) return 'low';
+  return 'normal';
+}
+
+/**
  * Check if user prefers dark color scheme
  */
 export function prefersDarkColorScheme(): boolean {

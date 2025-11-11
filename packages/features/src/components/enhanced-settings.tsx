@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Button,
   Input,
@@ -8,7 +8,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@boostlly/ui";
-import { useAutoTheme, logError, logDebug, logWarning } from "@boostlly/core";
+import { 
+  useAutoTheme, 
+  logError, 
+  logDebug, 
+  logWarning,
+  getContrastRatio,
+  ensureContrast,
+  ContrastLevel,
+  getLuminance,
+  getOptimalForeground,
+  ColorPalette,
+} from "@boostlly/core";
 import {
   Palette,
   Volume2,
@@ -19,10 +30,12 @@ import {
   Download,
   RefreshCw,
   Settings,
+  LucideIcon,
 } from "lucide-react";
 
 interface EnhancedSettingsProps {
   storage: any;
+  palette?: ColorPalette;
 }
 
 interface UserPreferences {
@@ -73,9 +86,10 @@ interface UserPreferences {
   apiProxy?: boolean;
 }
 
-export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
-  // Use auto-theme palette for dynamic contrast
-  const { palette } = useAutoTheme();
+export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSettingsProps) {
+  // Use auto-theme palette for dynamic contrast (fallback if prop not provided)
+  const { palette: autoPalette } = useAutoTheme();
+  const palette = propPalette || autoPalette;
 
   const defaultPalette = {
     primary: "#7C3AED", // Purple
@@ -432,12 +446,171 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
     }
   };
 
+  // Calculate contrast-adjusted colors for tabs and UI elements
+  // IMPORTANT: This hook must be called before any conditional returns to follow Rules of Hooks
+  const tabColors = useMemo(() => {
+    if (!palette?.bg) {
+      // Fallback: use high-contrast colors that work on light backgrounds
+      return {
+        activeText: "#FFFFFF",
+        inactiveText: "#374151", // Dark gray with excellent contrast on light
+        hoverText: "#1F2937", // Darker for hover
+        activeBg: "#7C3AED", // Primary color
+        inactiveBg: "transparent",
+        tabBackdropColor: "#FFFFFF",
+        activeContrast: 4.5,
+        inactiveContrast: 12.0,
+      };
+    }
+
+    const bgColor = palette.bg;
+    const bgLuminance = getLuminance(bgColor);
+    const isDarkBg = bgLuminance < 0.5;
+    
+    // Tab backdrop color: dark overlay for dark backgrounds, light overlay for light backgrounds
+    // This ensures tabs have a consistent, high-contrast background
+    const tabBackdropColor = isDarkBg ? "#1F2937" : "#FFFFFF"; // Dark gray or white
+    
+    // Active tab background: use accent/primary color from palette
+    const activeBg = palette?.accent || "#7C3AED";
+    
+    // Active tab text: ensure high contrast with active background (not backdrop)
+    // Use white text on dark backgrounds, dark text on light backgrounds
+    let activeText = getOptimalForeground(activeBg);
+    let activeContrast = getContrastRatio(activeText, activeBg);
+    
+    // Ensure active tab text meets WCAG AA normal text (4.5:1) against active background
+    if (activeContrast < ContrastLevel.AA_NORMAL) {
+      const { fg: adjustedActive } = ensureContrast(
+        activeText, 
+        activeBg, 
+        ContrastLevel.AA_NORMAL,
+        true
+      );
+      activeText = adjustedActive;
+      activeContrast = getContrastRatio(activeText, activeBg);
+    }
+    
+    // Inactive tabs: high contrast color that's clearly visible and distinguishable
+    // Must meet WCAG AA for UI components (3:1), prefer 4.5:1 for better visibility
+    let inactiveText: string;
+    
+    if (isDarkBg) {
+      // Dark backdrop: use light gray for excellent contrast
+      inactiveText = "#D1D5DB"; // Light gray
+      let inactiveContrast = getContrastRatio(inactiveText, tabBackdropColor);
+      
+      // Ensure it meets minimum (should easily meet 4.5:1)
+      if (inactiveContrast < ContrastLevel.AA_NORMAL) {
+        const { fg: adjustedInactive } = ensureContrast(
+          inactiveText,
+          tabBackdropColor,
+          ContrastLevel.AA_NORMAL,
+          true
+        );
+        inactiveText = adjustedInactive;
+        inactiveContrast = getContrastRatio(inactiveText, tabBackdropColor);
+      }
+    } else {
+      // Light backdrop: use dark gray for excellent contrast
+      inactiveText = "#374151"; // Dark gray
+      let inactiveContrast = getContrastRatio(inactiveText, tabBackdropColor);
+      
+      // Ensure it meets minimum (should easily meet 4.5:1)
+      if (inactiveContrast < ContrastLevel.AA_NORMAL) {
+        const { fg: adjustedInactive } = ensureContrast(
+          inactiveText,
+          tabBackdropColor,
+          ContrastLevel.AA_NORMAL,
+          true
+        );
+        inactiveText = adjustedInactive;
+        inactiveContrast = getContrastRatio(inactiveText, tabBackdropColor);
+      }
+    }
+    
+    // Hover state: slightly darker/lighter than inactive for clear feedback
+    const hoverText = isDarkBg 
+      ? "#F3F4F6" // Lighter for dark backdrop
+      : "#1F2937"; // Darker for light backdrop
+    
+    // Final verification
+    const finalActiveContrast = getContrastRatio(activeText, activeBg);
+    const finalInactiveContrast = getContrastRatio(inactiveText, tabBackdropColor);
+    const finalHoverContrast = getContrastRatio(hoverText, tabBackdropColor);
+    
+    return {
+      activeText,
+      inactiveText,
+      hoverText,
+      activeBg,
+      inactiveBg: "transparent",
+      tabBackdropColor,
+      activeContrast: finalActiveContrast,
+      inactiveContrast: finalInactiveContrast,
+    };
+  }, [palette]);
+
+  // Calculate contrast-adjusted colors for text elements
+  const textColors = useMemo(() => {
+    if (!palette?.bg) {
+      return {
+        primary: "hsl(var(--foreground))",
+        secondary: "hsl(var(--muted-foreground))",
+        cardTitle: "hsl(var(--foreground))",
+        cardText: "hsl(var(--foreground))",
+      };
+    }
+
+    const bgColor = palette.bg;
+    const bgLuminance = getLuminance(bgColor);
+    
+    // Card background: semi-transparent overlay for better contrast
+    const cardBg = bgLuminance < 0.5 ? "rgba(31, 41, 55, 0.95)" : "rgba(255, 255, 255, 0.95)";
+    
+    // Primary text: ensure high contrast on card background
+    let primaryText = palette?.fg || getOptimalForeground(cardBg);
+    let primaryContrast = getContrastRatio(primaryText, cardBg);
+    
+    if (primaryContrast < ContrastLevel.AA_NORMAL) {
+      const { fg: adjustedPrimary } = ensureContrast(
+        primaryText,
+        cardBg,
+        ContrastLevel.AA_NORMAL,
+        true
+      );
+      primaryText = adjustedPrimary;
+    }
+    
+    // Secondary text: slightly muted but still readable
+    let secondaryText = bgLuminance < 0.5 ? "#D1D5DB" : "#6B7280";
+    let secondaryContrast = getContrastRatio(secondaryText, cardBg);
+    
+    if (secondaryContrast < ContrastLevel.AA_NORMAL) {
+      const { fg: adjustedSecondary } = ensureContrast(
+        secondaryText,
+        cardBg,
+        ContrastLevel.AA_NORMAL,
+        true
+      );
+      secondaryText = adjustedSecondary;
+    }
+    
+    return {
+      primary: primaryText,
+      secondary: secondaryText,
+      cardTitle: primaryText,
+      cardText: primaryText,
+      cardBg,
+    };
+  }, [palette]);
+
   const renderGeneralTab = () => (
     <div className="space-y-6">
-      <Card className="border border-border shadow-sm">
+      <Card className="border border-border shadow-sm" style={{ backgroundColor: textColors.cardBg }}>
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Settings className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 font-semibold" style={{ color: textColors.cardTitle }}>
+            <Settings className="w-5 h-5" style={{ color: textColors.cardTitle }} strokeWidth={2} />
             General Settings
           </CardTitle>
         </CardHeader>
@@ -449,21 +622,21 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
 
   const renderAppearanceTab = () => (
     <div className="space-y-6">
-      <Card>
+      <Card style={{ backgroundColor: textColors.cardBg }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 font-semibold" style={{ color: textColors.cardTitle }}>
+            <Palette className="w-5 h-5" style={{ color: textColors.cardTitle }} strokeWidth={2} />
             Theme & Colors
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            <h4 className="font-medium">Custom Colors</h4>
-            <p className="text-xs text-muted-foreground">
+            <h4 className="font-semibold" style={{ color: textColors.cardTitle }}>Custom Colors</h4>
+            <p className="text-xs font-medium" style={{ color: textColors.secondary }}>
               Default palette: Primary{" "}
-              <span className="font-medium">#7C3AED</span>, Secondary{" "}
-              <span className="font-medium">#A78BFA</span>, Accent
-              <span className="font-medium"> #9333EA</span>
+              <span className="font-semibold">#7C3AED</span>, Secondary{" "}
+              <span className="font-semibold">#A78BFA</span>, Accent
+              <span className="font-semibold"> #9333EA</span>
             </p>
             <div>
               <Button
@@ -480,7 +653,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
               {(["primary", "secondary", "accent"] as const).map(
                 (colorType) => (
                   <div key={colorType} className="space-y-2">
-                    <label className="text-sm font-medium capitalize">
+                    <label className="text-sm font-semibold capitalize" style={{ color: textColors.cardText }}>
                       {colorType}
                     </label>
                     <Input
@@ -504,7 +677,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
 
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm">Animations</span>
+              <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Animations</span>
               <Switch
                 checked={preferences.animations}
                 onCheckedChange={(checked) =>
@@ -513,7 +686,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
               />
             </div>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm">Compact Mode</span>
+              <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Compact Mode</span>
               <Switch
                 checked={preferences.compactMode}
                 onCheckedChange={(checked) =>
@@ -525,9 +698,9 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
 
           {/* Display preferences */}
           <div className="space-y-3">
-            <h4 className="font-medium">Display</h4>
+            <h4 className="font-semibold" style={{ color: textColors.cardTitle }}>Display</h4>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm">Show author</span>
+              <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Show author</span>
               <Switch
                 checked={preferences.showAuthor ?? true}
                 onCheckedChange={(checked) =>
@@ -536,7 +709,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
               />
             </div>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm">Show daily background</span>
+              <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Show daily background</span>
               <Switch
                 checked={preferences.showBackground ?? true}
                 onCheckedChange={(checked) =>
@@ -545,7 +718,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
               />
             </div>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm">Show time and date</span>
+              <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Show time and date</span>
               <Switch
                 checked={preferences.showTimeDate ?? true}
                 onCheckedChange={(checked) =>
@@ -584,16 +757,16 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
     return (
       <div className="space-y-6">
         {/* Notification Sounds */}
-        <Card>
+        <Card style={{ backgroundColor: textColors.cardBg }}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Volume2 className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 font-semibold" style={{ color: textColors.cardTitle }}>
+              <Volume2 className="w-5 h-5" style={{ color: textColors.cardTitle }} strokeWidth={2} />
               Notification Sounds
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Enable Notification Sounds</span>
+              <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Enable Notification Sounds</span>
               <Switch
                 checked={preferences.notificationSounds}
                 onCheckedChange={(checked) =>
@@ -605,7 +778,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             {preferences.notificationSounds && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Sound Volume</label>
+                  <label className="text-sm font-semibold" style={{ color: textColors.cardText }}>Sound Volume</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="range"
@@ -620,7 +793,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
                       }
                       className="flex-1"
                     />
-                    <span className="text-sm w-12">
+                    <span className="text-sm w-12 font-medium" style={{ color: textColors.cardText }}>
                       {preferences.soundVolume}%
                     </span>
                   </div>
@@ -630,13 +803,13 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
                   <button
                     data-sound-preview
                     onClick={handleSoundPreview}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium"
                     aria-label="Preview notification sound"
                   >
-                    <Volume2 className="w-4 h-4" />
+                    <Volume2 className="w-4 h-4" strokeWidth={2} />
                     Preview Sound
                   </button>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs font-medium" style={{ color: textColors.secondary }}>
                     Click to test sound (requires user interaction)
                   </span>
                 </div>
@@ -646,16 +819,16 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
         </Card>
 
         {/* Text-to-Speech */}
-        <Card>
+        <Card style={{ backgroundColor: textColors.cardBg }}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Volume2 className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 font-semibold" style={{ color: textColors.cardTitle }}>
+              <Volume2 className="w-5 h-5" style={{ color: textColors.cardTitle }} strokeWidth={2} />
               Text-to-Speech
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Enable Text-to-Speech</span>
+              <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Enable Text-to-Speech</span>
               <Switch
                 checked={preferences.textToSpeech}
                 onCheckedChange={(checked) =>
@@ -667,7 +840,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             {preferences.textToSpeech && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Speech Rate</label>
+                  <label className="text-sm font-semibold" style={{ color: textColors.cardText }}>Speech Rate</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="range"
@@ -682,14 +855,14 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
                       }
                       className="flex-1"
                     />
-                    <span className="text-sm w-12">
+                    <span className="text-sm w-12 font-medium" style={{ color: textColors.cardText }}>
                       {preferences.speechRate}x
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Volume</label>
+                  <label className="text-sm font-semibold" style={{ color: textColors.cardText }}>Volume</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="range"
@@ -704,7 +877,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
                       }
                       className="flex-1"
                     />
-                    <span className="text-sm w-12">
+                    <span className="text-sm w-12 font-medium" style={{ color: textColors.cardText }}>
                       {preferences.speechVolume}%
                     </span>
                   </div>
@@ -721,16 +894,16 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
 
   const renderPrivacyTab = () => (
     <div className="space-y-6">
-      <Card>
+      <Card style={{ backgroundColor: textColors.cardBg }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 font-semibold" style={{ color: textColors.cardTitle }}>
+            <Shield className="w-5 h-5" style={{ color: textColors.cardTitle }} strokeWidth={2} />
             Data & Privacy
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm">Data Sharing</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Data Sharing</span>
             <Switch
               checked={preferences.dataSharing}
               onCheckedChange={(checked) =>
@@ -739,7 +912,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm">Analytics</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Analytics</span>
             <Switch
               checked={preferences.analyticsEnabled}
               onCheckedChange={(checked) =>
@@ -748,7 +921,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm">
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>
               Use API Proxy (fixes CORS in extension)
             </span>
             <Switch
@@ -765,16 +938,16 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
 
   const renderAccessibilityTab = () => (
     <div className="space-y-6">
-      <Card>
+      <Card style={{ backgroundColor: textColors.cardBg }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Eye className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 font-semibold" style={{ color: textColors.cardTitle }}>
+            <Eye className="w-5 h-5" style={{ color: textColors.cardTitle }} strokeWidth={2} />
             Accessibility Features
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm">High Contrast</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>High Contrast</span>
             <Switch
               checked={preferences.highContrast}
               onCheckedChange={(checked) =>
@@ -783,7 +956,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm">Screen Reader Support</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Screen Reader Support</span>
             <Switch
               checked={preferences.screenReader}
               onCheckedChange={(checked) =>
@@ -792,7 +965,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm">Reduced Motion</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Reduced Motion</span>
             <Switch
               checked={preferences.reducedMotion}
               onCheckedChange={(checked) =>
@@ -807,16 +980,16 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
 
   const renderNotificationsTab = () => (
     <div className="space-y-6">
-      <Card>
+      <Card style={{ backgroundColor: textColors.cardBg }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 font-semibold" style={{ color: textColors.cardTitle }}>
+            <Bell className="w-5 h-5" style={{ color: textColors.cardTitle }} strokeWidth={2} />
             Notification Preferences
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm">Push Notifications</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Push Notifications</span>
             <Switch
               checked={preferences.pushNotifications}
               onCheckedChange={(checked) =>
@@ -825,7 +998,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm">Daily Reminders</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Daily Reminders</span>
             <Switch
               checked={preferences.dailyReminders}
               onCheckedChange={(checked) =>
@@ -834,7 +1007,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm">Achievement Alerts</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Achievement Alerts</span>
             <Switch
               checked={preferences.achievementAlerts}
               onCheckedChange={(checked) =>
@@ -849,16 +1022,16 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
 
   const renderPerformanceTab = () => (
     <div className="space-y-6">
-      <Card>
+      <Card style={{ backgroundColor: textColors.cardBg }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 font-semibold" style={{ color: textColors.cardTitle }}>
+            <Zap className="w-5 h-5" style={{ color: textColors.cardTitle }} strokeWidth={2} />
             Performance & Sync
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm">Auto Sync</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Auto Sync</span>
             <Switch
               checked={preferences.autoSync}
               onCheckedChange={(checked) =>
@@ -867,7 +1040,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm">Offline Mode</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Offline Mode</span>
             <Switch
               checked={preferences.offlineMode}
               onCheckedChange={(checked) =>
@@ -876,7 +1049,7 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm">Cache Enabled</span>
+            <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Cache Enabled</span>
             <Switch
               checked={preferences.cacheEnabled}
               onCheckedChange={(checked) =>
@@ -888,6 +1061,56 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
       </Card>
     </div>
   );
+
+  // TabButton component for proper contrast handling
+  interface TabButtonProps {
+    id: string;
+    label: string;
+    icon: LucideIcon;
+    isActive: boolean;
+    onClick: () => void;
+    tabColors: {
+      activeText: string;
+      inactiveText: string;
+      hoverText: string;
+      activeBg: string;
+      inactiveBg: string;
+    };
+  }
+
+  const TabButton: React.FC<TabButtonProps> = ({ id, label, icon: Icon, isActive, onClick, tabColors }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    
+    const textColor = isActive 
+      ? tabColors.activeText 
+      : isHovered 
+        ? tabColors.hoverText 
+        : tabColors.inactiveText;
+    
+    return (
+      <button
+        key={id}
+        onClick={onClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        aria-selected={isActive}
+        role="tab"
+        className="flex items-center gap-2 px-3 py-2 rounded-md text-xs sm:text-sm whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+        style={{
+          backgroundColor: isActive ? tabColors.activeBg : tabColors.inactiveBg,
+          color: textColor,
+          fontWeight: isActive ? 600 : 400,
+        }}
+      >
+        <Icon 
+          className="w-4 h-4" 
+          style={{ color: textColor }}
+          strokeWidth={isActive ? 2.5 : 2}
+        />
+        <span>{label}</span>
+      </button>
+    );
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -917,13 +1140,13 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
         <div className="min-w-0">
           <h2
             className="text-xl sm:text-2xl font-bold"
-            style={{ color: palette?.fg || "hsl(var(--foreground))" }}
+            style={{ color: textColors.primary }}
           >
             Enhanced Settings
           </h2>
           <p
-            className="text-sm sm:text-base"
-            style={{ color: palette?.fg || "hsl(var(--foreground))" }}
+            className="text-sm sm:text-base font-medium"
+            style={{ color: textColors.secondary }}
           >
             Advanced customization and preferences
           </p>
@@ -933,15 +1156,16 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             variant="outline"
             size="sm"
             onClick={exportPreferences}
-            className="w-full xs:w-auto sm:w-auto"
+            className="w-full xs:w-auto sm:w-auto font-medium"
             style={{
-              color: palette?.fg || "hsl(var(--foreground))",
-              borderColor: palette?.fg || "hsl(var(--border))",
+              color: textColors.primary,
+              borderColor: textColors.secondary,
             }}
           >
             <Download
               className="w-4 h-4 mr-2"
-              style={{ color: palette?.fg || "hsl(var(--foreground))" }}
+              style={{ color: textColors.primary }}
+              strokeWidth={2}
             />
             Export
           </Button>
@@ -949,15 +1173,16 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             variant="outline"
             size="sm"
             onClick={resetToDefaults}
-            className="w-full xs:w-auto sm:w-auto"
+            className="w-full xs:w-auto sm:w-auto font-medium"
             style={{
-              color: palette?.fg || "hsl(var(--foreground))",
-              borderColor: palette?.fg || "hsl(var(--border))",
+              color: textColors.primary,
+              borderColor: textColors.secondary,
             }}
           >
             <RefreshCw
               className="w-4 h-4 mr-2"
-              style={{ color: palette?.fg || "hsl(var(--foreground))" }}
+              style={{ color: textColors.primary }}
+              strokeWidth={2}
             />
             Reset
           </Button>
@@ -965,8 +1190,17 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="sticky top-0 z-10 -mx-4 sm:mx-0 px-4 sm:px-0 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70">
-        <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide bg-card rounded-lg p-1 border border-border elevation-1 hover-soft">
+      <div 
+        className="sticky top-0 z-10 -mx-4 sm:mx-0 px-4 sm:px-0 backdrop-blur supports-[backdrop-filter]:backdrop-blur-sm"
+        style={{ backgroundColor: tabColors.tabBackdropColor + "CC" }} // 80% opacity
+      >
+        <div 
+          className="flex items-center gap-1 overflow-x-auto scrollbar-hide rounded-lg p-1 border elevation-1"
+          style={{ 
+            backgroundColor: tabColors.tabBackdropColor,
+            borderColor: textColors.secondary + "40", // 25% opacity
+          }}
+        >
           {[
             { id: "general", label: "General", icon: Settings },
             { id: "appearance", label: "Appearance", icon: Palette },
@@ -976,20 +1210,15 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
             { id: "notifications", label: "Notifications", icon: Bell },
             { id: "performance", label: "Performance", icon: Zap },
           ].map((tab) => (
-            <button
+            <TabButton
               key={tab.id}
+              id={tab.id}
+              label={tab.label}
+              icon={tab.icon}
+              isActive={activeTab === (tab.id as any)}
               onClick={() => setActiveTab(tab.id as any)}
-              aria-selected={activeTab === (tab.id as any)}
-              role="tab"
-              className={
-                activeTab === (tab.id as any)
-                  ? "flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-primary-foreground text-xs sm:text-sm whitespace-nowrap shadow"
-                  : "flex items-center gap-2 px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent text-xs sm:text-sm whitespace-nowrap"
-              }
-            >
-              <tab.icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
+              tabColors={tabColors}
+            />
           ))}
         </div>
       </div>
@@ -1001,8 +1230,8 @@ export function EnhancedSettings({ storage }: EnhancedSettingsProps) {
 
       {/* Save Status */}
       {isLoading && (
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <RefreshCw className="w-4 h-4 animate-spin" />
+        <div className="flex items-center justify-center gap-2 text-sm font-medium" style={{ color: textColors.secondary }}>
+          <RefreshCw className="w-4 h-4 animate-spin" style={{ color: textColors.secondary }} strokeWidth={2} />
           Saving preferences...
         </div>
       )}

@@ -21,18 +21,89 @@
       background-position: center;
       background-attachment: fixed;
       transition: background-image 0.5s ease;
+      position: relative;
+    }
+    
+    /* Mobile-specific overlay for better text contrast */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    @media (min-width: 768px) {
+      body::before {
+        background: rgba(0, 0, 0, 0.2);
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      body::before {
+        background: rgba(0, 0, 0, 0.1);
+      }
+    }
+    
+    /* Gradient overlays for better text readability on mobile */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.4) 0%,
+        transparent 20%,
+        transparent 80%,
+        rgba(0, 0, 0, 0.4) 100%
+      );
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    @media (min-width: 768px) {
+      body::after {
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.2) 0%,
+          transparent 15%,
+          transparent 85%,
+          rgba(0, 0, 0, 0.2) 100%
+        );
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      body::after {
+        display: none;
+      }
     }
 
     .container {
       max-width: 800px;
       padding: 2rem;
       text-align: center;
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       color: white;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Enhanced contrast on mobile */
+    @media (max-width: 768px) {
+      .container {
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      }
     }
 
     .quote-text {
@@ -40,14 +111,37 @@
       line-height: 1.6;
       margin-bottom: 1.5rem;
       font-weight: 300;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      text-shadow: 0 3px 8px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.5);
+      color: #ffffff;
+    }
+    
+    /* Enhanced text shadows on mobile for better contrast */
+    @media (max-width: 768px) {
+      .quote-text {
+        font-size: 1.5rem;
+        font-weight: 400;
+        text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 
+                     0 3px 6px rgba(0, 0, 0, 0.7),
+                     0 2px 4px rgba(0, 0, 0, 0.6);
+      }
     }
 
     .quote-author {
       font-size: 1.2rem;
-      opacity: 0.9;
+      opacity: 0.95;
       font-style: italic;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.5);
+      color: #ffffff;
+    }
+    
+    /* Enhanced author text on mobile */
+    @media (max-width: 768px) {
+      .quote-author {
+        font-size: 1rem;
+        opacity: 1;
+        text-shadow: 0 3px 8px rgba(0, 0, 0, 0.8), 
+                     0 2px 4px rgba(0, 0, 0, 0.7);
+      }
     }
 
     .refresh-btn {
@@ -236,12 +330,16 @@
       }
     });
 
+    // Track last loaded date for background
+    let lastBackgroundDate = null;
+
     // Initialize theme and background
     async function initializeTheme() {
       try {
         const today = new Date();
-        const dateKey = today.toISOString().split('T')[0].replace(/-/g, '');
-        const imageUrl = `https://picsum.photos/seed/${dateKey}/1920/1080`;
+        const dateKey = today.toISOString().split('T')[0];
+        const dateSeed = dateKey.replace(/-/g, '');
+        const imageUrl = `https://picsum.photos/seed/${dateSeed}/1920/1080`;
         
         // Set background image
         document.body.style.backgroundImage = `url(${imageUrl})`;
@@ -250,6 +348,7 @@
         document.body.style.backgroundAttachment = 'fixed';
         
         console.log('Extension: Background set', imageUrl);
+        lastBackgroundDate = dateKey;
 
         // Try to extract colors and apply theme
         try {
@@ -262,6 +361,25 @@
         }
       } catch (error) {
         console.error('Extension: Theme initialization failed', error);
+      }
+    }
+
+    // Check and refresh background if date has changed
+    async function checkAndRefreshBackground() {
+      try {
+        const today = new Date();
+        const currentDate = today.toISOString().split('T')[0];
+        
+        // If date has changed, refresh the background
+        if (lastBackgroundDate !== currentDate) {
+          console.log('Extension: Date changed, refreshing background', {
+            oldDate: lastBackgroundDate,
+            newDate: currentDate
+          });
+          await initializeTheme();
+        }
+      } catch (error) {
+        console.error('Extension: Error checking background date:', error);
       }
     }
 
@@ -321,6 +439,17 @@
 
     // Set up interval to check for new day every hour
     setInterval(checkAndRefreshQuote, 60 * 60 * 1000);
+    
+    // Set up interval to check for background date change every hour
+    setInterval(checkAndRefreshBackground, 60 * 60 * 1000);
+    
+    // Also check when the page becomes visible (user might have switched tabs)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        checkAndRefreshBackground();
+        checkAndRefreshQuote();
+      }
+    });
 
     // Initialize everything
     async function initialize() {
@@ -334,6 +463,7 @@
         
         // Check for auto-refresh on initial load
         await checkAndRefreshQuote();
+        await checkAndRefreshBackground();
       } catch (error) {
         console.error('Extension: Initialization failed', error);
       }

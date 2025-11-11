@@ -1,0 +1,982 @@
+"use client";
+
+import React, { useState, useEffect, useMemo } from "react";
+import { QuoteService, getContrastRatio, ensureContrast, ContrastLevel, getLuminance } from "@boostlly/core";
+import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@boostlly/ui";
+import {
+  BarChart3,
+  TrendingUp,
+  Activity,
+  Clock,
+  Search,
+  Heart,
+  Eye,
+  Zap,
+  Database,
+  RefreshCw,
+  Calendar,
+  Tag,
+  type LucideIcon,
+} from "lucide-react";
+import type { StorageLike } from "../unified-app/types";
+import type { Quote, QuoteAnalytics, Source, APIHealthStatus } from "@boostlly/core";
+import { StatAreaChart, StatBarChart, StatPieChart } from "./ChartComponents";
+
+interface StatisticsProps {
+  storage: StorageLike | null;
+  variant?: "web" | "popup" | "mobile";
+  palette?: {
+    bg?: string;
+    fg?: string;
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    muted?: string;
+  };
+}
+
+interface StatsData {
+  analytics: QuoteAnalytics;
+  performanceMetrics: Record<
+    Source,
+    { totalCalls: number; successCalls: number; avgResponseTime: number }
+  >;
+  healthStatus: APIHealthStatus[];
+  savedQuotes: any[];
+  quoteHistory: any[];
+}
+
+// Modern color palette for charts
+const CHART_COLORS = [
+  "#7C3AED", // Purple
+  "#10B981", // Green
+  "#F59E0B", // Amber
+  "#EF4444", // Red
+  "#3B82F6", // Blue
+  "#EC4899", // Pink
+  "#06B6D4", // Cyan
+  "#8B5CF6", // Violet
+  "#F97316", // Orange
+  "#14B8A6", // Teal
+];
+
+const COLORS = {
+  primary: "#7C3AED",
+  secondary: "#10B981",
+  accent: "#F59E0B",
+  danger: "#EF4444",
+  info: "#3B82F6",
+};
+
+// Tab button component with proper contrast and hover states
+interface TabButtonProps {
+  isActive: boolean;
+  label: string;
+  icon: LucideIcon;
+  activeText: string;
+  inactiveText: string;
+  hoverText: string;
+  activeBorder: string;
+  inactiveBorder: string;
+  onClick: () => void;
+}
+
+function TabButton({
+  isActive,
+  label,
+  icon: Icon,
+  activeText,
+  inactiveText,
+  hoverText,
+  activeBorder,
+  inactiveBorder,
+  onClick,
+}: TabButtonProps) {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const textColor = isActive 
+    ? activeText 
+    : (isHovered ? hoverText : inactiveText);
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="flex items-center gap-2 px-4 py-3 border-b-2 transition-all font-medium rounded-t-lg relative group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+      style={{
+        color: textColor,
+        borderBottomColor: isActive ? activeBorder : inactiveBorder,
+        borderBottomWidth: isActive ? "3px" : "2px",
+        fontWeight: isActive ? "600" : "500",
+      }}
+      aria-current={isActive ? "page" : undefined}
+      aria-label={`${label} tab${isActive ? " (active)" : ""}`}
+    >
+      <Icon 
+        className="w-4 h-4 flex-shrink-0 transition-colors duration-200" 
+        strokeWidth={isActive ? 2.5 : 2}
+        style={{ 
+          color: textColor 
+        }}
+        aria-hidden="true"
+      />
+      <span className="text-sm font-medium">{label}</span>
+    </button>
+  );
+}
+
+export function Statistics({ storage, variant = "web", palette }: StatisticsProps) {
+  const [quoteService, setQuoteService] = useState<QuoteService | null>(null);
+  const [statsData, setStatsData] = useState<StatsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d" | "all">("30d");
+  const [activeView, setActiveView] = useState<"overview" | "sources" | "performance" | "engagement">("overview");
+
+  useEffect(() => {
+    if (!storage) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // QuoteService expects StorageService, but we have StorageLike
+      // Cast it as any since the interface is compatible for our use case
+      const service = new QuoteService(storage as any);
+      setQuoteService(service);
+    } catch (error) {
+      console.error("Failed to initialize QuoteService:", error);
+      setIsLoading(false);
+    }
+  }, [storage]);
+
+  useEffect(() => {
+    if (!quoteService || !storage) return;
+
+    const loadStats = async () => {
+      setIsLoading(true);
+      try {
+        const analytics = quoteService.getAnalytics();
+        const performanceMetrics = quoteService.getPerformanceMetrics();
+        const healthStatus = quoteService.getHealthStatus();
+        
+        // Get saved quotes and quote history
+        const savedQuotes = (await storage.get("savedQuotes")) || [];
+        
+        // Try to get quote history - use getSync if available, otherwise use async get
+        let quoteHistory: any[] = [];
+        try {
+          if (typeof (storage as any).getSync === 'function') {
+            quoteHistory = (storage as any).getSync("quoteHistory") || [];
+          } else {
+            quoteHistory = (await storage.get("quoteHistory")) || [];
+          }
+        } catch (err) {
+          // Fallback to empty array if history can't be loaded
+          quoteHistory = [];
+        }
+
+        setStatsData({
+          analytics,
+          performanceMetrics,
+          healthStatus,
+          savedQuotes: Array.isArray(savedQuotes) ? savedQuotes : [],
+          quoteHistory: Array.isArray(quoteHistory) ? quoteHistory : [],
+        });
+      } catch (error) {
+        console.error("Failed to load statistics:", error);
+        // Set empty data on error to prevent crashes
+        setStatsData({
+          analytics: {
+            totalQuotes: 0,
+            sourceDistribution: {} as Record<Source, number>,
+            categoryDistribution: {},
+            averageRating: 0,
+            mostLikedQuotes: [],
+            recentlyViewed: [],
+            searchHistory: [],
+          },
+          performanceMetrics: {} as Record<Source, { totalCalls: number; successCalls: number; avgResponseTime: number }>,
+          healthStatus: [],
+          savedQuotes: [],
+          quoteHistory: [],
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadStats();
+  }, [quoteService, storage]);
+
+  const chartData = useMemo(() => {
+    if (!statsData) {
+      return {
+        sourceDistribution: [],
+        categoryDistribution: [],
+        performanceData: [],
+        dailyActivity: [],
+        searchHistory: [],
+      };
+    }
+
+    // Source distribution data for pie chart
+    const sourceDistEntries = Object.entries(statsData.analytics.sourceDistribution || {})
+      .filter(([_, value]) => value > 0);
+    const sourceDistribution = sourceDistEntries.map(([name, value], index) => ({
+      name: name.replace(/([A-Z])/g, " $1").trim(),
+      value,
+      fill: CHART_COLORS[index % CHART_COLORS.length],
+    }));
+
+    // Category distribution data for bar chart
+    const categoryDistribution = Object.entries(statsData.analytics.categoryDistribution || {})
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 10)
+      .map(([name, value]) => ({
+        name: name.length > 15 ? name.substring(0, 15) + "..." : name,
+        value,
+        fullName: name,
+      }));
+
+    // Performance metrics data
+    const performanceData = Object.entries(statsData.performanceMetrics || {})
+      .filter(([_, metrics]) => metrics && metrics.totalCalls > 0)
+      .map(([source, metrics]) => ({
+        name: source.replace(/([A-Z])/g, " $1").trim(),
+        successRate: metrics.totalCalls > 0 
+          ? Math.round((metrics.successCalls / metrics.totalCalls) * 100) 
+          : 0,
+        avgResponseTime: Math.round(metrics.avgResponseTime || 0),
+        totalCalls: metrics.totalCalls,
+      }));
+
+    // Daily activity from quote history
+    const dailyActivityMap = new Map<string, number>();
+    const now = new Date();
+    const daysToShow = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : 365;
+    
+    statsData.quoteHistory.forEach((entry: any) => {
+      if (entry.date) {
+        const entryDate = new Date(entry.date);
+        const daysDiff = Math.floor((now.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff >= 0 && daysDiff < daysToShow) {
+          const dateKey = entryDate.toISOString().split("T")[0];
+          dailyActivityMap.set(dateKey, (dailyActivityMap.get(dateKey) || 0) + 1);
+        }
+      }
+    });
+
+    // Fill in missing dates with 0
+    const dailyActivity: { date: string; quotes: number }[] = [];
+    for (let i = daysToShow - 1; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split("T")[0];
+      dailyActivity.push({
+        date: dateKey,
+        quotes: dailyActivityMap.get(dateKey) || 0,
+      });
+    }
+
+    // Search history data
+    const searchHistory = (statsData.analytics.searchHistory || []).slice(0, 10);
+
+    return {
+      sourceDistribution,
+      categoryDistribution,
+      performanceData,
+      dailyActivity,
+      searchHistory,
+    };
+  }, [statsData, timeRange]);
+
+  const summaryStats = useMemo(() => {
+    if (!statsData) return null;
+
+    const totalQuotes = statsData.analytics.totalQuotes || statsData.savedQuotes.length || 0;
+    const totalSources = Object.values(statsData.analytics.sourceDistribution || {}).filter(v => v > 0).length;
+    const totalCategories = Object.keys(statsData.analytics.categoryDistribution || {}).length;
+    const totalSearches = (statsData.analytics.searchHistory || []).length;
+    const mostLikedCount = statsData.analytics.mostLikedQuotes?.length || 0;
+    const recentlyViewedCount = statsData.analytics.recentlyViewed?.length || 0;
+
+    // Calculate streak from quote history
+    let streak = 0;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    for (let i = 0; i < 365; i++) {
+      const checkDate = new Date(now);
+      checkDate.setDate(checkDate.getDate() - i);
+      const dateKey = checkDate.toISOString().split("T")[0];
+      const hasQuote = statsData.quoteHistory.some((entry: any) => 
+        entry.date === dateKey
+      );
+      if (hasQuote && (i === 0 || streak > 0)) {
+        streak++;
+      } else if (i > 0) {
+        break;
+      }
+    }
+
+    // Calculate average response time
+    const performanceMetricsEntries = Object.values(statsData.performanceMetrics || {})
+      .filter(m => m && m.totalCalls > 0);
+    const avgResponseTime = performanceMetricsEntries.length > 0
+      ? performanceMetricsEntries.reduce((sum, m) => sum + (m.avgResponseTime || 0), 0) / performanceMetricsEntries.length
+      : 0;
+
+    return {
+      totalQuotes,
+      totalSources,
+      totalCategories,
+      totalSearches,
+      mostLikedCount,
+      recentlyViewedCount,
+      streak,
+      avgResponseTime: Math.round(avgResponseTime),
+    };
+  }, [statsData]);
+
+  // Calculate contrast-adjusted colors for tabs
+  // IMPORTANT: This hook must be called before any conditional returns to follow Rules of Hooks
+  // The tab container has a backdrop that adapts to the background image
+  // We calculate contrast against the backdrop color (dark for dark bg, light for light bg)
+  const tabColors = useMemo(() => {
+    if (!palette?.bg) {
+      // Fallback: use high-contrast colors that work on light backgrounds
+      return {
+        activeText: COLORS.primary,
+        inactiveText: "#374151", // Dark gray with excellent contrast on light
+        hoverText: "#1F2937", // Darker for hover
+        activeBorder: COLORS.primary,
+        inactiveBorder: "transparent",
+        activeContrast: 4.5,
+        inactiveContrast: 12.0,
+      };
+    }
+
+    const bgColor = palette.bg;
+    const bgLuminance = getLuminance(bgColor);
+    const isDarkBg = bgLuminance < 0.5;
+    
+    // Tab backdrop color: dark overlay for dark backgrounds, light overlay for light backgrounds
+    // This ensures tabs have a consistent, high-contrast background
+    const tabBackdropColor = isDarkBg ? "#1F2937" : "#FFFFFF"; // Dark gray or white
+    
+    // Active tab: use primary/accent color with excellent contrast
+    let activeText = palette?.primary || palette?.accent || COLORS.primary;
+    let activeContrast = getContrastRatio(activeText, tabBackdropColor);
+    
+    // Ensure active tab meets WCAG AA normal text (4.5:1) - prefer even higher for visibility
+    if (activeContrast < ContrastLevel.AA_NORMAL) {
+      const { fg: adjustedActive } = ensureContrast(
+        activeText, 
+        tabBackdropColor, 
+        ContrastLevel.AA_NORMAL,
+        true
+      );
+      activeText = adjustedActive;
+      activeContrast = getContrastRatio(activeText, tabBackdropColor);
+    }
+    
+    // Inactive tabs: high contrast color that's clearly visible and distinguishable
+    // Must meet WCAG AA for UI components (3:1), prefer 4.5:1 for better visibility
+    let inactiveText: string;
+    
+    if (isDarkBg) {
+      // Dark backdrop: use light gray for excellent contrast
+      inactiveText = "#D1D5DB"; // Light gray
+      let inactiveContrast = getContrastRatio(inactiveText, tabBackdropColor);
+      
+      // Ensure it meets minimum (should easily meet 4.5:1)
+      if (inactiveContrast < ContrastLevel.AA_NORMAL) {
+        const { fg: adjustedInactive } = ensureContrast(
+          inactiveText,
+          tabBackdropColor,
+          ContrastLevel.AA_NORMAL,
+          true
+        );
+        inactiveText = adjustedInactive;
+        inactiveContrast = getContrastRatio(inactiveText, tabBackdropColor);
+      }
+    } else {
+      // Light backdrop: use dark gray for excellent contrast
+      inactiveText = "#4B5563"; // Dark gray
+      let inactiveContrast = getContrastRatio(inactiveText, tabBackdropColor);
+      
+      // Ensure it meets minimum (should easily meet 4.5:1)
+      if (inactiveContrast < ContrastLevel.AA_NORMAL) {
+        const { fg: adjustedInactive } = ensureContrast(
+          inactiveText,
+          tabBackdropColor,
+          ContrastLevel.AA_NORMAL,
+          true
+        );
+        inactiveText = adjustedInactive;
+        inactiveContrast = getContrastRatio(inactiveText, tabBackdropColor);
+      }
+    }
+    
+    // Hover state: provide clear visual feedback
+    let hoverText: string;
+    if (isDarkBg) {
+      hoverText = "#F3F4F6"; // Very light gray for dark backdrop
+    } else {
+      hoverText = "#1F2937"; // Very dark gray for light backdrop
+    }
+    
+    // Verify hover contrast meets minimum
+    const hoverContrast = getContrastRatio(hoverText, tabBackdropColor);
+    if (hoverContrast < ContrastLevel.AA_LARGE) {
+      hoverText = inactiveText; // Fallback to inactive if contrast insufficient
+    }
+    
+    // Final verification
+    const finalActiveContrast = getContrastRatio(activeText, tabBackdropColor);
+    const finalInactiveContrast = getContrastRatio(inactiveText, tabBackdropColor);
+    const finalHoverContrast = getContrastRatio(hoverText, tabBackdropColor);
+    
+    return {
+      activeText,
+      inactiveText,
+      hoverText,
+      activeBorder: activeText,
+      inactiveBorder: "transparent",
+      activeContrast: finalActiveContrast,
+      inactiveContrast: finalInactiveContrast,
+    };
+  }, [palette]);
+
+  // Now we can safely check loading and data states after all hooks are called
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto"></div>
+          <p className="text-foreground/80 font-medium">Loading statistics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!statsData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <p className="text-foreground/80 font-semibold text-lg">No statistics data available.</p>
+          <p className="text-sm text-foreground/60 font-medium">
+            Start using the app to see your statistics here.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const isCompact = variant === "popup" || variant === "mobile";
+
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 
+            className={`${isCompact ? "text-xl" : "text-3xl"} font-bold mb-2 text-foreground`}
+            style={palette?.fg ? { color: palette.fg } : undefined}
+          >
+            Statistics & Analytics
+          </h2>
+          <p className="text-foreground/70 text-sm font-medium">
+            Insights into your quote journey
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value as any)}
+            className="px-3 py-2 rounded-lg border bg-background text-foreground text-sm"
+          >
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+            <option value="all">All time</option>
+          </select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              if (quoteService && storage) {
+                setIsLoading(true);
+                try {
+                  // Reload stats data
+                  const analytics = quoteService.getAnalytics();
+                  const performanceMetrics = quoteService.getPerformanceMetrics();
+                  const healthStatus = quoteService.getHealthStatus();
+                  const savedQuotes = (await storage.get("savedQuotes")) || [];
+                  
+                  let quoteHistory: any[] = [];
+                  try {
+                    if (typeof (storage as any).getSync === 'function') {
+                      quoteHistory = (storage as any).getSync("quoteHistory") || [];
+                    } else {
+                      quoteHistory = (await storage.get("quoteHistory")) || [];
+                    }
+                  } catch (err) {
+                    quoteHistory = [];
+                  }
+
+                  setStatsData({
+                    analytics,
+                    performanceMetrics,
+                    healthStatus,
+                    savedQuotes: Array.isArray(savedQuotes) ? savedQuotes : [],
+                    quoteHistory: Array.isArray(quoteHistory) ? quoteHistory : [],
+                  });
+                } catch (error) {
+                  console.error("Failed to refresh statistics:", error);
+                } finally {
+                  setIsLoading(false);
+                }
+              }
+            }}
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary Stats Cards */}
+      {summaryStats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-2 hover:shadow-lg transition-shadow bg-card/95 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-foreground/70 mb-1.5 uppercase tracking-wide">Total Quotes</p>
+                  <p className="text-3xl font-bold text-foreground">{summaryStats.totalQuotes}</p>
+                </div>
+                <Database 
+                  className="w-10 h-10 flex-shrink-0" 
+                  style={{ color: COLORS.primary }}
+                  strokeWidth={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 hover:shadow-lg transition-shadow bg-card/95 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-foreground/70 mb-1.5 uppercase tracking-wide">Streak</p>
+                  <p className="text-3xl font-bold text-foreground">{summaryStats.streak} days</p>
+                </div>
+                <Calendar 
+                  className="w-10 h-10 flex-shrink-0" 
+                  style={{ color: COLORS.secondary }}
+                  strokeWidth={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 hover:shadow-lg transition-shadow bg-card/95 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-foreground/70 mb-1.5 uppercase tracking-wide">Categories</p>
+                  <p className="text-3xl font-bold text-foreground">{summaryStats.totalCategories}</p>
+                </div>
+                <Tag 
+                  className="w-10 h-10 flex-shrink-0" 
+                  style={{ color: COLORS.accent }}
+                  strokeWidth={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 hover:shadow-lg transition-shadow bg-card/95 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-foreground/70 mb-1.5 uppercase tracking-wide">Searches</p>
+                  <p className="text-3xl font-bold text-foreground">{summaryStats.totalSearches}</p>
+                </div>
+                <Search 
+                  className="w-10 h-10 flex-shrink-0" 
+                  style={{ color: COLORS.info }}
+                  strokeWidth={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* View Tabs - WCAG AA compliant with proper contrast */}
+      <div 
+        className="flex flex-wrap gap-2 border-b -mx-4 md:-mx-6 px-4 md:px-6 pt-2"
+        style={{
+          // Create a high-contrast backdrop for tabs
+          // Use a darker/lighter overlay based on background luminance to ensure text visibility
+          backgroundColor: palette?.bg 
+            ? (() => {
+                const bgLum = getLuminance(palette.bg);
+                // For dark backgrounds, use a darker overlay; for light, use lighter
+                // This ensures the backdrop provides good contrast for tab text
+                if (bgLum < 0.5) {
+                  // Dark background: use dark overlay with high opacity
+                  return `rgba(0, 0, 0, 0.7)`;
+                } else {
+                  // Light background: use light overlay with high opacity
+                  return `rgba(255, 255, 255, 0.85)`;
+                }
+              })()
+            : 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(12px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+          borderColor: palette?.bg 
+            ? (() => {
+                const bgLum = getLuminance(palette.bg);
+                return bgLum < 0.5 ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)';
+              })()
+            : 'rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        {[
+          { id: "overview", label: "Overview", icon: BarChart3 },
+          { id: "sources", label: "Sources", icon: Database },
+          { id: "performance", label: "Performance", icon: Zap },
+          { id: "engagement", label: "Engagement", icon: Heart },
+        ].map(({ id, label, icon: Icon }) => {
+          const isActive = activeView === id;
+          return (
+            <TabButton
+              key={id}
+              isActive={isActive}
+              label={label}
+              icon={Icon}
+              activeText={tabColors.activeText}
+              inactiveText={tabColors.inactiveText}
+              hoverText={tabColors.hoverText}
+              activeBorder={tabColors.activeBorder}
+              inactiveBorder={tabColors.inactiveBorder}
+              onClick={() => setActiveView(id as any)}
+            />
+          );
+        })}
+      </div>
+
+      {/* Charts Content */}
+      <div className="space-y-6">
+        {activeView === "overview" && (
+          <>
+            {/* Daily Activity Line Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <TrendingUp className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.primary }} />
+                  <span className="font-semibold">Daily Activity</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartData.dailyActivity.length > 0 && chartData.dailyActivity.some(d => d.quotes > 0) ? (
+                  <StatAreaChart
+                    data={chartData.dailyActivity}
+                    dataKey="quotes"
+                    color={COLORS.primary}
+                    height={isCompact ? 250 : 300}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-foreground/60">
+                    <p className="font-medium">No activity data available for the selected time range.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Category Distribution Bar Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <BarChart3 className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.secondary }} />
+                  <span className="font-semibold">Top Categories</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartData.categoryDistribution.length > 0 ? (
+                  <StatBarChart
+                    data={chartData.categoryDistribution}
+                    dataKey="value"
+                    color={COLORS.secondary}
+                    height={isCompact ? 250 : 300}
+                    layout="vertical"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-foreground/60">
+                    <p className="font-medium">No category data available.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Source Distribution Pie Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Activity className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.info }} />
+                  <span className="font-semibold">Source Distribution</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartData.sourceDistribution.length > 0 ? (
+                  <StatPieChart
+                    data={chartData.sourceDistribution}
+                    height={isCompact ? 250 : 300}
+                    outerRadius={isCompact ? 80 : 100}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-foreground/60">
+                    <p className="font-medium">No source distribution data available.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {activeView === "sources" && (
+          <>
+            {/* Source Distribution Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Database className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.primary }} />
+                  <span className="font-semibold">Quote Sources</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartData.sourceDistribution.length > 0 ? (
+                  <StatBarChart
+                    data={chartData.sourceDistribution}
+                    dataKey="value"
+                    color={COLORS.primary}
+                    height={isCompact ? 250 : 300}
+                    xAxisAngle={-45}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-foreground/60">
+                    <p className="font-medium">No source data available.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Health Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Zap className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.accent }} />
+                  <span className="font-semibold">API Health Status</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {statsData.healthStatus.length > 0 ? (
+                  <div className="space-y-3">
+                    {statsData.healthStatus.map((health) => (
+                      <div
+                        key={health.source}
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card/50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-3.5 h-3.5 rounded-full shadow-sm ${
+                              health.status === "healthy"
+                                ? "bg-green-500"
+                                : health.status === "degraded"
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
+                            }`}
+                          />
+                          <span className="font-semibold text-foreground">{health.source}</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm font-medium text-foreground/80">
+                          <span>Success: {health.successRate || 0}%</span>
+                          <span>
+                            {health.responseTime && health.responseTime > 0
+                              ? `${health.responseTime}ms`
+                              : "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-foreground/60">
+                    <p className="font-medium">No health status data available.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {activeView === "performance" && (
+          <>
+            {/* Performance Metrics */}
+            {chartData.performanceData.length > 0 ? (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <Zap className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.secondary }} />
+                      <span className="font-semibold">API Success Rates</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <StatBarChart
+                      data={chartData.performanceData}
+                      dataKey="successRate"
+                      color={COLORS.secondary}
+                      height={isCompact ? 250 : 300}
+                      xAxisAngle={-45}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <Clock className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.accent }} />
+                      <span className="font-semibold">Average Response Times</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <StatBarChart
+                      data={chartData.performanceData}
+                      dataKey="avgResponseTime"
+                      color={COLORS.accent}
+                      height={isCompact ? 250 : 300}
+                      xAxisAngle={-45}
+                    />
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardContent>
+                  <div className="flex items-center justify-center h-[300px] text-foreground/60">
+                    <p className="font-medium">No performance data available.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+
+        {activeView === "engagement" && (
+          <>
+            {/* Most Liked Quotes */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Heart className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.danger }} />
+                  <span className="font-semibold">Most Liked Quotes</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {statsData.analytics.mostLikedQuotes && statsData.analytics.mostLikedQuotes.length > 0 ? (
+                  <div className="space-y-4">
+                    {statsData.analytics.mostLikedQuotes.slice(0, 5).map((quote, index) => (
+                      <div
+                        key={quote.id || index}
+                        className="p-4 rounded-lg border hover:shadow-md transition-shadow"
+                      >
+                        <p className="text-sm mb-2 line-clamp-2 text-foreground font-medium">"{quote.text}"</p>
+                        {quote.author && (
+                          <p className="text-xs text-foreground/70 font-medium">— {quote.author}</p>
+                        )}
+                        {quote.category && (
+                          <Badge variant="secondary" className="mt-2 font-medium text-foreground/80 border-foreground/20">
+                            {quote.category}
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-foreground/60">
+                    <p className="font-medium">No liked quotes yet.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Recently Viewed */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Eye className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.info }} />
+                  <span className="font-semibold">Recently Viewed</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {statsData.analytics.recentlyViewed && statsData.analytics.recentlyViewed.length > 0 ? (
+                  <div className="space-y-4">
+                    {statsData.analytics.recentlyViewed.slice(0, 5).map((quote, index) => (
+                      <div
+                        key={quote.id || index}
+                        className="p-4 rounded-lg border hover:shadow-md transition-shadow"
+                      >
+                        <p className="text-sm mb-2 line-clamp-2 text-foreground font-medium">"{quote.text}"</p>
+                        {quote.author && (
+                          <p className="text-xs text-foreground/70 font-medium">— {quote.author}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-foreground/60">
+                    <p className="font-medium">No recently viewed quotes.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Search History */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Search className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.info }} />
+                  <span className="font-semibold">Recent Searches</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartData.searchHistory.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {chartData.searchHistory.map((search, index) => (
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        className="px-3 py-1.5 text-sm font-medium border-foreground/20 text-foreground bg-background/50 hover:bg-background/70"
+                      >
+                        {search}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[100px] text-foreground/60">
+                    <p className="font-medium">No search history available.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+

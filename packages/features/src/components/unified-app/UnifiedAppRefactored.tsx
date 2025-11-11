@@ -299,15 +299,27 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
       style={backgroundStyle}
     >
       <GlobalVoiceListener />
-      {/* Reduced overlay for better background visibility */}
+      {/* Responsive overlay for better text contrast - darker on mobile */}
       {imageUrl && showBackground && (
+        <>
+          {/* Main overlay - responsive opacity based on screen size */}
         <div
           className={
             variant === "popup"
-              ? "absolute inset-0 bg-background/10 z-0"
-              : "fixed inset-0 bg-background/10 z-0"
+                ? "absolute inset-0 bg-black/20 md:bg-background/10 z-0"
+                : "fixed inset-0 bg-black/30 md:bg-black/20 lg:bg-background/10 z-0"
           }
         />
+          {/* Additional gradient overlays for better text readability on mobile */}
+          {variant !== "popup" && (
+            <>
+              {/* Top gradient overlay - stronger on mobile */}
+              <div className="fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-black/50 via-black/30 to-transparent md:from-black/30 md:via-black/20 md:to-transparent lg:hidden z-0 pointer-events-none" />
+              {/* Bottom gradient overlay - stronger on mobile */}
+              <div className="fixed inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/50 via-black/30 to-transparent md:from-black/30 md:via-black/20 md:to-transparent lg:hidden z-0 pointer-events-none" />
+            </>
+          )}
+        </>
       )}
       <div className={containerClass}>
         <div className="relative z-10">
