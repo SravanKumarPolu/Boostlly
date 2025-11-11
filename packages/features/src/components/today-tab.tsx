@@ -244,12 +244,61 @@ export const TodayTab = forwardRef<
     const [isSaved, setIsSaved] = useState(false);
     const [showAuthor, setShowAuthor] = useState(true);
     const [isHydrated, setIsHydrated] = useState(false);
+    
+    // CRITICAL: Clear stale quote cache SYNCHRONOUSLY before creating QuoteService
+    // This must happen before any quote loading to prevent showing yesterday's quote
+    if (storage && typeof window !== "undefined") {
+      try {
+        const today = getDateKey();
+        const storedDate = storage.getSync?.("dailyQuoteDate") || storage.getSync?.("dayBasedQuoteDate");
+        
+        // If stored date exists and doesn't match today, clear it IMMEDIATELY
+        if (storedDate && storedDate !== today) {
+          console.log(`[TodayTab] 🚨 IMMEDIATE CACHE CLEAR: Stored date "${storedDate}" ≠ Today "${today}"`);
+          storage.setSync("dailyQuote", null);
+          storage.setSync("dailyQuoteDate", null);
+          storage.setSync("dayBasedQuote", null);
+          storage.setSync("dayBasedQuoteDate", null);
+          console.log(`[TodayTab] ✅ Cache cleared synchronously. Fresh quote will load for ${today}`);
+        }
+      } catch (error) {
+        console.error("[TodayTab] Error in synchronous cache clear:", error);
+      }
+    }
+    
     const quoteService = storage ? new QuoteService(storage) : null;
 
     // Set hydrated flag after mount to prevent hydration mismatch
     useEffect(() => {
       setIsHydrated(true);
     }, []);
+
+    // CRITICAL: Clear stale quote cache immediately on mount if date has changed
+    // This must run BEFORE any quote loading to ensure we get today's quote
+    useEffect(() => {
+      if (!storage || typeof window === "undefined") return;
+      
+      try {
+        const today = getDateKey();
+        const storedDate = storage.getSync?.("dailyQuoteDate") || storage.getSync?.("dayBasedQuoteDate");
+        
+        // If stored date exists and doesn't match today, clear it immediately
+        if (storedDate && storedDate !== today) {
+          console.log(`[TodayTab] ⚠️ Stale quote detected! Stored date: ${storedDate}, Today: ${today}. Clearing cache...`);
+          storage.setSync("dailyQuote", null);
+          storage.setSync("dailyQuoteDate", null);
+          storage.setSync("dayBasedQuote", null);
+          storage.setSync("dayBasedQuoteDate", null);
+          console.log(`[TodayTab] ✅ Cache cleared. Will load fresh quote for ${today}`);
+        } else if (!storedDate) {
+          console.log(`[TodayTab] No stored quote date found. Will load fresh quote for ${today}`);
+        } else {
+          console.log(`[TodayTab] Stored quote date matches today (${today}). Using cached quote.`);
+        }
+      } catch (error) {
+        console.error("[TodayTab] Error checking quote date:", error);
+      }
+    }, [storage]);
 
     // Define helper functions
     const quoteEquals = useCallback((a: any, b: any): boolean => {
