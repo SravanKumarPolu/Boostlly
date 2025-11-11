@@ -28,6 +28,7 @@ import {
   getProviderDisplayName,
 } from "../utils/day-based-quotes";
 import { getRandomFallbackQuote } from "../utils/Boostlly";
+import { getDateKey } from "../utils/date-utils";
 import { SOURCE_WEIGHTS, TIME_CONSTANTS } from "../constants";
 import { BaseService, ServiceResponse } from "./base-service";
 import { errorHandler, ErrorUtils } from "../utils/error-handler";
@@ -371,7 +372,7 @@ export class QuoteService extends BaseService {
   private async maybeFetchOneDaily(): Promise<void> {
     try {
       // Only run in browser/runtime environments with storage
-      const today = new Date().toISOString().split("T")[0];
+      const today = getDateKey();
       const lastFetched = (this.storage.getSync as any)?.("quotes-last-fetch");
       if (lastFetched === today) return;
 
@@ -435,9 +436,11 @@ export class QuoteService extends BaseService {
       logDebug("Could not load saved quotes for daily quote", { error });
     }
 
-    // Get today's date as a string (YYYY-MM-DD)
-    const today = new Date().toISOString().split("T")[0];
-    // Dev-only diagnostics
+    // Get today's date key using consistent date utility (local timezone)
+    // This ensures the same quote for everyone on the same calendar date
+    const today = getDateKey();
+    
+    // Dev-only diagnostics - allow force refresh via URL parameter
     if (
       typeof window !== "undefined" &&
       (window as any)?.location?.search?.includes("force=1")
@@ -450,15 +453,22 @@ export class QuoteService extends BaseService {
     const storedDailyQuote = this.storage.getSync("dailyQuote");
     const storedDate = this.storage.getSync("dailyQuoteDate");
 
-    // If we have a stored quote from today, check if it's from AI source
+    // CRITICAL: Only use cached quote if it's from TODAY (same date key)
+    // If storedDate is different from today, it's an old quote and must be refreshed
     if (storedDailyQuote && storedDate === today) {
       // If the cached quote has source "AI", treat as expired and fetch new
       if (storedDailyQuote.source === "AI") {
         this.storage.setSync("dailyQuote", null);
         this.storage.setSync("dailyQuoteDate", null);
       } else {
+        // Valid cached quote from today - return it
         return storedDailyQuote;
       }
+    } else if (storedDailyQuote && storedDate !== today) {
+      // Stored quote is from a different date - clear it to force refresh
+      console.log(`[QuoteService] Stored quote date (${storedDate}) doesn't match today (${today}), clearing cache`);
+      this.storage.setSync("dailyQuote", null);
+      this.storage.setSync("dailyQuoteDate", null);
     }
 
     // Get recent quote history to avoid repetition
@@ -508,14 +518,25 @@ export class QuoteService extends BaseService {
    */
   async getDailyQuoteAsync(force: boolean = false): Promise<Quote> {
     await this.ensureInitialized();
-    const today = new Date().toISOString().split("T")[0];
+    // Use consistent date utility (local timezone) for date comparison
+    const today = getDateKey();
     try {
       if (!force) {
         const storedDailyQuote = this.storage.getSync("dailyQuote");
         const storedDate = this.storage.getSync("dailyQuoteDate");
+        // CRITICAL: Only use cached quote if date matches exactly (same day)
         if (storedDailyQuote && storedDate === today) {
           return storedDailyQuote;
+        } else if (storedDailyQuote && storedDate !== today) {
+          // Clear stale cached quote from previous day
+          console.log(`[QuoteService] Clearing stale quote from ${storedDate}, today is ${today}`);
+          this.storage.setSync("dailyQuote", null);
+          this.storage.setSync("dailyQuoteDate", null);
         }
+      } else {
+        // Force refresh - clear cache
+        this.storage.setSync("dailyQuote", null);
+        this.storage.setSync("dailyQuoteDate", null);
       }
       // Choose a primary and use fallback chain
       const source = this.selectPrimarySource();

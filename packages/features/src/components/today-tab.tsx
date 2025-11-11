@@ -12,6 +12,7 @@ import {
   meetsWCAGAAA,
   calculateEffectiveBackground,
 } from "@boostlly/core";
+import { getDateKey } from "@boostlly/core/utils/date-utils";
 import { getCategoryDisplay } from "@boostlly/core/utils/category-display";
 import { Card, CardContent, Button, Badge } from "@boostlly/ui";
 import {
@@ -359,12 +360,14 @@ export const TodayTab = forwardRef<
 
       const checkAndRefreshQuote = async () => {
         try {
-          const today = new Date().toISOString().split("T")[0];
-          const lastFetchDate = storage?.getSync?.("dayBasedQuoteDate");
+          // Use getDateKey for consistent date comparison (local timezone)
+          const today = getDateKey();
+          // Check both possible date keys (legacy and current)
+          const storedDate = storage?.getSync?.("dailyQuoteDate") || storage?.getSync?.("dayBasedQuoteDate");
           
           // If the date has changed (new day), fetch a new quote
-          if (lastFetchDate !== today) {
-            console.log("New day detected, fetching fresh quote");
+          if (storedDate !== today) {
+            console.log(`[TodayTab] Date changed: ${storedDate} -> ${today}, fetching fresh quote`);
             const force =
               typeof window !== "undefined" &&
               window.location.search.includes("force=1");
@@ -387,12 +390,31 @@ export const TodayTab = forwardRef<
         checkAndRefreshQuote();
       }, 100);
 
-      // Set up interval to check every hour (to catch the day change)
+      // Set up interval to check every hour (to catch the day change at midnight)
       const intervalId = setInterval(checkAndRefreshQuote, 60 * 60 * 1000);
+
+      // Also check when the page becomes visible (user might have switched tabs overnight)
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          console.log("[TodayTab] Page visible, checking for date change...");
+          checkAndRefreshQuote();
+        }
+      };
+
+      // Check on focus (user returns to tab)
+      const handleFocus = () => {
+        console.log("[TodayTab] Window focused, checking for date change...");
+        checkAndRefreshQuote();
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', handleFocus);
 
       return () => {
         clearTimeout(timer);
         clearInterval(intervalId);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('focus', handleFocus);
       };
     }, [quoteService, storage, setTodayQuote, updateReadingStreak, incrementQuotesRead, initializeQuoteStates, isHydrated]);
 
