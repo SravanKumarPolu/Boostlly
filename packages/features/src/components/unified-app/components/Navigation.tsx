@@ -93,9 +93,6 @@ export function Navigation({
       >
         {tabs.map((tab) => {
           const Icon = tab.icon as any;
-          const iconSrc = (tab as any).iconSrc; // Support for image icons
-          const iconSize = variant === "popup" ? "w-3 h-3" : "w-4 h-4";
-          
           return (
             <button
               key={tab.id}
@@ -134,26 +131,12 @@ export function Navigation({
                     }
               }
             >
-              {iconSrc ? (
-                <img
-                  src={iconSrc}
-                  alt={`${tab.label} icon`}
-                  className={iconSize}
-                  style={{
-                    filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))",
-                    objectFit: "contain",
-                    width: variant === "popup" ? "12px" : "16px",
-                    height: variant === "popup" ? "12px" : "16px",
-                  }}
-                />
-              ) : (
-                <Icon
-                  className={iconSize}
-                  style={{
-                    filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))",
-                  }}
-                />
-              )}
+              <Icon
+                className={variant === "popup" ? "w-3 h-3" : "w-4 h-4"}
+                style={{
+                  filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))",
+                }}
+              />
               <span className={variant === "popup" ? "" : "font-medium"}>
                 {tab.label}
               </span>

@@ -235,12 +235,7 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
 
   // Navigation tabs - only core features, no advanced features
   const navigationTabs: NavigationTab[] = [
-    { 
-      id: "today", 
-      label: "Today", 
-      icon: Home,
-      iconSrc: "/boostlly-logo.png" // Rocket icon for Today tab
-    } as any,
+    { id: "today", label: "Today", icon: Home },
     { id: "search", label: "Search", icon: Search },
     { id: "collections", label: "Collections", icon: FolderOpen },
     { id: "saved", label: "Saved", icon: Heart },

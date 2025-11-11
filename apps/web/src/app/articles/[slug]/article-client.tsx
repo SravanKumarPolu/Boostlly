@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { Card, CardContent, Button, Badge } from "@boostlly/ui";
 import { ArticleService } from "@boostlly/core";
 import { Article } from "@boostlly/core";
@@ -206,11 +207,13 @@ export function ArticleClient({ slug }: ArticleClientProps) {
 
         {/* Article Image */}
         {article.imageUrl && (
-          <div className="mb-8">
-            <img
+          <div className="mb-8 relative w-full h-64 rounded-lg shadow-lg overflow-hidden">
+            <Image
               src={article.imageUrl}
               alt={article.title}
-              className="w-full h-64 object-cover rounded-lg shadow-lg"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
             />
           </div>
         )}

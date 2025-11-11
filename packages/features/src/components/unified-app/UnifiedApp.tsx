@@ -104,12 +104,7 @@ export function UnifiedApp({
 function getNavigationTabs(variant: 'web' | 'popup') {
   // Only core features - no advanced features
   const baseTabs = [
-    { 
-      id: 'today', 
-      label: 'Today', 
-      icon: Home,
-      iconSrc: '/boostlly-logo.png' // Rocket icon for Today tab
-    } as any,
+    { id: 'today', label: 'Today', icon: Home },
     { id: 'search', label: 'Search', icon: Search },
     { id: 'collections', label: 'Collections', icon: FolderOpen },
     { id: 'settings', label: 'Settings', icon: Settings },
