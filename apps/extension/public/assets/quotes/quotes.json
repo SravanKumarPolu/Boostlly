@@ -1,0 +1,214 @@
+{
+  "quotes": [
+    {
+      "id": "1",
+      "text": "The only way to do great work is to love what you do.",
+      "author": "Steve Jobs",
+      "categories": ["motivation", "work", "passion"],
+      "source": "bundle"
+    },
+    {
+      "id": "2",
+      "text": "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+      "author": "Winston Churchill",
+      "categories": ["success", "perseverance", "courage"],
+      "source": "bundle"
+    },
+    {
+      "id": "3",
+      "text": "Believe you can and you're halfway there.",
+      "author": "Theodore Roosevelt",
+      "categories": ["belief", "confidence", "motivation"],
+      "source": "bundle"
+    },
+    {
+      "id": "4",
+      "text": "The future belongs to those who believe in the beauty of their dreams.",
+      "author": "Eleanor Roosevelt",
+      "categories": ["dreams", "future", "hope"],
+      "source": "bundle"
+    },
+    {
+      "id": "5",
+      "text": "Don't watch the clock; do what it does. Keep going.",
+      "author": "Sam Levenson",
+      "categories": ["perseverance", "time", "motivation"],
+      "source": "bundle"
+    },
+    {
+      "id": "6",
+      "text": "The only limit to our realization of tomorrow is our doubts of today.",
+      "author": "Franklin D. Roosevelt",
+      "categories": ["doubt", "future", "limitations"],
+      "source": "bundle"
+    },
+    {
+      "id": "7",
+      "text": "It always seems impossible until it's done.",
+      "author": "Nelson Mandela",
+      "categories": ["impossible", "achievement", "perseverance"],
+      "source": "bundle"
+    },
+    {
+      "id": "8",
+      "text": "The way to get started is to quit talking and begin doing.",
+      "author": "Walt Disney",
+      "categories": ["action", "start", "doing"],
+      "source": "bundle"
+    },
+    {
+      "id": "9",
+      "text": "Your time is limited, don't waste it living someone else's life.",
+      "author": "Steve Jobs",
+      "categories": ["time", "authenticity", "life"],
+      "source": "bundle"
+    },
+    {
+      "id": "10",
+      "text": "The greatest glory in living lies not in never falling, but in rising every time we fall.",
+      "author": "Nelson Mandela",
+      "categories": ["resilience", "failure", "glory"],
+      "source": "bundle"
+    },
+    {
+      "id": "11",
+      "text": "Life is what happens to you while you're busy making other plans.",
+      "author": "John Lennon",
+      "categories": ["life", "plans", "present"],
+      "source": "bundle"
+    },
+    {
+      "id": "12",
+      "text": "The future belongs to those who believe in the beauty of their dreams.",
+      "author": "Eleanor Roosevelt",
+      "categories": ["dreams", "future", "belief"],
+      "source": "bundle"
+    },
+    {
+      "id": "13",
+      "text": "It is during our darkest moments that we must focus to see the light.",
+      "author": "Aristotle",
+      "categories": ["darkness", "light", "focus"],
+      "source": "bundle"
+    },
+    {
+      "id": "14",
+      "text": "The only impossible journey is the one you never begin.",
+      "author": "Tony Robbins",
+      "categories": ["journey", "beginning", "possibility"],
+      "source": "bundle"
+    },
+    {
+      "id": "15",
+      "text": "In the middle of difficulty lies opportunity.",
+      "author": "Albert Einstein",
+      "categories": ["difficulty", "opportunity", "challenge"],
+      "source": "bundle"
+    },
+    {
+      "id": "16",
+      "text": "The way to get started is to quit talking and begin doing.",
+      "author": "Walt Disney",
+      "categories": ["action", "start", "doing"],
+      "source": "bundle"
+    },
+    {
+      "id": "17",
+      "text": "Don't be pushed around by the fears in your mind. Be led by the dreams in your heart.",
+      "author": "Roy T. Bennett",
+      "categories": ["fear", "dreams", "courage"],
+      "source": "bundle"
+    },
+    {
+      "id": "18",
+      "text": "Take up one idea. Make that one idea your life—think of it, dream of it, live on that idea.",
+      "author": "Swami Vivekananda",
+      "categories": ["focus", "ideas", "dedication"],
+      "source": "bundle"
+    },
+    {
+      "id": "19",
+      "text": "The only person you are destined to become is the person you decide to be.",
+      "author": "Ralph Waldo Emerson",
+      "categories": ["destiny", "choice", "self-determination"],
+      "source": "bundle"
+    },
+    {
+      "id": "20",
+      "text": "Go confidently in the direction of your dreams. Live the life you have imagined.",
+      "author": "Henry David Thoreau",
+      "categories": ["confidence", "dreams", "imagination"],
+      "source": "bundle"
+    },
+    {
+      "id": "21",
+      "text": "When you have a dream, you've got to grab it and never let go.",
+      "author": "Carol Burnett",
+      "categories": ["dreams", "persistence", "grab"],
+      "source": "bundle"
+    },
+    {
+      "id": "22",
+      "text": "Nothing is impossible, the word itself says 'I'm possible'!",
+      "author": "Audrey Hepburn",
+      "categories": ["impossible", "possible", "wordplay"],
+      "source": "bundle"
+    },
+    {
+      "id": "23",
+      "text": "There is nothing impossible to they who will try.",
+      "author": "Alexander the Great",
+      "categories": ["impossible", "trying", "will"],
+      "source": "bundle"
+    },
+    {
+      "id": "24",
+      "text": "The bad news is time flies. The good news is you're the pilot.",
+      "author": "Michael Altshuler",
+      "categories": ["time", "control", "pilot"],
+      "source": "bundle"
+    },
+    {
+      "id": "25",
+      "text": "Life has no limitations, except the ones you make.",
+      "author": "Les Brown",
+      "categories": ["limitations", "life", "self-imposed"],
+      "source": "bundle"
+    },
+    {
+      "id": "26",
+      "text": "Keep your face always toward the sunshine—and shadows will fall behind you.",
+      "author": "Walt Whitman",
+      "categories": ["sunshine", "shadows", "optimism"],
+      "source": "bundle"
+    },
+    {
+      "id": "27",
+      "text": "Success is not how high you have climbed, but how you make a positive difference to the world.",
+      "author": "Roy T. Bennett",
+      "categories": ["success", "difference", "world"],
+      "source": "bundle"
+    },
+    {
+      "id": "28",
+      "text": "What lies behind us and what lies before us are tiny matters compared to what lies within us.",
+      "author": "Ralph Waldo Emerson",
+      "categories": ["within", "past", "future"],
+      "source": "bundle"
+    },
+    {
+      "id": "29",
+      "text": "If you are working on something that you really care about, you don't have to be pushed. The vision pulls you.",
+      "author": "Steve Jobs",
+      "categories": ["passion", "vision", "motivation"],
+      "source": "bundle"
+    },
+    {
+      "id": "30",
+      "text": "Experience is a hard teacher because she gives the test first, the lesson afterwards.",
+      "author": "Vernon Law",
+      "categories": ["experience", "learning", "teaching"],
+      "source": "bundle"
+    }
+  ]
+}
