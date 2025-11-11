@@ -19,6 +19,7 @@ import {
   getLuminance,
   getOptimalForeground,
   ColorPalette,
+  calculateEffectiveBackground,
 } from "@boostlly/core";
 import {
   Palette,
@@ -556,9 +557,10 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
     if (!palette?.bg) {
       return {
         primary: "hsl(var(--foreground))",
-        secondary: "hsl(var(--muted-foreground))",
+        secondary: "hsl(var(--foreground) / 0.85)", // Use foreground with slight opacity for secondary
         cardTitle: "hsl(var(--foreground))",
         cardText: "hsl(var(--foreground))",
+        pageSecondary: "hsl(var(--foreground) / 0.85)", // For page background subtitles
       };
     }
 
@@ -567,6 +569,12 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
     
     // Card background: semi-transparent overlay for better contrast
     const cardBg = bgLuminance < 0.5 ? "rgba(31, 41, 55, 0.95)" : "rgba(255, 255, 255, 0.95)";
+    
+    // Page background with overlay (for subtitles rendered on page background)
+    // Account for the backdrop blur and semi-transparent overlays
+    const pageBgOverlayColor = bgLuminance < 0.5 ? "#000000" : "#ffffff";
+    const pageBgOverlayOpacity = bgLuminance < 0.5 ? 0.4 : 0.3;
+    const pageBg = calculateEffectiveBackground(bgColor, pageBgOverlayColor, pageBgOverlayOpacity);
     
     // Primary text: ensure high contrast on card background
     let primaryText = palette?.fg || getOptimalForeground(cardBg);
@@ -582,7 +590,7 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
       primaryText = adjustedPrimary;
     }
     
-    // Secondary text: slightly muted but still readable
+    // Secondary text for cards: slightly muted but still readable on card background
     let secondaryText = bgLuminance < 0.5 ? "#D1D5DB" : "#6B7280";
     let secondaryContrast = getContrastRatio(secondaryText, cardBg);
     
@@ -596,9 +604,27 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
       secondaryText = adjustedSecondary;
     }
     
+    // Page secondary text: for subtitles on page background (must meet WCAG AA)
+    // Use primary text color but ensure it meets contrast on page background
+    let pageSecondaryText = primaryText;
+    let pageSecondaryContrast = getContrastRatio(pageSecondaryText, pageBg);
+    
+    // Ensure page secondary text meets WCAG AA (4.5:1 for normal text)
+    if (pageSecondaryContrast < ContrastLevel.AA_NORMAL) {
+      const { fg: adjustedPageSecondary } = ensureContrast(
+        pageSecondaryText,
+        pageBg,
+        ContrastLevel.AA_NORMAL,
+        true
+      );
+      pageSecondaryText = adjustedPageSecondary;
+      pageSecondaryContrast = getContrastRatio(pageSecondaryText, pageBg);
+    }
+    
     return {
       primary: primaryText,
       secondary: secondaryText,
+      pageSecondary: pageSecondaryText, // For subtitles on page background
       cardTitle: primaryText,
       cardText: primaryText,
       cardBg,
@@ -1146,7 +1172,7 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
           </h2>
           <p
             className="text-sm sm:text-base font-medium"
-            style={{ color: textColors.secondary }}
+            style={{ color: textColors.pageSecondary || textColors.primary }}
           >
             Advanced customization and preferences
           </p>

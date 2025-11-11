@@ -122,7 +122,9 @@ export function Navigation({
                     }
                   : {
                       backgroundColor: "transparent",
-                      color: "hsl(var(--fg-hsl) / 0.85)",
+                      // Use full opacity for WCAG AA compliance (4.5:1 minimum)
+                      // The text shadow helps with readability on varying backgrounds
+                      color: "hsl(var(--fg-hsl))",
                       borderColor: "transparent",
                       textShadow:
                         "0 1px 2px rgba(0,0,0,0.5), 0 0 10px rgba(0,0,0,0.4)",

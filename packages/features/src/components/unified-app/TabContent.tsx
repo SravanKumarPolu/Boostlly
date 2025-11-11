@@ -503,10 +503,11 @@ export function TabContent({
                     Settings
                   </h2>
                   <p
-                    className="text-xs"
+                    className="text-xs font-medium"
                     style={{
-                      color:
-                        palette?.fg || "hsl(var(--foreground))",
+                      // Use full opacity foreground for WCAG AA compliance (4.5:1 minimum)
+                      // The palette.fg is already contrast-adjusted in extractPalette
+                      color: palette?.fg || "hsl(var(--foreground))",
                     }}
                   >
                     Enhanced customization & preferences

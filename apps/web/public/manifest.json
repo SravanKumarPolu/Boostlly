@@ -62,5 +62,16 @@
   ],
   "categories": ["productivity", "lifestyle", "utilities"],
   "lang": "en",
-  "dir": "ltr"
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "Today's Quote",
+      "short_name": "Today",
+      "description": "View today's daily motivation quote",
+      "url": "/?tab=today",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [],
+  "related_applications": []
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from "react";
+import { useState, useEffect, useImperativeHandle, forwardRef, useCallback, useMemo } from "react";
 import {
   QuoteService,
   generateQuoteImage,
@@ -6,6 +6,10 @@ import {
   useAutoTheme,
   accessibleTTS,
   announceToScreenReader,
+  getOptimalTextColorForImageWithOverlays,
+  getContrastRatio,
+  meetsWCAGAA,
+  meetsWCAGAAA,
 } from "@boostlly/core";
 import { getCategoryDisplay } from "@boostlly/core/utils/category-display";
 import { Card, CardContent, Button, Badge } from "@boostlly/ui";
@@ -75,63 +79,88 @@ export const TodayTab = forwardRef<
     // Auto-theme for Picsum background
     const { imageUrl, palette } = useAutoTheme();
 
-    // Get contrast-safe colors from the palette
-    // For mobile, always use high-contrast colors (white or black) for better readability
-    const computeLuminance = (hex?: string): number => {
-      if (!hex || !hex.startsWith("#")) return 0.5;
-      const clean = hex.replace("#", "");
-      const bigint = parseInt(
-        clean.length === 3
-          ? clean
-              .split("")
-              .map((c) => c + c)
-              .join("")
-          : clean,
-        16,
-      );
-      const r = ((bigint >> 16) & 255) / 255;
-      const g = ((bigint >> 8) & 255) / 255;
-      const b = (bigint & 255) / 255;
-      const toLin = (c: number) =>
-        c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-      const [rl, gl, bl] = [toLin(r), toLin(g), toLin(b)];
-      return 0.2126 * rl + 0.7152 * gl + 0.0722 * bl;
-    };
-    const bgLuma = computeLuminance(palette?.bg);
+    // Calculate optimal text color with WCAG AA/AAA compliance
+    // Account for the dark overlays applied over background images
+    // Mobile has stronger overlays (black/60-70%), desktop has lighter (background/30-50%)
+    const [isMobile, setIsMobile] = useState(false);
     
-    // Determine text color based on background brightness
-    // With the dark overlay on mobile, prefer high-contrast colors (white/black)
-    // for maximum readability over background images
-    let textColor: string;
-    if (palette?.fg) {
-      // Use palette color as base, but optimize for contrast
-      // Since we have a dark overlay, prefer lighter text for better visibility
-      if (bgLuma > 0.65) {
-        // Very light background - use black text for maximum contrast
-        textColor = "#000000";
-      } else if (bgLuma < 0.35) {
-        // Very dark background - use white text for maximum contrast
-        textColor = "#ffffff";
-      } else {
-        // Medium brightness - prefer white text due to dark overlay,
-        // but fall back to palette color if it provides good contrast
-        // Check if palette.fg is light (good for dark overlay) or dark
-        const fgLuma = computeLuminance(palette.fg);
-        if (fgLuma > 0.5) {
-          // Palette foreground is light - use it (good for dark overlay)
-          textColor = palette.fg;
-        } else {
-          // Palette foreground is dark - use white instead (better with dark overlay)
-          textColor = "#ffffff";
-        }
+    // Detect mobile on mount and window resize
+    useEffect(() => {
+      if (typeof window === "undefined") return;
+      
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      checkMobile();
+      window.addEventListener("resize", checkMobile);
+      return () => window.removeEventListener("resize", checkMobile);
+    }, []);
+    
+    // Define overlays based on device type
+    // Mobile: stronger dark overlay for better text readability
+    // Desktop: lighter overlay that preserves more of the image
+    const overlays = useMemo(() => {
+      return isMobile
+        ? [
+            { color: "#000000", opacity: 0.6 }, // Main overlay
+            { color: "#000000", opacity: 0.2 }, // Additional mobile overlay
+          ]
+        : [
+            { color: "#000000", opacity: 0.4 }, // Main overlay (lighter on desktop)
+          ];
+    }, [isMobile]);
+    
+    // Get optimal text color for quote text (large text: 24px+ = 3:1 for AA)
+    // Quote text is typically 24px-48px, so it qualifies as large text
+    // Use useMemo to recalculate only when palette or overlays change
+    const quoteTextColor = useMemo(() => {
+      if (!palette?.bg) {
+        return { color: "#ffffff", contrast: 21.0, meetsAA: true, meetsAAA: true };
       }
-    } else {
-      // Fallback: use white for maximum contrast with dark overlay
-      textColor = "#ffffff";
+      return getOptimalTextColorForImageWithOverlays(
+        palette.bg,
+        overlays,
+        24, // Quote text is large (24px+)
+        false, // Not bold (but font-medium)
+        "AA", // WCAG AA standard
+      );
+    }, [palette?.bg, overlays]);
+    
+    // Get optimal text color for author text (normal text: 16px-20px = 4.5:1 for AA)
+    const authorTextColor = useMemo(() => {
+      if (!palette?.bg) {
+        return { color: "#ffffff", contrast: 21.0, meetsAA: true, meetsAAA: true };
+      }
+      return getOptimalTextColorForImageWithOverlays(
+        palette.bg,
+        overlays,
+        18, // Author text is normal size (18px)
+        false,
+        "AA",
+      );
+    }, [palette?.bg, overlays]);
+    
+    // Use quote text color as primary text color
+    const textColor = quoteTextColor.color;
+    
+    // Verify contrast ratios meet WCAG standards
+    if (process.env.NODE_ENV === "development") {
+      console.log("WCAG Contrast Verification:", {
+        quoteText: {
+          color: quoteTextColor.color,
+          contrast: quoteTextColor.contrast.toFixed(2),
+          meetsAA: quoteTextColor.meetsAA,
+          meetsAAA: quoteTextColor.meetsAAA,
+        },
+        authorText: {
+          color: authorTextColor.color,
+          contrast: authorTextColor.contrast.toFixed(2),
+          meetsAA: authorTextColor.meetsAA,
+          meetsAAA: authorTextColor.meetsAAA,
+        },
+      });
     }
     
-    const quoteOpacity =
-      bgLuma > 0.7 ? 0.28 : bgLuma > 0.5 ? 0.24 : bgLuma > 0.3 ? 0.2 : 0.18;
     // Adaptive button style that adapts to background theme
     // Uses CSS variables set by applyColorPalette which automatically adapt to daily background
     // These variables are set dynamically based on the background image colors
@@ -834,7 +863,7 @@ export const TodayTab = forwardRef<
             <div
               className="absolute top-0 left-0 text-5xl sm:text-6xl md:text-8xl font-serif leading-none"
               style={{
-                color: `hsl(var(--fg-hsl) / ${quoteOpacity})`,
+                color: `hsl(var(--fg-hsl) / 0.25)`,
                 textShadow: "0 1px 2px rgba(0,0,0,0.35)",
               }}
             >
@@ -843,7 +872,7 @@ export const TodayTab = forwardRef<
             <div
               className="absolute bottom-0 right-0 text-5xl sm:text-6xl md:text-8xl font-serif leading-none"
               style={{
-                color: `hsl(var(--fg-hsl) / ${quoteOpacity})`,
+                color: `hsl(var(--fg-hsl) / 0.25)`,
                 textShadow: "0 1px 2px rgba(0,0,0,0.35)",
               }}
             >
@@ -869,7 +898,7 @@ export const TodayTab = forwardRef<
               <p
                 className="inline-block text-base sm:text-lg md:text-xl font-medium px-4 py-2 rounded-full backdrop-blur-xl border-2 shadow-md quote-author-mobile-contrast"
                 style={{
-                  color: textColor,
+                  color: authorTextColor.color,
                   backgroundColor: "hsl(var(--bg-hsl) / 0.85)",
                   borderColor: "hsl(var(--fg-hsl) / 0.4)",
                   textShadow: "0 2px 6px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5)",

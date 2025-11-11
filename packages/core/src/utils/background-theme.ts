@@ -452,6 +452,217 @@ export function getOptimalForeground(bg: string): string {
 }
 
 /**
+ * Calculate effective background color when an overlay is applied
+ * This is useful for background images with dark/light overlays
+ * @param baseBg - Base background color (from image)
+ * @param overlayColor - Overlay color (e.g., "rgba(0,0,0,0.6)" or hex)
+ * @param overlayOpacity - Overlay opacity (0-1), used if overlayColor is hex
+ */
+export function calculateEffectiveBackground(
+  baseBg: string,
+  overlayColor: string = "#000000",
+  overlayOpacity: number = 0.6,
+): string {
+  // Validate inputs
+  if (!baseBg || typeof baseBg !== "string") {
+    return baseBg || "#000000";
+  }
+  
+  const baseRgb = hexToRgb(baseBg);
+  if (!baseRgb) return baseBg;
+
+  // Clamp opacity between 0 and 1
+  overlayOpacity = Math.max(0, Math.min(1, overlayOpacity));
+
+  // Parse overlay color
+  let overlayRgb: { r: number; g: number; b: number };
+  
+  if (overlayColor.startsWith("rgba") || overlayColor.startsWith("rgb")) {
+    // Extract RGB values from rgba/rgb string
+    const match = overlayColor.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (match) {
+      overlayRgb = {
+        r: Math.max(0, Math.min(255, parseInt(match[1], 10))),
+        g: Math.max(0, Math.min(255, parseInt(match[2], 10))),
+        b: Math.max(0, Math.min(255, parseInt(match[3], 10))),
+      };
+      // Extract opacity from rgba if present
+      const alphaMatch = overlayColor.match(/,\s*([\d.]+)\s*\)/);
+      if (alphaMatch) {
+        overlayOpacity = Math.max(0, Math.min(1, parseFloat(alphaMatch[1])));
+      }
+    } else {
+      overlayRgb = { r: 0, g: 0, b: 0 };
+    }
+  } else {
+    // Hex color
+    const parsed = hexToRgb(overlayColor);
+    overlayRgb = parsed || { r: 0, g: 0, b: 0 };
+  }
+
+  // Blend colors: result = base * (1 - opacity) + overlay * opacity
+  const r = Math.max(0, Math.min(255, Math.round(baseRgb.r * (1 - overlayOpacity) + overlayRgb.r * overlayOpacity)));
+  const g = Math.max(0, Math.min(255, Math.round(baseRgb.g * (1 - overlayOpacity) + overlayRgb.g * overlayOpacity)));
+  const b = Math.max(0, Math.min(255, Math.round(baseRgb.b * (1 - overlayOpacity) + overlayRgb.b * overlayOpacity)));
+
+  return rgbToHex(r, g, b);
+}
+
+/**
+ * Get optimal text color for background images with overlays
+ * This function accounts for the effective background (image + overlay)
+ * and ensures WCAG AA/AAA compliance
+ * @param imageBgColor - Dominant color from background image
+ * @param overlayColor - Overlay color applied over the image
+ * @param overlayOpacity - Overlay opacity (0-1)
+ * @param fontSize - Font size in pixels (for determining large text threshold)
+ * @param isBold - Whether text is bold
+ * @param level - WCAG level ('AA' or 'AAA')
+ */
+export function getOptimalTextColorForImage(
+  imageBgColor: string,
+  overlayColor: string = "#000000",
+  overlayOpacity: number = 0.6,
+  fontSize: number = 16,
+  isBold: boolean = false,
+  level: 'AA' | 'AAA' = 'AA',
+): { color: string; contrast: number; meetsAA: boolean; meetsAAA: boolean } {
+  // Validate inputs
+  if (!imageBgColor || typeof imageBgColor !== "string") {
+    // Fallback to high contrast
+    return {
+      color: "#ffffff",
+      contrast: 21.0,
+      meetsAA: true,
+      meetsAAA: true,
+    };
+  }
+  
+  // Validate fontSize
+  fontSize = Math.max(1, Math.min(200, fontSize));
+  
+  // Calculate effective background (image + overlay)
+  const effectiveBg = calculateEffectiveBackground(imageBgColor, overlayColor, overlayOpacity);
+  
+  // Determine if this is large text
+  const large = isLargeText(fontSize, isBold);
+  
+  // Get minimum required contrast
+  const minContrast = getMinimumContrast(large, level);
+  
+  // Try white first
+  const whiteContrast = getContrastRatio("#ffffff", effectiveBg);
+  
+  // Try black
+  const blackContrast = getContrastRatio("#000000", effectiveBg);
+  
+  // Choose the color with better contrast
+  let optimalColor: string;
+  let contrast: number;
+  
+  if (whiteContrast >= blackContrast) {
+    optimalColor = "#ffffff";
+    contrast = whiteContrast;
+  } else {
+    optimalColor = "#000000";
+    contrast = blackContrast;
+  }
+  
+  // If contrast is still insufficient, use ensureContrast to adjust
+  if (contrast < minContrast) {
+    const adjusted = ensureContrast(optimalColor, effectiveBg, minContrast, true);
+    optimalColor = adjusted.fg;
+    contrast = adjusted.contrast;
+  }
+  
+  return {
+    color: optimalColor,
+    contrast,
+    meetsAA: meetsWCAGAA(contrast, large),
+    meetsAAA: meetsWCAGAAA(contrast, large),
+  };
+}
+
+/**
+ * Get optimal text color for background images with multiple overlays
+ * Accounts for gradient overlays and multiple layers
+ * @param imageBgColor - Dominant color from background image
+ * @param overlays - Array of overlay definitions
+ */
+export function getOptimalTextColorForImageWithOverlays(
+  imageBgColor: string,
+  overlays: Array<{ color: string; opacity: number }> = [
+    { color: "#000000", opacity: 0.6 },
+  ],
+  fontSize: number = 16,
+  isBold: boolean = false,
+  level: 'AA' | 'AAA' = 'AA',
+): { color: string; contrast: number; meetsAA: boolean; meetsAAA: boolean } {
+  // Validate inputs
+  if (!imageBgColor || typeof imageBgColor !== "string") {
+    // Fallback to high contrast
+    return {
+      color: "#ffffff",
+      contrast: 21.0,
+      meetsAA: true,
+      meetsAAA: true,
+    };
+  }
+  
+  // Validate fontSize
+  fontSize = Math.max(1, Math.min(200, fontSize));
+  
+  // Start with base background
+  let effectiveBg = imageBgColor;
+  
+  // Apply each overlay in sequence (if provided)
+  if (Array.isArray(overlays) && overlays.length > 0) {
+    for (const overlay of overlays) {
+      if (overlay && overlay.color && typeof overlay.opacity === "number") {
+        effectiveBg = calculateEffectiveBackground(
+          effectiveBg,
+          overlay.color,
+          overlay.opacity,
+        );
+      }
+    }
+  }
+  
+  // Now get optimal text color for the final effective background
+  const large = isLargeText(fontSize, isBold);
+  const minContrast = getMinimumContrast(large, level);
+  
+  // Try white and black
+  const whiteContrast = getContrastRatio("#ffffff", effectiveBg);
+  const blackContrast = getContrastRatio("#000000", effectiveBg);
+  
+  let optimalColor: string;
+  let contrast: number;
+  
+  if (whiteContrast >= blackContrast) {
+    optimalColor = "#ffffff";
+    contrast = whiteContrast;
+  } else {
+    optimalColor = "#000000";
+    contrast = blackContrast;
+  }
+  
+  // Ensure minimum contrast
+  if (contrast < minContrast) {
+    const adjusted = ensureContrast(optimalColor, effectiveBg, minContrast, true);
+    optimalColor = adjusted.fg;
+    contrast = adjusted.contrast;
+  }
+  
+  return {
+    color: optimalColor,
+    contrast,
+    meetsAA: meetsWCAGAA(contrast, large),
+    meetsAAA: meetsWCAGAAA(contrast, large),
+  };
+}
+
+/**
  * Check if text should be considered "large" for WCAG purposes
  * Large text is: 18pt (24px) or larger, OR 14pt (18.67px) or larger if bold
  * @param fontSize - Font size in pixels
@@ -858,5 +1069,128 @@ export function createGradientFallback(seed: string): string {
   const hue2 = (hue1 + 60) % 360;
 
   return `linear-gradient(135deg, hsl(${hue1}, 70%, 50%) 0%, hsl(${hue2}, 70%, 30%) 100%)`;
+}
+
+/**
+ * Comprehensive contrast verification result
+ */
+export interface ContrastVerificationResult {
+  fg: string;
+  bg: string;
+  contrast: number;
+  fontSize: number;
+  isBold: boolean;
+  isLargeText: boolean;
+  meetsAA: boolean;
+  meetsAAA: boolean;
+  requiredAA: number;
+  requiredAAA: number;
+  pass: boolean;
+  level: 'AA' | 'AAA';
+}
+
+/**
+ * Verify contrast for a text/background combination
+ * Returns detailed verification results
+ */
+export function verifyContrast(
+  fg: string,
+  bg: string,
+  fontSize: number = 16,
+  isBold: boolean = false,
+  level: 'AA' | 'AAA' = 'AA',
+): ContrastVerificationResult {
+  // Validate inputs
+  if (!fg || typeof fg !== "string" || !bg || typeof bg !== "string") {
+    return {
+      fg: fg || "#000000",
+      bg: bg || "#ffffff",
+      contrast: 0,
+      fontSize: Math.max(1, Math.min(200, fontSize)),
+      isBold,
+      isLargeText: false,
+      meetsAA: false,
+      meetsAAA: false,
+      requiredAA: 4.5,
+      requiredAAA: 7.0,
+      pass: false,
+      level,
+    };
+  }
+  
+  // Validate fontSize
+  fontSize = Math.max(1, Math.min(200, fontSize));
+  
+  const contrast = getContrastRatio(fg, bg);
+  const largeText = isLargeText(fontSize, isBold);
+  const requiredAA = getMinimumContrast(largeText, 'AA');
+  const requiredAAA = getMinimumContrast(largeText, 'AAA');
+  const meetsAA = meetsWCAGAA(contrast, largeText);
+  const meetsAAA = meetsWCAGAAA(contrast, largeText);
+  
+  const pass = level === 'AA' ? meetsAA : meetsAAA;
+  
+  return {
+    fg,
+    bg,
+    contrast,
+    fontSize,
+    isBold,
+    isLargeText: largeText,
+    meetsAA,
+    meetsAAA,
+    requiredAA,
+    requiredAAA,
+    pass,
+    level,
+  };
+}
+
+/**
+ * Verify contrast for multiple text/background combinations
+ * Useful for testing entire color palettes
+ */
+export function verifyContrastBatch(
+  combinations: Array<{
+    fg: string;
+    bg: string;
+    fontSize?: number;
+    isBold?: boolean;
+    level?: 'AA' | 'AAA';
+  }>,
+): Array<ContrastVerificationResult> {
+  return combinations.map(({ fg, bg, fontSize = 16, isBold = false, level = 'AA' }) =>
+    verifyContrast(fg, bg, fontSize, isBold, level),
+  );
+}
+
+/**
+ * Get contrast verification summary
+ * Returns a summary of all verification results
+ */
+export function getContrastSummary(
+  results: Array<ContrastVerificationResult>,
+): {
+  total: number;
+  passed: number;
+  failed: number;
+  passRate: number;
+  failures: Array<ContrastVerificationResult>;
+  warnings: Array<ContrastVerificationResult>;
+} {
+  const passed = results.filter((r) => r.pass).length;
+  const failed = results.filter((r) => !r.pass).length;
+  const warnings = results.filter(
+    (r) => r.pass && r.contrast < r.requiredAA * 1.2, // Within 20% of minimum
+  );
+  
+  return {
+    total: results.length,
+    passed,
+    failed,
+    passRate: results.length > 0 ? (passed / results.length) * 100 : 0,
+    failures: results.filter((r) => !r.pass),
+    warnings,
+  };
 }
 
