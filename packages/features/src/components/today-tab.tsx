@@ -97,16 +97,15 @@ export const TodayTab = forwardRef<
     }, []);
     
     // Define overlays based on device type
-    // Mobile: stronger dark overlay for better text readability
-    // Desktop: lighter overlay that preserves more of the image
+    // Since card now inherits page background, we use lighter overlays that match page overlays
+    // The page already has overlays applied, so we just need minimal contrast enhancement
     const overlays = useMemo(() => {
       return isMobile
         ? [
-            { color: "#000000", opacity: 0.6 }, // Main overlay
-            { color: "#000000", opacity: 0.2 }, // Additional mobile overlay
+            { color: "#000000", opacity: 0.3 }, // Light overlay to match page (mobile has stronger page overlay)
           ]
         : [
-            { color: "#000000", opacity: 0.4 }, // Main overlay (lighter on desktop)
+            { color: "#000000", opacity: 0.15 }, // Very light overlay to match page (desktop has lighter page overlay)
           ];
     }, [isMobile]);
     
@@ -164,23 +163,25 @@ export const TodayTab = forwardRef<
     // Adaptive button style that adapts to background theme
     // Uses CSS variables set by applyColorPalette which automatically adapt to daily background
     // These variables are set dynamically based on the background image colors
+    // Updated for glassmorphism effect that blends with transparent card
     const adaptiveButtonStyle: React.CSSProperties = {
       color: "hsl(var(--fg-hsl))",
-      backgroundColor: "hsl(var(--bg-hsl) / 0.7)",
-      border: "2px solid hsl(var(--fg-hsl) / 0.4)",
-      borderColor: "hsl(var(--fg-hsl) / 0.4)",
-      backdropFilter: "blur(12px)",
-      WebkitBackdropFilter: "blur(12px)",
+      backgroundColor: "hsl(var(--bg-hsl) / 0.6)",
+      border: "2px solid hsl(var(--fg-hsl) / 0.3)",
+      borderColor: "hsl(var(--fg-hsl) / 0.3)",
+      backdropFilter: "blur(16px) saturate(180%)",
+      WebkitBackdropFilter: "blur(16px) saturate(180%)",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.1)",
     };
     
     // Store base styles as strings for hover handlers
-    const adaptiveBgColor = "hsl(var(--bg-hsl) / 0.7)";
-    const adaptiveBorderColor = "hsl(var(--fg-hsl) / 0.4)";
+    const adaptiveBgColor = "hsl(var(--bg-hsl) / 0.6)";
+    const adaptiveBorderColor = "hsl(var(--fg-hsl) / 0.3)";
     const adaptiveTextColor = "hsl(var(--fg-hsl))";
-    const adaptiveHoverBgColor = "hsl(var(--bg-hsl) / 0.85)";
-    const adaptiveHoverBorderColor = "hsl(var(--fg-hsl) / 0.5)";
-    const adaptiveActiveBgColor = "hsl(var(--bg-hsl) / 0.95)";
-    const adaptiveActiveBorderColor = "hsl(var(--fg-hsl) / 0.6)";
+    const adaptiveHoverBgColor = "hsl(var(--bg-hsl) / 0.75)";
+    const adaptiveHoverBorderColor = "hsl(var(--fg-hsl) / 0.4)";
+    const adaptiveActiveBgColor = "hsl(var(--bg-hsl) / 0.85)";
+    const adaptiveActiveBorderColor = "hsl(var(--fg-hsl) / 0.5)";
 
     const chipStyle = {
       color: "hsl(var(--fg-hsl))",
@@ -806,37 +807,24 @@ export const TodayTab = forwardRef<
     }
 
     return (
-      <div className="w-full max-w-2xl mx-auto relative overflow-hidden rounded-2xl shadow-2xl border border-border/20">
-        {/* Picsum Background Image */}
-        {imageUrl && (
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 transition-transform duration-700 ease-out"
-            style={{
-              backgroundImage: `url(${imageUrl})`,
-            }}
-          />
-        )}
-
-        {/* Enhanced overlay for better contrast - WCAG AA+ compliant */}
-        {/* Mobile: Stronger overlay for better text readability on smaller screens */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/60 md:from-background/40 md:via-background/30 md:to-background/50" />
-        {/* Top and bottom gradient washes for better text readability - stronger on mobile */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/70 via-black/50 to-transparent md:from-background/50 md:via-background/30 md:to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 via-black/50 to-transparent md:from-background/50 md:via-background/30 md:to-transparent" />
-        {/* Additional mobile-specific darker overlay for text area */}
-        <div className="pointer-events-none absolute inset-0 bg-black/20 md:hidden" />
-
-        {/* Content Card */}
+      <div className="w-full max-w-2xl mx-auto relative overflow-hidden rounded-2xl shadow-2xl border border-border/30 backdrop-blur-xl backdrop-saturate-180" style={{
+        backgroundColor: "hsl(var(--bg-hsl) / 0.15)",
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+      }}>
+        {/* Content Card - No background image, inherits page background */}
         <div className="relative z-10 p-4 sm:p-8">
           <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2 mb-8">
             <h2
               className="text-lg sm:text-2xl font-bold flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl backdrop-blur-xl border-2 shadow-lg w-fit max-w-full"
               style={{
                 color: textColor,
-                backgroundColor: "hsl(var(--bg-hsl) / 0.85)",
-                borderColor: "hsl(var(--fg-hsl) / 0.4)",
-                textShadow: "0 2px 4px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)",
-                boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
+                backgroundColor: "hsl(var(--bg-hsl) / 0.7)",
+                borderColor: "hsl(var(--fg-hsl) / 0.3)",
+                textShadow: "0 2px 6px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15)",
+                backdropFilter: "blur(16px) saturate(180%)",
+                WebkitBackdropFilter: "blur(16px) saturate(180%)",
               }}
             >
               <span className="whitespace-nowrap">Today's Boost</span>
@@ -848,8 +836,10 @@ export const TodayTab = forwardRef<
                   className="text-xs px-3 py-1 rounded-full backdrop-blur-xl shadow-md border-2"
                   style={{
                     color: "hsl(var(--fg-hsl))",
-                    backgroundColor: "hsl(var(--bg-hsl) / 0.7)",
-                    borderColor: "hsl(var(--fg-hsl) / 0.4)",
+                    backgroundColor: "hsl(var(--bg-hsl) / 0.6)",
+                    borderColor: "hsl(var(--fg-hsl) / 0.3)",
+                    backdropFilter: "blur(12px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   }}
                 >
                   {getCategoryDisplay(quote.category)}
@@ -883,9 +873,10 @@ export const TodayTab = forwardRef<
               data-current-quote={quote.text}
               style={{ 
                 color: textColor,
-                // Strong text shadow for better contrast on all devices
-                // Mobile will get even stronger shadow via CSS class
-                textShadow: "0 3px 10px rgba(0,0,0,0.7), 0 2px 5px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)",
+                // Enhanced text shadow for readability over transparent background
+                textShadow: isMobile 
+                  ? "0 4px 16px rgba(0,0,0,0.8), 0 3px 10px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5)"
+                  : "0 3px 12px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.4)",
               }}
             >
               {quote.text}
@@ -899,10 +890,14 @@ export const TodayTab = forwardRef<
                 className="inline-block text-base sm:text-lg md:text-xl font-medium px-4 py-2 rounded-full backdrop-blur-xl border-2 shadow-md quote-author-mobile-contrast"
                 style={{
                   color: authorTextColor.color,
-                  backgroundColor: "hsl(var(--bg-hsl) / 0.85)",
-                  borderColor: "hsl(var(--fg-hsl) / 0.4)",
-                  textShadow: "0 2px 6px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5)",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
+                  backgroundColor: "hsl(var(--bg-hsl) / 0.7)",
+                  borderColor: "hsl(var(--fg-hsl) / 0.3)",
+                  textShadow: isMobile 
+                    ? "0 3px 10px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5)"
+                    : "0 2px 8px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.5)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15)",
+                  backdropFilter: "blur(16px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(16px) saturate(180%)",
                 }}
               >
                 — {quote.author || "Unknown"}
@@ -957,6 +952,9 @@ export const TodayTab = forwardRef<
                   e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                   e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                   e.currentTarget.style.color = adaptiveTextColor;
+                  // Preserve backdrop-filter for glassmorphism
+                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
                 }
               }}
               onMouseLeave={(e) => {
@@ -964,6 +962,9 @@ export const TodayTab = forwardRef<
                   e.currentTarget.style.backgroundColor = adaptiveBgColor;
                   e.currentTarget.style.borderColor = adaptiveBorderColor;
                   e.currentTarget.style.color = adaptiveTextColor;
+                  // Preserve backdrop-filter for glassmorphism
+                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
                 }
               }}
               onMouseDown={(e) => {
@@ -971,6 +972,9 @@ export const TodayTab = forwardRef<
                   e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
                   e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
                   e.currentTarget.style.color = adaptiveTextColor;
+                  // Preserve backdrop-filter for glassmorphism
+                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
                 }
               }}
               onMouseUp={(e) => {
@@ -978,6 +982,9 @@ export const TodayTab = forwardRef<
                   e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                   e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                   e.currentTarget.style.color = adaptiveTextColor;
+                  // Preserve backdrop-filter for glassmorphism
+                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
                 }
               }}
               aria-label={isLiked ? "Unlike this quote" : "Like this quote"}
@@ -1014,6 +1021,9 @@ export const TodayTab = forwardRef<
                   e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                   e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                   e.currentTarget.style.color = adaptiveTextColor;
+                  // Preserve backdrop-filter for glassmorphism
+                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
                 }
               }}
               onMouseLeave={(e) => {
@@ -1021,6 +1031,9 @@ export const TodayTab = forwardRef<
                   e.currentTarget.style.backgroundColor = adaptiveBgColor;
                   e.currentTarget.style.borderColor = adaptiveBorderColor;
                   e.currentTarget.style.color = adaptiveTextColor;
+                  // Preserve backdrop-filter for glassmorphism
+                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
                 }
               }}
               onMouseDown={(e) => {
@@ -1028,6 +1041,9 @@ export const TodayTab = forwardRef<
                   e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
                   e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
                   e.currentTarget.style.color = adaptiveTextColor;
+                  // Preserve backdrop-filter for glassmorphism
+                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
                 }
               }}
               onMouseUp={(e) => {
@@ -1035,6 +1051,9 @@ export const TodayTab = forwardRef<
                   e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                   e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                   e.currentTarget.style.color = adaptiveTextColor;
+                  // Preserve backdrop-filter for glassmorphism
+                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
                 }
               }}
               aria-label={
@@ -1064,21 +1083,33 @@ export const TodayTab = forwardRef<
                 e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                 e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveBgColor;
                 e.currentTarget.style.borderColor = adaptiveBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseDown={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
                 e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseUp={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                 e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               aria-label="Share this quote"
               title="Share this quote using your device's sharing options"
@@ -1095,21 +1126,33 @@ export const TodayTab = forwardRef<
                 e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                 e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveBgColor;
                 e.currentTarget.style.borderColor = adaptiveBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseDown={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
                 e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseUp={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                 e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               aria-label="Copy quote text to clipboard"
               title="Copy this quote to your clipboard"
@@ -1126,21 +1169,33 @@ export const TodayTab = forwardRef<
                 e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                 e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveBgColor;
                 e.currentTarget.style.borderColor = adaptiveBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseDown={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
                 e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseUp={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                 e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               aria-label="Speak quote aloud using text-to-speech"
               aria-describedby="tts-description"
@@ -1161,21 +1216,33 @@ export const TodayTab = forwardRef<
                 e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                 e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveBgColor;
                 e.currentTarget.style.borderColor = adaptiveBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseDown={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
                 e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               onMouseUp={(e) => {
                 e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
                 e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
                 e.currentTarget.style.color = adaptiveTextColor;
+                // Preserve backdrop-filter for glassmorphism
+                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
+                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
               }}
               aria-label="Generate and download quote as image"
               title="Create a beautiful image of this quote and download it"
