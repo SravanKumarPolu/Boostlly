@@ -55,6 +55,9 @@ public/
 # But allow tracking source files in apps/web/public (Next.js needs these)
 !apps/web/public/
 !apps/web/public/**
+# Allow extension public directory for icons and assets
+!apps/extension/public/
+!apps/extension/public/**
 
 # Serverless directories
 .serverless/
