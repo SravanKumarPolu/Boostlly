@@ -3,8 +3,8 @@
 
 // UPDATE THIS VERSION NUMBER WITH EACH DEPLOYMENT TO FORCE CACHE REFRESH
 // This file is automatically updated by scripts/update-version.js during build
-const VERSION = "0.1.0"; // Updated: 2025-11-11T19:26:53.319Z
-const BUILD_TIME = "20251111192653"; // Format: YYYYMMDDHHmmss
+const VERSION = "0.1.0"; // Updated: 2025-11-11T19:29:06.834Z
+const BUILD_TIME = "20251111192906"; // Format: YYYYMMDDHHmmss
 
 const CACHE_NAME = `boostlly-v${VERSION}`;
 const STATIC_CACHE = `boostlly-static-v${VERSION}-${BUILD_TIME}`;
