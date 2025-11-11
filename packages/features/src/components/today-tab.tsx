@@ -10,6 +10,7 @@ import {
   getContrastRatio,
   meetsWCAGAA,
   meetsWCAGAAA,
+  calculateEffectiveBackground,
 } from "@boostlly/core";
 import { getCategoryDisplay } from "@boostlly/core/utils/category-display";
 import { Card, CardContent, Button, Badge } from "@boostlly/ui";
@@ -97,52 +98,85 @@ export const TodayTab = forwardRef<
     }, []);
     
     // Define overlays based on device type
-    // Since card now inherits page background, we use lighter overlays that match page overlays
-    // The page already has overlays applied, so we just need minimal contrast enhancement
+    // Since card is transparent and inherits page background, we need to account for:
+    // 1. Page overlays (bg-black/30 on mobile, bg-background/10 on desktop)
+    // 2. Card transparency (bg-hsl / 0.12)
+    // For transparent cards over background images, we prefer white text with strong shadows
+    // This ensures readability regardless of background image brightness
     const overlays = useMemo(() => {
+      // Page has overlays: mobile = black/30 (0.3), desktop = background/10 (lighter)
+      // Card is transparent, so we combine page overlay + card transparency effect
+      // We calculate as if the card adds minimal additional darkening
       return isMobile
         ? [
-            { color: "#000000", opacity: 0.3 }, // Light overlay to match page (mobile has stronger page overlay)
+            // Mobile: Page has bg-black/30, card adds minimal opacity
+            // Combined effect approximates black/35-40 for text color calculation
+            { color: "#000000", opacity: 0.4 },
           ]
         : [
-            { color: "#000000", opacity: 0.15 }, // Very light overlay to match page (desktop has lighter page overlay)
+            // Desktop: Page has lighter overlay, but we still need enough for white text
+            // Combined effect approximates black/20-25 for text color calculation
+            { color: "#000000", opacity: 0.25 },
           ];
     }, [isMobile]);
     
     // Get optimal text color for quote text (large text: 24px+ = 3:1 for AA)
-    // Quote text is typically 24px-48px, so it qualifies as large text
-    // Use useMemo to recalculate only when palette or overlays change
+    // For transparent glassmorphism cards over background images, we ALWAYS use white text
+    // with strong text shadows for maximum readability and visual consistency
+    // This ensures the text is always readable regardless of background image brightness
     const quoteTextColor = useMemo(() => {
       if (!palette?.bg) {
         return { color: "#ffffff", contrast: 21.0, meetsAA: true, meetsAAA: true };
       }
-      return getOptimalTextColorForImageWithOverlays(
+      
+      // Calculate effective background with page overlays + card transparency
+      // Page overlays: mobile = black/30, desktop = lighter
+      // Card adds minimal opacity, so combined effect is darker
+      const effectiveBg = calculateEffectiveBackground(
         palette.bg,
-        overlays,
-        24, // Quote text is large (24px+)
-        false, // Not bold (but font-medium)
-        "AA", // WCAG AA standard
+        "#000000",
+        isMobile ? 0.45 : 0.30 // Combined page overlay + card transparency effect
       );
-    }, [palette?.bg, overlays]);
+      
+      // Always use white text for transparent cards - shadows provide the contrast
+      const whiteContrast = getContrastRatio("#ffffff", effectiveBg);
+      
+      return {
+        color: "#ffffff", // Always white for glassmorphism cards
+        contrast: whiteContrast,
+        meetsAA: whiteContrast >= 3.0, // Large text threshold
+        meetsAAA: whiteContrast >= 4.5,
+      };
+    }, [palette?.bg, isMobile]);
     
-    // Get optimal text color for author text (normal text: 16px-20px = 4.5:1 for AA)
+    // Get optimal text color for author text
+    // Also always white for consistency with quote text
     const authorTextColor = useMemo(() => {
       if (!palette?.bg) {
         return { color: "#ffffff", contrast: 21.0, meetsAA: true, meetsAAA: true };
       }
-      return getOptimalTextColorForImageWithOverlays(
+      
+      // Calculate effective background
+      const effectiveBg = calculateEffectiveBackground(
         palette.bg,
-        overlays,
-        18, // Author text is normal size (18px)
-        false,
-        "AA",
+        "#000000",
+        isMobile ? 0.45 : 0.30
       );
-    }, [palette?.bg, overlays]);
-    
-    // Use quote text color as primary text color
-    const textColor = quoteTextColor.color;
+      
+      // Always use white text for consistency
+      const whiteContrast = getContrastRatio("#ffffff", effectiveBg);
+      
+      return {
+        color: "#ffffff", // Always white for glassmorphism cards
+        contrast: whiteContrast,
+        meetsAA: whiteContrast >= 4.5, // Normal text threshold
+        meetsAAA: whiteContrast >= 7.0,
+      };
+    }, [palette?.bg, isMobile]);
     
     // Verify contrast ratios meet WCAG standards
+    // Note: All text in the glassmorphism card uses white (#ffffff) with strong shadows
+    // This ensures readability on any background image brightness
     if (process.env.NODE_ENV === "development") {
       console.log("WCAG Contrast Verification:", {
         quoteText: {
@@ -160,28 +194,43 @@ export const TodayTab = forwardRef<
       });
     }
     
-    // Adaptive button style that adapts to background theme
+    // Adaptive button style - Refined for professional appearance
     // Uses CSS variables set by applyColorPalette which automatically adapt to daily background
     // These variables are set dynamically based on the background image colors
-    // Updated for glassmorphism effect that blends with transparent card
+    // Enhanced glassmorphism with refined transparency and blur
     const adaptiveButtonStyle: React.CSSProperties = {
       color: "hsl(var(--fg-hsl))",
-      backgroundColor: "hsl(var(--bg-hsl) / 0.6)",
-      border: "2px solid hsl(var(--fg-hsl) / 0.3)",
-      borderColor: "hsl(var(--fg-hsl) / 0.3)",
-      backdropFilter: "blur(16px) saturate(180%)",
-      WebkitBackdropFilter: "blur(16px) saturate(180%)",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.1)",
+      backgroundColor: "hsl(var(--bg-hsl) / 0.55)",
+      border: "1.5px solid hsl(var(--fg-hsl) / 0.25)",
+      borderColor: "hsl(var(--fg-hsl) / 0.25)",
+      backdropFilter: "blur(20px) saturate(150%)",
+      WebkitBackdropFilter: "blur(20px) saturate(150%)",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08)",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     };
     
-    // Store base styles as strings for hover handlers
-    const adaptiveBgColor = "hsl(var(--bg-hsl) / 0.6)";
-    const adaptiveBorderColor = "hsl(var(--fg-hsl) / 0.3)";
+    // Store base styles as strings for hover handlers - Refined opacity values
+    const adaptiveBgColor = "hsl(var(--bg-hsl) / 0.55)";
+    const adaptiveBorderColor = "hsl(var(--fg-hsl) / 0.25)";
     const adaptiveTextColor = "hsl(var(--fg-hsl))";
-    const adaptiveHoverBgColor = "hsl(var(--bg-hsl) / 0.75)";
-    const adaptiveHoverBorderColor = "hsl(var(--fg-hsl) / 0.4)";
-    const adaptiveActiveBgColor = "hsl(var(--bg-hsl) / 0.85)";
-    const adaptiveActiveBorderColor = "hsl(var(--fg-hsl) / 0.5)";
+    const adaptiveHoverBgColor = "hsl(var(--bg-hsl) / 0.70)";
+    const adaptiveHoverBorderColor = "hsl(var(--fg-hsl) / 0.35)";
+    const adaptiveActiveBgColor = "hsl(var(--bg-hsl) / 0.80)";
+    const adaptiveActiveBorderColor = "hsl(var(--fg-hsl) / 0.45)";
+    
+    // Helper function to apply glassmorphism styles consistently
+    const applyGlassmorphism = (element: HTMLElement) => {
+      element.style.backdropFilter = "blur(20px) saturate(150%)";
+      (element.style as any).WebkitBackdropFilter = "blur(20px) saturate(150%)";
+    };
+    
+    // Helper function for button hover state
+    const applyButtonHover = (element: HTMLElement, bgColor: string, borderColor: string) => {
+      element.style.backgroundColor = bgColor;
+      element.style.borderColor = borderColor;
+      element.style.color = adaptiveTextColor;
+      applyGlassmorphism(element);
+    };
 
     const chipStyle = {
       color: "hsl(var(--fg-hsl))",
@@ -806,102 +855,126 @@ export const TodayTab = forwardRef<
       );
     }
 
-    return (
-      <div className="w-full max-w-2xl mx-auto relative overflow-hidden rounded-2xl shadow-2xl border border-border/30 backdrop-blur-xl backdrop-saturate-180" style={{
-        backgroundColor: "hsl(var(--bg-hsl) / 0.15)",
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)",
-      }}>
-        {/* Content Card - No background image, inherits page background */}
-        <div className="relative z-10 p-4 sm:p-8">
-          <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2 mb-8">
-            <h2
-              className="text-lg sm:text-2xl font-bold flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl backdrop-blur-xl border-2 shadow-lg w-fit max-w-full"
-              style={{
-                color: textColor,
-                backgroundColor: "hsl(var(--bg-hsl) / 0.7)",
-                borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                textShadow: "0 2px 6px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4)",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15)",
-                backdropFilter: "blur(16px) saturate(180%)",
-                WebkitBackdropFilter: "blur(16px) saturate(180%)",
-              }}
-            >
-              <span className="whitespace-nowrap">Today's Boost</span>
-            </h2>
-            <div className="flex items-center gap-2 justify-center sm:justify-start">
-              {quote.category && (
-                <Badge
-                  variant="glass"
-                  className="text-xs px-3 py-1 rounded-full backdrop-blur-xl shadow-md border-2"
-                  style={{
-                    color: "hsl(var(--fg-hsl))",
-                    backgroundColor: "hsl(var(--bg-hsl) / 0.6)",
-                    borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                    backdropFilter: "blur(12px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
-                  }}
-                >
-                  {getCategoryDisplay(quote.category)}
-                </Badge>
-              )}
-            </div>
-          </div>
+    // Apply background image to card if available
+    const cardBackgroundStyle = imageUrl
+      ? {
+          backgroundImage: `url(${imageUrl})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "local",
+        }
+      : {};
 
-          {/* Quote Display */}
-          <div className="relative mb-8">
+    return (
+      <div 
+        className="w-full max-w-3xl mx-auto relative overflow-hidden rounded-3xl shadow-2xl border border-border/20 backdrop-blur-xl backdrop-saturate-150" 
+        style={{
+          ...cardBackgroundStyle,
+          backgroundColor: imageUrl 
+            ? "hsl(var(--bg-hsl) / 0.10)" // More transparent when image is present to show it better
+            : "hsl(var(--bg-hsl) / 0.12)",
+          backdropFilter: "blur(24px) saturate(150%)",
+          WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          boxShadow: "0 20px 60px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -6px rgba(0, 0, 0, 0.15)",
+        }}
+      >
+        {/* Subtle overlay for text readability - light enough to show background image */}
+        {imageUrl && (
+          <div 
+            className="absolute inset-0 rounded-3xl z-0 pointer-events-none"
+            style={{
+              backgroundColor: "rgba(0, 0, 0, 0.15)", // Light overlay - text shadows handle most contrast
+            }}
+          />
+        )}
+        {/* Content Card - Refined spacing and structure */}
+        <div className="relative z-10 p-6 sm:p-10 lg:p-12">
+          {/* Category Badge - Only show if category exists */}
+          {quote.category && (
+            <div className="flex justify-center mb-8 sm:mb-10">
+              <Badge
+                variant="glass"
+                className="text-xs sm:text-sm px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full backdrop-blur-xl shadow-md border font-medium"
+                style={{
+                  color: "hsl(var(--fg-hsl))",
+                  backgroundColor: "hsl(var(--bg-hsl) / 0.55)",
+                  borderColor: "hsl(var(--fg-hsl) / 0.25)",
+                  backdropFilter: "blur(20px) saturate(150%)",
+                  WebkitBackdropFilter: "blur(20px) saturate(150%)",
+                }}
+              >
+                {getCategoryDisplay(quote.category)}
+              </Badge>
+            </div>
+          )}
+
+          {/* Quote Display - Enhanced typography and spacing */}
+          <div className="relative mb-10 sm:mb-12">
+            {/* Decorative quotation marks - more subtle and refined */}
             <div
-              className="absolute top-0 left-0 text-5xl sm:text-6xl md:text-8xl font-serif leading-none"
+              className="absolute -top-2 -left-2 sm:-top-4 sm:-left-4 text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-serif leading-none opacity-20 select-none pointer-events-none"
               style={{
-                color: `hsl(var(--fg-hsl) / 0.25)`,
-                textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+                color: `hsl(var(--fg-hsl))`,
+                textShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                fontFamily: "'Georgia', 'Times New Roman', serif",
               }}
             >
               "
             </div>
             <div
-              className="absolute bottom-0 right-0 text-5xl sm:text-6xl md:text-8xl font-serif leading-none"
+              className="absolute -bottom-4 -right-2 sm:-bottom-6 sm:-right-4 text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-serif leading-none opacity-20 select-none pointer-events-none"
               style={{
-                color: `hsl(var(--fg-hsl) / 0.25)`,
-                textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+                color: `hsl(var(--fg-hsl))`,
+                textShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                fontFamily: "'Georgia', 'Times New Roman', serif",
               }}
             >
               "
             </div>
             <blockquote
-              className="text-xl sm:text-2xl md:text-3xl font-medium leading-relaxed pt-6 sm:pt-8 pb-10 sm:pb-12 px-4 sm:px-8 text-center italic today-quote-text quote-text-mobile-contrast"
+              className="quote-text-professional text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light leading-[1.4] sm:leading-[1.35] md:leading-[1.3] pt-8 sm:pt-12 pb-12 sm:pb-16 px-6 sm:px-10 md:px-12 text-center"
               data-current-quote={quote.text}
               style={{ 
-                color: textColor,
-                // Enhanced text shadow for readability over transparent background
+                color: "#ffffff", // Always white for glassmorphism cards
                 textShadow: isMobile 
-                  ? "0 4px 16px rgba(0,0,0,0.8), 0 3px 10px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5)"
-                  : "0 3px 12px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.4)",
+                  ? "0 5px 24px rgba(0,0,0,0.95), 0 4px 16px rgba(0,0,0,0.85), 0 3px 10px rgba(0,0,0,0.75), 0 2px 6px rgba(0,0,0,0.65), 0 1px 3px rgba(0,0,0,0.55)"
+                  : "0 4px 20px rgba(0,0,0,0.75), 0 3px 12px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.45)",
+                WebkitTextStroke: "0.5px rgba(0,0,0,0.3)", // Subtle stroke for additional contrast
               }}
             >
               {quote.text}
             </blockquote>
           </div>
 
-          {/* Author (toggleable) */}
-          <div className="text-center mb-8">
+          {/* Author Section - Refined presentation */}
+          <div className="text-center mb-10 sm:mb-12">
             {showAuthor && (
-              <p
-                className="inline-block text-base sm:text-lg md:text-xl font-medium px-4 py-2 rounded-full backdrop-blur-xl border-2 shadow-md quote-author-mobile-contrast"
-                style={{
-                  color: authorTextColor.color,
-                  backgroundColor: "hsl(var(--bg-hsl) / 0.7)",
-                  borderColor: "hsl(var(--fg-hsl) / 0.3)",
-                  textShadow: isMobile 
-                    ? "0 3px 10px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5)"
-                    : "0 2px 8px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.5)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15)",
-                  backdropFilter: "blur(16px) saturate(180%)",
-                  WebkitBackdropFilter: "blur(16px) saturate(180%)",
-                }}
-              >
-                — {quote.author || "Unknown"}
-              </p>
+              <div className="inline-flex items-center gap-3">
+                <div 
+                  className="h-px flex-1 max-w-16 opacity-30"
+                  style={{ backgroundColor: `hsl(var(--fg-hsl) / 0.5)` }}
+                />
+                <p
+                  className="quote-author-professional text-base sm:text-lg md:text-xl font-medium px-5 py-2.5 sm:px-6 sm:py-3 rounded-full backdrop-blur-xl border shadow-md"
+                  style={{
+                    color: "#ffffff", // Always white for glassmorphism cards
+                    backgroundColor: "hsl(var(--bg-hsl) / 0.6)",
+                    borderColor: "hsl(var(--fg-hsl) / 0.25)",
+                    textShadow: isMobile 
+                      ? "0 4px 16px rgba(0,0,0,0.85), 0 3px 10px rgba(0,0,0,0.75), 0 2px 6px rgba(0,0,0,0.65), 0 1px 3px rgba(0,0,0,0.55)"
+                      : "0 3px 12px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.5)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1)",
+                    backdropFilter: "blur(20px) saturate(150%)",
+                    WebkitBackdropFilter: "blur(20px) saturate(150%)",
+                  }}
+                >
+                  — {quote.author || "Unknown"}
+                </p>
+                <div 
+                  className="h-px flex-1 max-w-16 opacity-30"
+                  style={{ backgroundColor: `hsl(var(--fg-hsl) / 0.5)` }}
+                />
+              </div>
             )}
             {/* Source section hidden per user request */}
             {/* {quote.source && (
@@ -931,11 +1004,13 @@ export const TodayTab = forwardRef<
             )} */}
           </div>
 
-          {/* Action Buttons - Adaptive to background theme */}
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-            <button
-              onClick={handleLike}
-              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+          {/* Action Buttons - Professional organization and styling */}
+          <div className="space-y-4">
+            {/* Primary Actions - Main interactions */}
+            <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3">
+              <button
+                onClick={handleLike}
+                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-xl text-sm font-medium shadow-md hover:shadow-lg min-w-[110px] sm:min-w-[120px] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
               style={
                 isLiked
                   ? {
@@ -949,42 +1024,22 @@ export const TodayTab = forwardRef<
               }
               onMouseEnter={(e) => {
                 if (!isLiked) {
-                  e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                  e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                  e.currentTarget.style.color = adaptiveTextColor;
-                  // Preserve backdrop-filter for glassmorphism
-                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
+                  applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor);
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isLiked) {
-                  e.currentTarget.style.backgroundColor = adaptiveBgColor;
-                  e.currentTarget.style.borderColor = adaptiveBorderColor;
-                  e.currentTarget.style.color = adaptiveTextColor;
-                  // Preserve backdrop-filter for glassmorphism
-                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
+                  applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor);
                 }
               }}
               onMouseDown={(e) => {
                 if (!isLiked) {
-                  e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
-                  e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
-                  e.currentTarget.style.color = adaptiveTextColor;
-                  // Preserve backdrop-filter for glassmorphism
-                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
+                  applyButtonHover(e.currentTarget, adaptiveActiveBgColor, adaptiveActiveBorderColor);
                 }
               }}
               onMouseUp={(e) => {
                 if (!isLiked) {
-                  e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                  e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                  e.currentTarget.style.color = adaptiveTextColor;
-                  // Preserve backdrop-filter for glassmorphism
-                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
+                  applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor);
                 }
               }}
               aria-label={isLiked ? "Unlike this quote" : "Like this quote"}
@@ -996,15 +1051,15 @@ export const TodayTab = forwardRef<
               }
             >
               <Heart
-                className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`}
+                className={`w-4 h-4 sm:w-5 sm:h-5 ${isLiked ? "fill-current" : ""}`}
                 aria-hidden="true"
               />
-              <span>{isLiked ? "Liked" : "Like"}</span>
+              <span className="font-medium">{isLiked ? "Liked" : "Like"}</span>
             </button>
 
-            <button
-              onClick={handleSave}
-              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              <button
+                onClick={handleSave}
+                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-xl text-sm font-medium shadow-md hover:shadow-lg min-w-[110px] sm:min-w-[120px] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
               style={
                 isSaved
                   ? {
@@ -1018,42 +1073,22 @@ export const TodayTab = forwardRef<
               }
               onMouseEnter={(e) => {
                 if (!isSaved) {
-                  e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                  e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                  e.currentTarget.style.color = adaptiveTextColor;
-                  // Preserve backdrop-filter for glassmorphism
-                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
+                  applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor);
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isSaved) {
-                  e.currentTarget.style.backgroundColor = adaptiveBgColor;
-                  e.currentTarget.style.borderColor = adaptiveBorderColor;
-                  e.currentTarget.style.color = adaptiveTextColor;
-                  // Preserve backdrop-filter for glassmorphism
-                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
+                  applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor);
                 }
               }}
               onMouseDown={(e) => {
                 if (!isSaved) {
-                  e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
-                  e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
-                  e.currentTarget.style.color = adaptiveTextColor;
-                  // Preserve backdrop-filter for glassmorphism
-                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
+                  applyButtonHover(e.currentTarget, adaptiveActiveBgColor, adaptiveActiveBorderColor);
                 }
               }}
               onMouseUp={(e) => {
                 if (!isSaved) {
-                  e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                  e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                  e.currentTarget.style.color = adaptiveTextColor;
-                  // Preserve backdrop-filter for glassmorphism
-                  e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                  (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
+                  applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor);
                 }
               }}
               aria-label={
@@ -1069,187 +1104,80 @@ export const TodayTab = forwardRef<
               }
             >
               <ThumbsUp
-                className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`}
+                className={`w-4 h-4 sm:w-5 sm:h-5 ${isSaved ? "fill-current" : ""}`}
                 aria-hidden="true"
               />
-              <span>{isSaved ? "Saved" : "Save"}</span>
+              <span className="font-medium">{isSaved ? "Saved" : "Save"}</span>
             </button>
 
-            <button
-              onClick={handleShare}
-              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-              style={adaptiveButtonStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveBgColor;
-                e.currentTarget.style.borderColor = adaptiveBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseDown={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
-                e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseUp={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
+              <button
+                onClick={handleShare}
+                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-xl text-sm font-medium shadow-md hover:shadow-lg min-w-[110px] sm:min-w-[120px] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+                style={adaptiveButtonStyle}
+              onMouseEnter={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
+              onMouseLeave={(e) => applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor)}
+              onMouseDown={(e) => applyButtonHover(e.currentTarget, adaptiveActiveBgColor, adaptiveActiveBorderColor)}
+              onMouseUp={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
               aria-label="Share this quote"
               title="Share this quote using your device's sharing options"
             >
-              <Share2 className="w-4 h-4" aria-hidden="true" />
-              <span>Share</span>
+              <Share2 className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+              <span className="font-medium">Share</span>
             </button>
 
-            <button
-              onClick={handleCopy}
-              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-              style={adaptiveButtonStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveBgColor;
-                e.currentTarget.style.borderColor = adaptiveBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseDown={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
-                e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseUp={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
+              <button
+                onClick={handleCopy}
+                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-xl text-sm font-medium shadow-md hover:shadow-lg min-w-[110px] sm:min-w-[120px] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+                style={adaptiveButtonStyle}
+              onMouseEnter={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
+              onMouseLeave={(e) => applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor)}
+              onMouseDown={(e) => applyButtonHover(e.currentTarget, adaptiveActiveBgColor, adaptiveActiveBorderColor)}
+              onMouseUp={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
               aria-label="Copy quote text to clipboard"
               title="Copy this quote to your clipboard"
             >
-              <Copy className="w-4 h-4" aria-hidden="true" />
-              <span>Copy</span>
+              <Copy className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+              <span className="font-medium">Copy</span>
             </button>
 
-            <button
-              onClick={handleSpeak}
-              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-              style={adaptiveButtonStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveBgColor;
-                e.currentTarget.style.borderColor = adaptiveBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseDown={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
-                e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseUp={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
+              <button
+                onClick={handleSpeak}
+                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-xl text-sm font-medium shadow-md hover:shadow-lg min-w-[110px] sm:min-w-[120px] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+                style={adaptiveButtonStyle}
+              onMouseEnter={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
+              onMouseLeave={(e) => applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor)}
+              onMouseDown={(e) => applyButtonHover(e.currentTarget, adaptiveActiveBgColor, adaptiveActiveBorderColor)}
+              onMouseUp={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
               aria-label="Speak quote aloud using text-to-speech"
               aria-describedby="tts-description"
               title="Listen to this quote using text-to-speech"
             >
-              <Volume2 className="w-4 h-4" aria-hidden="true" />
-              <span>Read</span>
+              <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+              <span className="font-medium">Read</span>
               <span id="tts-description" className="sr-only">
                 Click to hear this quote read aloud using text-to-speech
               </span>
             </button>
 
-            <button
-              onClick={handleSaveAsImage}
-              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-medium shadow-md hover:shadow-lg min-w-[100px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-              style={adaptiveButtonStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveBgColor;
-                e.currentTarget.style.borderColor = adaptiveBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseDown={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveActiveBgColor;
-                e.currentTarget.style.borderColor = adaptiveActiveBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
-              onMouseUp={(e) => {
-                e.currentTarget.style.backgroundColor = adaptiveHoverBgColor;
-                e.currentTarget.style.borderColor = adaptiveHoverBorderColor;
-                e.currentTarget.style.color = adaptiveTextColor;
-                // Preserve backdrop-filter for glassmorphism
-                e.currentTarget.style.backdropFilter = "blur(16px) saturate(180%)";
-                (e.currentTarget.style as any).WebkitBackdropFilter = "blur(16px) saturate(180%)";
-              }}
+            </div>
+            
+            {/* Secondary Action - Image generation */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleSaveAsImage}
+                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-6 sm:px-8 rounded-xl text-sm font-medium shadow-md hover:shadow-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+                style={adaptiveButtonStyle}
+              onMouseEnter={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
+              onMouseLeave={(e) => applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor)}
+              onMouseDown={(e) => applyButtonHover(e.currentTarget, adaptiveActiveBgColor, adaptiveActiveBorderColor)}
+              onMouseUp={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
               aria-label="Generate and download quote as image"
               title="Create a beautiful image of this quote and download it"
             >
-              <Image className="w-4 h-4" aria-hidden="true" />
-              <span>Image</span>
-            </button>
+                <Image className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+                <span>Generate Image</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

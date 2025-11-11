@@ -521,21 +521,48 @@
     }
   }
   
+  /* Professional Quote Card Typography Enhancements */
+  /* Refined typography for better readability and professional appearance */
+  
+  /* Quote text - Enhanced for professional presentation */
+  .quote-text-professional {
+    font-family: 'Georgia', 'Playfair Display', 'Times New Roman', serif;
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Author text - Refined styling */
+  .quote-author-professional {
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
   /* Mobile-specific text contrast enhancements */
   /* Stronger text shadows on mobile for better readability over background images */
   @media (max-width: 768px) {
     .quote-text-mobile-contrast {
-      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 
-                   0 3px 8px rgba(0, 0, 0, 0.8), 
-                   0 2px 4px rgba(0, 0, 0, 0.7),
-                   0 1px 2px rgba(0, 0, 0, 0.6) !important;
-      font-weight: 600; /* Slightly bolder on mobile for better visibility */
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.85), 
+                   0 3px 12px rgba(0, 0, 0, 0.75), 
+                   0 2px 6px rgba(0, 0, 0, 0.65),
+                   0 1px 3px rgba(0, 0, 0, 0.55) !important;
+      font-weight: 400; /* Refined weight for better readability */
+      letter-spacing: -0.01em;
     }
     
     /* Ensure author text also has strong contrast on mobile */
     .quote-author-mobile-contrast {
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 
-                   0 1px 4px rgba(0, 0, 0, 0.7) !important;
+      text-shadow: 0 3px 12px rgba(0, 0, 0, 0.75), 
+                   0 2px 6px rgba(0, 0, 0, 0.65),
+                   0 1px 3px rgba(0, 0, 0, 0.55) !important;
+      font-weight: 500;
     }
     
     /* Statistics cards - enhanced contrast on mobile */
