@@ -410,15 +410,32 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
   };
 
   // Text-to-speech function
-  const speakResponse = (text: string) => {
-    if (speechSynthesis && !isSpeaking) {
-      setIsSpeaking(true);
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = voiceSettings.rate;
-      utterance.volume = voiceSettings.volume;
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      speechSynthesis.speak(utterance);
+  // Now uses AccessibleTTS which properly handles voice loading for desktop browsers
+  const speakResponse = async (text: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window) || isSpeaking) {
+      return;
+    }
+
+    setIsSpeaking(true);
+    try {
+      const { accessibleTTS } = await import("@boostlly/core");
+      await accessibleTTS.speak(text, {
+        rate: voiceSettings.rate,
+        volume: voiceSettings.volume,
+        pitch: 1.0,
+        onStart: () => {
+          setIsSpeaking(true);
+        },
+        onEnd: () => {
+          setIsSpeaking(false);
+        },
+        onError: () => {
+          setIsSpeaking(false);
+        },
+      });
+    } catch (error) {
+      console.error("Error speaking response:", error);
+      setIsSpeaking(false);
     }
   };
 

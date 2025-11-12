@@ -5,7 +5,7 @@ import NextImage from "next/image";
 import { Button, Badge, Input, Switch } from "@boostlly/ui";
 import { TodayTab, AdvancedSearch } from "@boostlly/features";
 import { StorageService } from "@boostlly/platform-web";
-import { generateQuoteImage, downloadImage } from "@boostlly/core";
+import { generateQuoteImage, downloadImage, accessibleTTS } from "@boostlly/core";
 import {
   Home,
   Search,
@@ -149,15 +149,20 @@ export default function PopupPage() {
       const volumePct = (await storage.get<number>("speechVolume")) ?? 80;
       if (typeof window === "undefined" || !("speechSynthesis" in window))
         return;
-      const utter = new SpeechSynthesisUtterance(`"${q.text}" by ${q.author}`);
-      utter.rate = typeof rate === "number" ? rate : 0.8;
-      utter.volume = Math.max(
-        0,
-        Math.min(1, (typeof volumePct === "number" ? volumePct : 80) / 100),
-      );
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utter);
-    } catch {}
+      
+      // Use AccessibleTTS which properly waits for voices to be ready
+      // The button click provides user interaction context needed for desktop browsers
+      await accessibleTTS.speak(`"${q.text}" by ${q.author}`, {
+        rate: typeof rate === "number" ? Math.max(0.5, Math.min(2, rate)) : 0.8,
+        volume: Math.max(
+          0,
+          Math.min(1, (typeof volumePct === "number" ? volumePct : 80) / 100),
+        ),
+        pitch: 1.0,
+      });
+    } catch (error) {
+      console.error("Failed to speak quote:", error);
+    }
   }
 
   async function saveQuoteAsImage(q: SavedQuote) {

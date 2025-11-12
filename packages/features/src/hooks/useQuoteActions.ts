@@ -5,6 +5,7 @@ import {
   logError,
   logDebug,
   logWarning,
+  accessibleTTS,
 } from "@boostlly/core";
 
 /**
@@ -59,6 +60,7 @@ export function useQuoteActions(callbacks: QuoteActionCallbacks = {}) {
 
   /**
    * Handles text-to-speech for a quote
+   * Now uses AccessibleTTS which properly handles voice loading for desktop browsers
    *
    * @param quote - The quote object to speak
    */
@@ -70,42 +72,33 @@ export function useQuoteActions(callbacks: QuoteActionCallbacks = {}) {
 
       try {
         // Check if speech synthesis is supported
-        if (!("speechSynthesis" in window)) {
+        if (typeof window === "undefined" || !("speechSynthesis" in window)) {
           throw new Error("Speech synthesis not supported");
         }
 
-        // Stop any ongoing speech
-        speechSynthesis.cancel();
+        // Use AccessibleTTS which properly waits for voices to be ready
+        // The button click provides user interaction context needed for desktop browsers
+        const textToSpeak = quote.author 
+          ? `"${quote.text}" by ${quote.author}`
+          : `"${quote.text}"`;
 
-        const utterance = new SpeechSynthesisUtterance(quote.text);
-        utterance.rate = 0.8;
-        utterance.pitch = 1;
-        utterance.volume = 0.8;
-
-        // Set voice if available
-        const voices = speechSynthesis.getVoices();
-        const preferredVoice =
-          voices.find(
-            (voice) =>
-              voice.lang.startsWith("en") && voice.name.includes("Female"),
-          ) || voices.find((voice) => voice.lang.startsWith("en"));
-
-        if (preferredVoice) {
-          utterance.voice = preferredVoice;
-        }
-
-        utterance.onend = () => {
-          setState((prev) => ({ ...prev, isSpeaking: false }));
-        };
-
-        utterance.onerror = () => {
-          setState((prev) => ({ ...prev, isSpeaking: false }));
-        };
-
-        speechSynthesis.speak(utterance);
-
-        // Call callback if provided
-        callbacks.onSpeakQuote?.(quote);
+        await accessibleTTS.speak(textToSpeak, {
+          rate: 0.8,
+          volume: 0.8,
+          pitch: 1.0,
+          onStart: () => {
+            setState((prev) => ({ ...prev, isSpeaking: true }));
+          },
+          onEnd: () => {
+            setState((prev) => ({ ...prev, isSpeaking: false }));
+            // Call callback if provided
+            callbacks.onSpeakQuote?.(quote);
+          },
+          onError: (error) => {
+            logError("Error speaking quote:", { error });
+            setState((prev) => ({ ...prev, isSpeaking: false }));
+          },
+        });
       } catch (error) {
         logError("Error speaking quote:", { error: error });
         setState((prev) => ({ ...prev, isSpeaking: false }));
