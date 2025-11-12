@@ -830,8 +830,8 @@ export class QuoteService extends BaseService {
         } catch (error) {
           // Continue to next provider - graceful degradation
           logDebug(`Provider ${s} failed, trying next`, {
-            source: s,
-            error: error instanceof Error ? error.message : String(error),
+              source: s,
+              error: error instanceof Error ? error.message : String(error),
           });
           continue;
         }
@@ -980,8 +980,8 @@ export class QuoteService extends BaseService {
         } catch (error) {
           // Continue to next provider - graceful degradation
           logDebug(`Day-based quote: Provider ${providerSource} failed, trying next`, {
-            provider: providerSource,
-            error: error instanceof Error ? error.message : String(error),
+              provider: providerSource,
+              error: error instanceof Error ? error.message : String(error),
           });
           continue;
         }
@@ -1194,7 +1194,7 @@ export class QuoteService extends BaseService {
     // Try each provider until one succeeds with graceful degradation
     for (const provider of sortedProviders) {
       const source = provider.name as Source;
-      
+
       // Skip if not available
       if (!this.isProviderAvailable(source)) {
         continue;
@@ -1206,7 +1206,7 @@ export class QuoteService extends BaseService {
           () => provider.random(),
           "random"
         );
-        
+
         // Track analytics
         this.updateAnalytics(quote, "view");
         
@@ -2359,7 +2359,7 @@ export class QuoteService extends BaseService {
     try {
       // Update total quotes (only for views, not prefetches)
       if (operation === "view") {
-        this.analytics.totalQuotes++;
+      this.analytics.totalQuotes++;
       }
 
       // Update source distribution
