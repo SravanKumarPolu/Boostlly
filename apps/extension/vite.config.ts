@@ -31,6 +31,7 @@ export default defineConfig({
   build: {
     emptyOutDir: true, // Always clean dist folder before building
     rollupOptions: {
+      external: ["recharts"], // Externalize recharts since it's optional and not used in extension
       input: {
         index: path.resolve(__dirname, "src/newtab/index.html"),
         popup: path.resolve(__dirname, "src/popup/index.html"),
