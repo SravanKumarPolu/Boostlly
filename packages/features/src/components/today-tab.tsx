@@ -250,13 +250,16 @@ export const TodayTab = forwardRef<
     if (storage && typeof window !== "undefined") {
       try {
         const today = getDateKey();
+        // Check unified cache key first, then legacy keys for backward compatibility
         const storedDate = storage.getSync?.("dailyQuoteDate") || storage.getSync?.("dayBasedQuoteDate");
         
         // If stored date exists and doesn't match today, clear it IMMEDIATELY
         if (storedDate && storedDate !== today) {
           console.log(`[TodayTab] 🚨 IMMEDIATE CACHE CLEAR: Stored date "${storedDate}" ≠ Today "${today}"`);
+          // Clear unified cache keys
           storage.setSync("dailyQuote", null);
           storage.setSync("dailyQuoteDate", null);
+          // Also clear legacy keys for backward compatibility
           storage.setSync("dayBasedQuote", null);
           storage.setSync("dayBasedQuoteDate", null);
           console.log(`[TodayTab] ✅ Cache cleared synchronously. Fresh quote will load for ${today}`);

@@ -1,11 +1,59 @@
-import { format } from "date-fns";
+import { format as formatDate } from "date-fns";
 
 /**
- * Get date key in YYYY-MM-DD format using local timezone
- * This ensures the same quote for everyone on the same calendar date
+ * Timezone preference type
  */
-export function getDateKey(date = new Date()): string {
-  return format(date, "yyyy-MM-dd");
+export type TimezoneMode = "local" | "utc" | string; // string is IANA timezone
+
+/**
+ * Format date to YYYY-MM-DD using native JavaScript with timezone support
+ */
+function formatDateWithTimezone(date: Date, timezone: TimezoneMode): string {
+  if (timezone === "local") {
+    // Use date-fns format for local timezone (backward compatible)
+    return formatDate(date, "yyyy-MM-dd");
+  } else if (timezone === "utc") {
+    // Use UTC timezone - format as YYYY-MM-DD
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  } else {
+    // Use specified IANA timezone via Intl API
+    try {
+      const formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      // en-CA locale returns YYYY-MM-DD format directly
+      return formatter.format(date);
+    } catch (error) {
+      // Fallback to local if timezone is invalid
+      console.warn(`Invalid timezone "${timezone}", falling back to local timezone`);
+      return formatDate(date, "yyyy-MM-dd");
+    }
+  }
+}
+
+/**
+ * Get date key in YYYY-MM-DD format
+ * Supports local timezone, UTC, or custom IANA timezone
+ * 
+ * @param date - Date to convert (defaults to now)
+ * @param timezone - Timezone mode: "local", "utc", or IANA timezone string (e.g., "America/New_York")
+ * @returns Date key in YYYY-MM-DD format
+ * 
+ * @example
+ * ```typescript
+ * getDateKey() // Uses local timezone
+ * getDateKey(new Date(), "utc") // Uses UTC
+ * getDateKey(new Date(), "America/New_York") // Uses specific timezone
+ * ```
+ */
+export function getDateKey(date: Date = new Date(), timezone: TimezoneMode = "local"): string {
+  return formatDateWithTimezone(date, timezone);
 }
 
 /**
@@ -48,25 +96,39 @@ export function pickQuote<T extends { id: string }>(
 
 /**
  * Get today's date key for quote selection
+ * 
+ * @param timezone - Timezone mode: "local", "utc", or IANA timezone string
+ * @returns Date key for today
  */
-export function getTodayKey(): string {
-  return getDateKey();
+export function getTodayKey(timezone: TimezoneMode = "local"): string {
+  return getDateKey(new Date(), timezone);
 }
 
 /**
  * Get quote for a specific date
+ * 
+ * @param quotes - Array of quotes to select from
+ * @param date - Date to get quote for
+ * @param timezone - Timezone mode: "local", "utc", or IANA timezone string
  */
 export function getQuoteForDate<T extends { id: string }>(
   quotes: T[],
   date: Date,
+  timezone: TimezoneMode = "local",
 ): T {
-  const dateKey = getDateKey(date);
+  const dateKey = getDateKey(date, timezone);
   return pickQuote(quotes, dateKey);
 }
 
 /**
  * Get quote for today
+ * 
+ * @param quotes - Array of quotes to select from
+ * @param timezone - Timezone mode: "local", "utc", or IANA timezone string
  */
-export function getTodayQuote<T extends { id: string }>(quotes: T[]): T {
-  return getQuoteForDate(quotes, new Date());
+export function getTodayQuote<T extends { id: string }>(
+  quotes: T[],
+  timezone: TimezoneMode = "local",
+): T {
+  return getQuoteForDate(quotes, new Date(), timezone);
 }

@@ -73,4 +73,10 @@ export const CACHE_KEYS = {
   SETTINGS: (userId: string) => `settings:${userId}`,
   ANALYTICS: (userId: string, date: string) => `analytics:${userId}:${date}`,
   SEARCH: (query: string) => `search:${query}`,
+  /**
+   * Unified daily quote cache key
+   * Replaces both dailyQuote and dayBasedQuote for consistency
+   */
+  DAILY_QUOTE: "dailyQuote",
+  DAILY_QUOTE_DATE: "dailyQuoteDate",
 } as const;

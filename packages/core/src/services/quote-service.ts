@@ -28,12 +28,13 @@ import {
   getProviderDisplayName,
 } from "../utils/day-based-quotes";
 import { getRandomFallbackQuote } from "../utils/Boostlly";
-import { getDateKey } from "../utils/date-utils";
+import { getDateKey, type TimezoneMode } from "../utils/date-utils";
 import { SOURCE_WEIGHTS, TIME_CONSTANTS } from "../constants";
 import { BaseService, ServiceResponse } from "./base-service";
 import { errorHandler, ErrorUtils } from "../utils/error-handler";
 import { getAPIConfig, getEnabledProviders } from "../utils/api-config";
 import { createCacheConfig, CACHE_KEYS } from "../utils/cache-utils";
+import { createLimiter, type RateLimiterOptions } from "../utils/rateLimiter";
 
 /**
  * QuoteService - Central service for managing quotes from multiple providers
@@ -76,6 +77,49 @@ export class QuoteService extends BaseService {
     Source,
     { totalCalls: number; successCalls: number; avgResponseTime: number }
   > = new Map();
+  private healthCheckInterval: number | null = null;
+  
+  // Configuration constants - centralized for maintainability
+  private static readonly CONFIG = {
+    HEALTH_CHECK_INTERVAL_MS: 5 * 60 * 1000, // 5 minutes
+    HEALTH_DEGRADED_THRESHOLD: 0.7, // 70% success rate
+    HEALTH_DOWN_THRESHOLD: 0.3, // 30% success rate
+    PREFETCH_COUNT: 3, // Prefetch 3 quotes ahead
+    PREFETCH_DELAY_MS: 2000, // Wait 2s after quote load before prefetching
+    PREFETCH_TIMEOUT_MS: 5000, // 5 second timeout for prefetch requests
+    CIRCUIT_BREAKER_FAILURE_THRESHOLD: 5, // Open circuit after 5 failures
+    CIRCUIT_BREAKER_RESET_TIMEOUT_MS: 60 * 1000, // Reset after 1 minute
+    MAX_PREFETCH_QUEUE_SIZE: 6, // Max 2x prefetch count
+    MAX_CACHE_SIZE: 1000, // Max cached quotes
+    CLEANUP_INTERVAL_MS: 10 * 60 * 1000, // Cleanup every 10 minutes
+  } as const;
+  
+  // Rate limiting per provider
+  private rateLimiters: Map<Source, () => boolean> = new Map();
+  private readonly RATE_LIMIT_CONFIG: Record<Source, RateLimiterOptions> = {
+    "ZenQuotes": { capacity: 3, refillPerMin: 6 },
+    "Quotable": { capacity: 5, refillPerMin: 10 },
+    "FavQs": { capacity: 3, refillPerMin: 6 },
+    "They Said So": { capacity: 2, refillPerMin: 4 },
+    "QuoteGarden": { capacity: 3, refillPerMin: 6 },
+    "Stoic Quotes": { capacity: 4, refillPerMin: 8 },
+    "Programming Quotes": { capacity: 4, refillPerMin: 8 },
+    "DummyJSON": { capacity: 10, refillPerMin: 20 }, // Local fallback, more lenient
+  };
+  
+  // Quote prefetching
+  private prefetchQueue: Quote[] = [];
+  private prefetchInProgress: boolean = false;
+  
+  // Circuit breaker for providers (prevents cascading failures)
+  private circuitBreakers: Map<Source, {
+    failures: number;
+    lastFailureTime: number;
+    state: 'closed' | 'open' | 'half-open';
+  }> = new Map();
+  
+  // Cleanup interval for resource management
+  private cleanupInterval: number | null = null;
 
   /**
    * Creates a new QuoteService instance
@@ -132,6 +176,9 @@ export class QuoteService extends BaseService {
 
     // Initialize health status
     this.initializeHealthStatus();
+    
+    // Initialize rate limiters for each provider
+    this.initializeRateLimiters();
 
     // Load API cache from storage (best-effort)
     try {
@@ -160,7 +207,146 @@ export class QuoteService extends BaseService {
       }
     } catch {}
 
+    // Migrate old cache keys to unified cache keys
+    this.migrateCacheKeys();
+
+    // Start health monitoring (enabled by default in BaseService config)
+    // Health monitoring runs in browser environments only
+    if (typeof window !== "undefined") {
+      this.startHealthMonitoring();
+      this.startResourceCleanup();
+    }
+
+    // Initialize circuit breakers
+    this.initializeCircuitBreakers();
+
     // Note: loadQuotes() is now called lazily when needed, not during constructor
+  }
+  
+  /**
+   * Initialize circuit breakers for all providers
+   */
+  private initializeCircuitBreakers(): void {
+    const sources: Source[] = [
+      "ZenQuotes",
+      "Quotable",
+      "FavQs",
+      "They Said So",
+      "QuoteGarden",
+      "Stoic Quotes",
+      "Programming Quotes",
+      "DummyJSON",
+    ];
+    
+    sources.forEach((source) => {
+      this.circuitBreakers.set(source, {
+        failures: 0,
+        lastFailureTime: 0,
+        state: 'closed',
+      });
+    });
+  }
+  
+  /**
+   * Check if circuit breaker is open for a provider
+   */
+  private isCircuitOpen(source: Source): boolean {
+    const breaker = this.circuitBreakers.get(source);
+    if (!breaker) return false;
+    
+    if (breaker.state === 'open') {
+      // Check if we should transition to half-open
+      const timeSinceLastFailure = Date.now() - breaker.lastFailureTime;
+      if (timeSinceLastFailure >= QuoteService.CONFIG.CIRCUIT_BREAKER_RESET_TIMEOUT_MS) {
+        breaker.state = 'half-open';
+        return false; // Allow one attempt
+      }
+      return true; // Circuit is open, block requests
+    }
+    
+    return false; // Circuit is closed or half-open, allow requests
+  }
+  
+  /**
+   * Record a successful request (reset circuit breaker)
+   */
+  private recordSuccess(source: Source): void {
+    const breaker = this.circuitBreakers.get(source);
+    if (breaker) {
+      breaker.failures = 0;
+      breaker.state = 'closed';
+    }
+  }
+  
+  /**
+   * Record a failure (may open circuit breaker)
+   */
+  private recordFailure(source: Source): void {
+    const breaker = this.circuitBreakers.get(source);
+    if (breaker) {
+      breaker.failures++;
+      breaker.lastFailureTime = Date.now();
+      
+      if (breaker.failures >= QuoteService.CONFIG.CIRCUIT_BREAKER_FAILURE_THRESHOLD) {
+        breaker.state = 'open';
+        logWarning(
+          `Circuit breaker opened for ${source} after ${breaker.failures} failures`,
+          { source, failures: breaker.failures },
+          "QuoteService",
+        );
+      }
+    }
+  }
+  
+  /**
+   * Start periodic resource cleanup
+   */
+  private startResourceCleanup(): void {
+    if (typeof window === "undefined") return;
+    
+    if (this.cleanupInterval !== null) {
+      clearInterval(this.cleanupInterval);
+    }
+    
+    this.cleanupInterval = window.setInterval(() => {
+      this.performResourceCleanup();
+    }, QuoteService.CONFIG.CLEANUP_INTERVAL_MS);
+  }
+  
+  /**
+   * Perform resource cleanup to prevent memory leaks
+   */
+  private performResourceCleanup(): void {
+    try {
+      // Limit prefetch queue size
+      if (this.prefetchQueue.length > QuoteService.CONFIG.MAX_PREFETCH_QUEUE_SIZE) {
+        this.prefetchQueue = this.prefetchQueue.slice(0, QuoteService.CONFIG.PREFETCH_COUNT);
+        logDebug("Cleaned up prefetch queue", { 
+          previousSize: QuoteService.CONFIG.MAX_PREFETCH_QUEUE_SIZE,
+          newSize: this.prefetchQueue.length 
+        });
+      }
+      
+      // Limit cached API quotes
+      if (this.cachedApiQuotes.length > QuoteService.CONFIG.MAX_CACHE_SIZE) {
+        this.cachedApiQuotes = this.cachedApiQuotes.slice(0, QuoteService.CONFIG.MAX_CACHE_SIZE);
+        logDebug("Cleaned up cached API quotes", { 
+          previousSize: this.cachedApiQuotes.length + QuoteService.CONFIG.MAX_CACHE_SIZE,
+          newSize: this.cachedApiQuotes.length 
+        });
+      }
+      
+      // Clean up old API cache entries
+      const now = Date.now();
+      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+      for (const [key, value] of this.apiCache.entries()) {
+        if (now - value.ts > maxAge) {
+          this.apiCache.delete(key);
+        }
+      }
+    } catch (error) {
+      logDebug("Error during resource cleanup", { error });
+    }
   }
 
   private loadSourceWeights(): SourceWeights {
@@ -372,7 +558,8 @@ export class QuoteService extends BaseService {
   private async maybeFetchOneDaily(): Promise<void> {
     try {
       // Only run in browser/runtime environments with storage
-      const today = getDateKey();
+      const timezone = this.getTimezonePreference();
+      const today = getDateKey(new Date(), timezone);
       const lastFetched = (this.storage.getSync as any)?.("quotes-last-fetch");
       if (lastFetched === today) return;
 
@@ -416,6 +603,66 @@ export class QuoteService extends BaseService {
     } catch {}
   }
 
+  /**
+   * Get timezone preference from storage
+   * Supports "local", "utc", or IANA timezone string
+   */
+  private getTimezonePreference(): TimezoneMode {
+    try {
+      // Try to get from settings
+      const settings = this.storage.getSync("settings") as any;
+      if (settings?.timezone) {
+        const tz = settings.timezone;
+        // Convert IANA timezone to our format, or use as-is if it's "utc" or "local"
+        if (tz === "UTC" || tz.toLowerCase() === "utc") {
+          return "utc";
+        }
+        // If it's a valid IANA timezone string, use it
+        if (typeof tz === "string" && tz.length > 0) {
+          return tz;
+        }
+      }
+      // Check for explicit timezone preference
+      const timezonePref = this.storage.getSync("quoteTimezone") as TimezoneMode | null;
+      if (timezonePref) {
+        return timezonePref;
+      }
+    } catch (error) {
+      logDebug("Could not get timezone preference, using local", { error });
+    }
+    // Default to local timezone for backward compatibility
+    return "local";
+  }
+
+  /**
+   * Migrate old cache keys to unified cache keys
+   * This ensures backward compatibility while using the new unified system
+   */
+  private migrateCacheKeys(): void {
+    try {
+      // Check if we have old dayBasedQuote cache
+      const oldDayBasedQuote = this.storage.getSync("dayBasedQuote");
+      const oldDayBasedQuoteDate = this.storage.getSync("dayBasedQuoteDate");
+      
+      // If we have old cache but no new cache, migrate it
+      const unifiedQuote = this.storage.getSync(CACHE_KEYS.DAILY_QUOTE);
+      const unifiedDate = this.storage.getSync(CACHE_KEYS.DAILY_QUOTE_DATE);
+      
+      if (oldDayBasedQuote && oldDayBasedQuoteDate && !unifiedQuote) {
+        // Migrate old cache to new unified cache
+        this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, oldDayBasedQuote);
+        this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, oldDayBasedQuoteDate);
+        logDebug("Migrated dayBasedQuote cache to unified dailyQuote cache");
+      }
+      
+      // Clean up old cache keys after migration (optional, can be done later)
+      // this.storage.setSync("dayBasedQuote", null);
+      // this.storage.setSync("dayBasedQuoteDate", null);
+    } catch (error) {
+      logDebug("Error during cache key migration", { error });
+    }
+  }
+
   getDailyQuote(): Quote {
     // Always ensure we have at least one quote
     if (this.quotes.length === 0) {
@@ -436,9 +683,9 @@ export class QuoteService extends BaseService {
       logDebug("Could not load saved quotes for daily quote", { error });
     }
 
-    // Get today's date key using consistent date utility (local timezone)
-    // This ensures the same quote for everyone on the same calendar date
-    const today = getDateKey();
+    // Get timezone preference and today's date key
+    const timezone = this.getTimezonePreference();
+    const today = getDateKey(new Date(), timezone);
     
     // Dev-only diagnostics - allow force refresh via URL parameter
     if (
@@ -446,23 +693,25 @@ export class QuoteService extends BaseService {
       (window as any)?.location?.search?.includes("force=1")
     ) {
       console.log("[QuoteService] Force refresh requested via URL parameter");
-      this.storage.setSync("dailyQuote", null);
-      this.storage.setSync("dailyQuoteDate", null);
+      this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
+      this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
+      // Also clear legacy keys
       this.storage.setSync("dayBasedQuote", null);
       this.storage.setSync("dayBasedQuoteDate", null);
     }
 
-    // Try to get the stored daily quote
-    const storedDailyQuote = this.storage.getSync("dailyQuote");
-    const storedDate = this.storage.getSync("dailyQuoteDate");
+    // Try to get the stored daily quote using unified cache keys
+    const storedDailyQuote = this.storage.getSync(CACHE_KEYS.DAILY_QUOTE);
+    const storedDate = this.storage.getSync(CACHE_KEYS.DAILY_QUOTE_DATE);
 
     // CRITICAL: Only use cached quote if it's from TODAY (same date key)
     // If storedDate is different from today, it's an old quote and must be refreshed
     if (storedDate && storedDate !== today) {
       // Stored quote is from a different date - clear ALL quote caches immediately
       console.log(`[QuoteService] ⚠️ STALE QUOTE DETECTED! Stored date: "${storedDate}", Today: "${today}". Clearing all quote caches...`);
-      this.storage.setSync("dailyQuote", null);
-      this.storage.setSync("dailyQuoteDate", null);
+      this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
+      this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
+      // Also clear legacy keys for backward compatibility
       this.storage.setSync("dayBasedQuote", null);
       this.storage.setSync("dayBasedQuoteDate", null);
       // Also clear any legacy cache keys
@@ -474,15 +723,15 @@ export class QuoteService extends BaseService {
       // Valid cached quote from today - check if it's from AI source (which we treat as expired)
       if (storedDailyQuote.source === "AI") {
         console.log("[QuoteService] Cached quote is from AI source, treating as expired");
-        this.storage.setSync("dailyQuote", null);
-        this.storage.setSync("dailyQuoteDate", null);
+        this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
+        this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
       } else {
         // Valid cached quote from today - return it
-        console.log(`[QuoteService] Using cached quote from ${today}`);
+        console.log(`[QuoteService] Using cached quote from ${today} (timezone: ${timezone})`);
         return storedDailyQuote;
       }
     } else if (!storedDate) {
-      console.log(`[QuoteService] No cached quote found. Will generate new quote for ${today}`);
+      console.log(`[QuoteService] No cached quote found. Will generate new quote for ${today} (timezone: ${timezone})`);
     }
 
     // Get recent quote history to avoid repetition
@@ -505,9 +754,9 @@ export class QuoteService extends BaseService {
     const quoteIndex = this.getQuoteIndexForDate(today);
     const dailyQuote = availableQuotes[quoteIndex % availableQuotes.length];
 
-    // Store the new daily quote and update history
-    this.storage.setSync("dailyQuote", dailyQuote);
-    this.storage.setSync("dailyQuoteDate", today);
+    // Store the new daily quote and update history using unified cache keys
+    this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, dailyQuote);
+    this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, today);
     this.updateQuoteHistory(dailyQuote, today);
 
     return dailyQuote;
@@ -532,25 +781,26 @@ export class QuoteService extends BaseService {
    */
   async getDailyQuoteAsync(force: boolean = false): Promise<Quote> {
     await this.ensureInitialized();
-    // Use consistent date utility (local timezone) for date comparison
-    const today = getDateKey();
+    // Get timezone preference and today's date key
+    const timezone = this.getTimezonePreference();
+    const today = getDateKey(new Date(), timezone);
     try {
       if (!force) {
-        const storedDailyQuote = this.storage.getSync("dailyQuote");
-        const storedDate = this.storage.getSync("dailyQuoteDate");
+        const storedDailyQuote = this.storage.getSync(CACHE_KEYS.DAILY_QUOTE);
+        const storedDate = this.storage.getSync(CACHE_KEYS.DAILY_QUOTE_DATE);
         // CRITICAL: Only use cached quote if date matches exactly (same day)
         if (storedDailyQuote && storedDate === today) {
           return storedDailyQuote;
         } else if (storedDailyQuote && storedDate !== today) {
           // Clear stale cached quote from previous day
           console.log(`[QuoteService] Clearing stale quote from ${storedDate}, today is ${today}`);
-          this.storage.setSync("dailyQuote", null);
-          this.storage.setSync("dailyQuoteDate", null);
+          this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
+          this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
         }
       } else {
         // Force refresh - clear cache
-        this.storage.setSync("dailyQuote", null);
-        this.storage.setSync("dailyQuoteDate", null);
+        this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
+        this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
       }
       // Choose a primary and use fallback chain
       const source = this.selectPrimarySource();
@@ -558,22 +808,32 @@ export class QuoteService extends BaseService {
         source,
         ...this.getFallbackChain(source),
       ] as Source[];
+      // Try fallback chain with graceful degradation
       for (const s of fallbackChain) {
+        // Skip if not available
+        if (!this.isProviderAvailable(s)) {
+          logDebug(`Skipping ${s} - not available`);
+          continue;
+        }
+        
         try {
           const q = await this.randomFrom(s);
-          // Persist
-          this.storage.setSync("dailyQuote", q);
-          this.storage.setSync("dailyQuoteDate", today);
+          
+          // Persist using unified cache keys
+          this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, q);
+          this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, today);
+          
+          // Trigger prefetching
+          this.prefetchQuotesInBackground();
+          
           return q;
         } catch (error) {
-          logWarning(
-            "Daily quote fetch failed for source, trying next",
-            {
-              source: s,
-              error: error instanceof Error ? error.message : String(error),
-            },
-            "QuoteService",
-          );
+          // Continue to next provider - graceful degradation
+          logDebug(`Provider ${s} failed, trying next`, {
+            source: s,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          continue;
         }
       }
       // Final local fallback
@@ -624,35 +884,35 @@ export class QuoteService extends BaseService {
    */
   async getQuoteByDay(force: boolean = false): Promise<Quote> {
     await this.ensureInitialized();
-    // Use getDateKey for consistent date comparison (local timezone)
-    const today = getDateKey();
-    const cacheKey = "dayBasedQuote";
-    const cacheDateKey = "dayBasedQuoteDate";
+    // Get timezone preference and today's date key
+    const timezone = this.getTimezonePreference();
+    const today = getDateKey(new Date(), timezone);
 
     try {
-      // Check cache first (unless force is true)
+      // Check cache first (unless force is true) - using unified cache keys
       if (!force) {
-        const cachedQuote = this.storage.getSync(cacheKey);
-        const cachedDate = this.storage.getSync(cacheDateKey);
+        const cachedQuote = this.storage.getSync(CACHE_KEYS.DAILY_QUOTE);
+        const cachedDate = this.storage.getSync(CACHE_KEYS.DAILY_QUOTE_DATE);
 
         // CRITICAL: Only use cached quote if date matches exactly (same day)
         if (cachedDate && cachedDate !== today) {
           // Stale cached quote - clear it immediately
           console.log(`[QuoteService.getQuoteByDay] ⚠️ STALE QUOTE! Cached date: "${cachedDate}", Today: "${today}". Clearing cache...`);
-          this.storage.setSync(cacheKey, null);
-          this.storage.setSync(cacheDateKey, null);
+          this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
+          this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
         } else if (cachedQuote && cachedDate === today) {
           // Valid cached quote from today
           logDebug("Day-based quote: Using cached quote", {
             source: cachedQuote.source,
             date: today,
+            timezone,
           });
           return cachedQuote;
         }
       } else {
         // Force refresh - clear cache
-        this.storage.setSync(cacheKey, null);
-        this.storage.setSync(cacheDateKey, null);
+        this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
+        this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
       }
 
       // Get today's assigned provider
@@ -662,14 +922,22 @@ export class QuoteService extends BaseService {
       logDebug("Day-based quote: Fetching from today's provider", {
         day: todaysMapping.dayName,
         provider: getProviderDisplayName(primaryProvider),
+        timezone,
       });
 
       // Build fallback chain (excluding the primary since we'll try it first)
       const fallbackChain = getDayBasedFallbackChain(primaryProvider);
-      const providersToTry = [primaryProvider, ...fallbackChain];
+      // Prioritize healthy providers in fallback chain
+      const providersToTry = this.prioritizeProvidersByHealth([primaryProvider, ...fallbackChain]);
 
-      // Try each provider in order
+      // Try each provider in order with graceful degradation
       for (const providerSource of providersToTry) {
+        // Skip if not available (rate limited, circuit open, or unhealthy)
+        if (!this.isProviderAvailable(providerSource)) {
+          logDebug(`Day-based quote: Skipping ${providerSource} - not available`);
+          continue;
+        }
+        
         const provider = this.providers.find((p) => p.name === providerSource);
 
         if (!provider) {
@@ -680,7 +948,11 @@ export class QuoteService extends BaseService {
         }
 
         try {
-          const quote = await provider.random();
+          const quote = await this.executeProviderRequest(
+            providerSource,
+            () => provider.random(),
+            "getQuoteByDay"
+          );
 
           // Ensure the quote has proper source attribution
           const attributedQuote: Quote = {
@@ -688,9 +960,15 @@ export class QuoteService extends BaseService {
             source: providerSource,
           };
 
-          // Cache the quote
-          this.storage.setSync(cacheKey, attributedQuote);
-          this.storage.setSync(cacheDateKey, today);
+          // Cache the quote using unified cache keys
+          this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, attributedQuote);
+          this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, today);
+          
+          // Track analytics
+          this.updateAnalytics(attributedQuote, "view");
+          
+          // Trigger prefetching
+          this.prefetchQuotesInBackground();
 
           logDebug("Day-based quote: Successfully fetched", {
             source: providerSource,
@@ -700,24 +978,31 @@ export class QuoteService extends BaseService {
 
           return attributedQuote;
         } catch (error) {
-          logWarning(
-            `Day-based quote: Provider ${providerSource} failed, trying next`,
-            {
-              provider: providerSource,
-              error: error instanceof Error ? error.message : String(error),
-            },
-          );
+          // Continue to next provider - graceful degradation
+          logDebug(`Day-based quote: Provider ${providerSource} failed, trying next`, {
+            provider: providerSource,
+            error: error instanceof Error ? error.message : String(error),
+          });
           continue;
         }
       }
 
-      // If all providers failed, fall back to local quote
+      // If all providers failed, try prefetched quote first
+      const prefetched = this.getPrefetchedQuote();
+      if (prefetched) {
+        // Cache the prefetched quote
+        this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, prefetched);
+        this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, today);
+        return prefetched;
+      }
+
+      // Final fallback to local quote
       logWarning("Day-based quote: All providers failed, using local fallback");
       const fallbackQuote = this.getDailyQuote();
 
-      // Cache the fallback
-      this.storage.setSync(cacheKey, fallbackQuote);
-      this.storage.setSync(cacheDateKey, today);
+      // Cache the fallback using unified cache keys
+      this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, fallbackQuote);
+      this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, today);
 
       return fallbackQuote;
     } catch (error) {
@@ -748,9 +1033,10 @@ export class QuoteService extends BaseService {
     isCached: boolean;
     cachedDate: string | null;
   } {
-    const today = new Date().toISOString().split("T")[0];
-    const storedDailyQuote = this.storage.getSync("dailyQuote");
-    const storedDate = this.storage.getSync("dailyQuoteDate");
+    const timezone = this.getTimezonePreference();
+    const today = getDateKey(new Date(), timezone);
+    const storedDailyQuote = this.storage.getSync(CACHE_KEYS.DAILY_QUOTE);
+    const storedDate = this.storage.getSync(CACHE_KEYS.DAILY_QUOTE_DATE);
 
     const isCached = storedDailyQuote && storedDate === today;
 
@@ -808,44 +1094,65 @@ export class QuoteService extends BaseService {
   async randomFrom(source: Source): Promise<Quote> {
     await this.ensureInitialized();
 
-    // Try primary source first
+    // Try primary source first with comprehensive error handling
     const primaryProvider = this.providers.find((p) => p.name === source);
     if (primaryProvider) {
       try {
-        const q = await primaryProvider.random();
+        const q = await this.executeProviderRequest(
+          source,
+          () => primaryProvider.random(),
+          "randomFrom"
+        );
+        
+        // Track analytics
+        this.updateAnalytics(q, "view");
         return q;
       } catch (error) {
-        logError(
-          error instanceof Error ? error : new Error(String(error)),
-          { source, operation: "randomFrom" },
-          "QuoteService",
-        );
+        // Log but continue to fallback chain
+        logDebug(`Primary provider ${source} failed, trying fallback chain`, {
+          source,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
-    // If primary fails, try fallback chain
+    // If primary fails, try fallback chain with graceful degradation
     const fallbackChain = this.getFallbackChain(source);
     for (const fallbackSource of fallbackChain) {
+      // Skip if not available (rate limited, circuit open, or unhealthy)
+      if (!this.isProviderAvailable(fallbackSource)) {
+        continue;
+      }
+      
       const fallbackProvider = this.providers.find(
         (p) => p.name === fallbackSource,
       );
       if (fallbackProvider) {
         try {
-          const q = await fallbackProvider.random();
+          const q = await this.executeProviderRequest(
+            fallbackSource,
+            () => fallbackProvider.random(),
+            "randomFrom"
+          );
+          
+          // Track analytics
+          this.updateAnalytics(q, "view");
           return q;
         } catch (error) {
-          logError(
-            error instanceof Error ? error : new Error(String(error)),
-            { source: fallbackSource, operation: "randomFrom" },
-            "QuoteService",
-          );
+          // Continue to next fallback - graceful degradation
+          logDebug(`Fallback provider ${fallbackSource} failed, trying next`, {
+            source: fallbackSource,
+            error: error instanceof Error ? error.message : String(error),
+          });
           continue;
         }
       }
     }
 
-    // Final fallback to local
-    return this.getRandomQuote();
+    // Final fallback to local - always succeeds
+    const localQuote = this.getRandomQuote();
+    this.updateAnalytics(localQuote, "view");
+    return localQuote;
   }
 
   // Main random method that intelligently selects providers and handles failures
@@ -884,41 +1191,49 @@ export class QuoteService extends BaseService {
       return weightB - weightA;
     });
 
-    // Try each provider until one succeeds
+    // Try each provider until one succeeds with graceful degradation
     for (const provider of sortedProviders) {
+      const source = provider.name as Source;
+      
+      // Skip if not available
+      if (!this.isProviderAvailable(source)) {
+        continue;
+      }
+      
       try {
-        const quote = await provider.random();
-
-        // Update health status on success
-        this.updateHealthStatus(provider.name as Source, "healthy");
-
-        // Update performance metrics
-        this.updatePerformanceMetrics(provider.name as Source, true, 0);
+        const quote = await this.executeProviderRequest(
+          source,
+          () => provider.random(),
+          "random"
+        );
+        
+        // Track analytics
+        this.updateAnalytics(quote, "view");
+        
+        // Trigger prefetching in background
+        this.prefetchQuotesInBackground();
 
         return quote;
       } catch (error) {
-        // Log error but continue to next provider
-        logError(
-          error instanceof Error ? error : new Error(String(error)),
-          {
-            provider: provider.name,
-            operation: "random",
-          },
-          "QuoteService",
-        );
-
-        // Update health status on failure
-        this.updateHealthStatus(provider.name as Source, "down");
-
-        // Update performance metrics
-        this.updatePerformanceMetrics(provider.name as Source, false, 0);
-
+        // Continue to next provider - graceful degradation
+        logDebug(`Provider ${source} failed, trying next`, {
+          provider: source,
+          error: error instanceof Error ? error.message : String(error),
+        });
         continue;
       }
     }
 
-    // If all providers fail, return local quote
-    return this.getRandomQuote();
+    // If all providers fail, try prefetched quote first (graceful degradation)
+    const prefetched = this.getPrefetchedQuote();
+    if (prefetched) {
+      return prefetched;
+    }
+
+    // Final fallback to local quote - always succeeds
+    const localQuote = this.getRandomQuote();
+    this.updateAnalytics(localQuote, "view");
+    return localQuote;
   }
 
   /**
@@ -1044,13 +1359,13 @@ export class QuoteService extends BaseService {
           ) {
             results.push(quote);
             this.updateAnalytics(quote, "view");
-            this.updateHealthStatus(source, "healthy");
+            // Update performance metrics (health status is auto-updated)
             this.updatePerformanceMetrics(source, true, responseTime);
           }
         }
       } catch (error) {
         const responseTime = Date.now();
-        this.updateHealthStatus(source, "down");
+        // Update performance metrics (health status is auto-updated)
         this.updatePerformanceMetrics(source, false, responseTime);
         logError(
           error instanceof Error ? error : new Error(String(error)),
@@ -1111,11 +1426,11 @@ export class QuoteService extends BaseService {
         allResults.push(...filteredResults);
         usedSources.push(source);
 
-        this.updateHealthStatus(source, "healthy");
+        // Update performance metrics (health status is auto-updated)
         this.updatePerformanceMetrics(source, true, responseTime);
       } catch (error) {
         const responseTime = Date.now();
-        this.updateHealthStatus(source, "down");
+        // Update performance metrics (health status is auto-updated)
         this.updatePerformanceMetrics(source, false, responseTime);
         logError(
           error instanceof Error ? error : new Error(String(error)),
@@ -1190,11 +1505,11 @@ export class QuoteService extends BaseService {
         );
 
         results.push(...categoryQuotes);
-        this.updateHealthStatus(source, "healthy");
+        // Update performance metrics (health status is auto-updated)
         this.updatePerformanceMetrics(source, true, responseTime);
       } catch (error) {
         const responseTime = Date.now();
-        this.updateHealthStatus(source, "down");
+        // Update performance metrics (health status is auto-updated)
         this.updatePerformanceMetrics(source, false, responseTime);
         logError(
           error instanceof Error ? error : new Error(String(error)),
@@ -1240,11 +1555,11 @@ export class QuoteService extends BaseService {
         );
 
         results.push(...authorQuotes);
-        this.updateHealthStatus(source, "healthy");
+        // Update performance metrics (health status is auto-updated)
         this.updatePerformanceMetrics(source, true, responseTime);
       } catch (error) {
         const responseTime = Date.now();
-        this.updateHealthStatus(source, "down");
+        // Update performance metrics (health status is auto-updated)
         this.updatePerformanceMetrics(source, false, responseTime);
         logError(
           error instanceof Error ? error : new Error(String(error)),
@@ -1570,6 +1885,8 @@ export class QuoteService extends BaseService {
       "FavQs",
       "They Said So",
       "QuoteGarden",
+      "Stoic Quotes",
+      "Programming Quotes",
       "DummyJSON",
     ];
     sources.forEach((source) => {
@@ -1589,13 +1906,461 @@ export class QuoteService extends BaseService {
     });
   }
 
+  /**
+   * Initialize rate limiters for each provider
+   */
+  private initializeRateLimiters(): void {
+    const sources: Source[] = [
+      "ZenQuotes",
+      "Quotable",
+      "FavQs",
+      "They Said So",
+      "QuoteGarden",
+      "Stoic Quotes",
+      "Programming Quotes",
+      "DummyJSON",
+    ];
+    
+    sources.forEach((source) => {
+      const config = this.RATE_LIMIT_CONFIG[source] || { capacity: 3, refillPerMin: 6 };
+      this.rateLimiters.set(source, createLimiter(config));
+    });
+  }
+
+  /**
+   * Check if a provider request is allowed (rate limiting + circuit breaker)
+   */
+  private isRateLimited(source: Source): boolean {
+    // Check circuit breaker first
+    if (this.isCircuitOpen(source)) {
+      return true; // Circuit is open, treat as rate limited
+    }
+    
+    // Check rate limiter
+    const limiter = this.rateLimiters.get(source);
+    if (!limiter) return false; // No limiter = allow
+    
+    return !limiter(); // Return true if rate limited (not allowed)
+  }
+  
+  /**
+   * Check if provider is available (not rate limited, circuit not open, and healthy)
+   */
+  private isProviderAvailable(source: Source): boolean {
+    // Check circuit breaker
+    if (this.isCircuitOpen(source)) {
+      return false;
+    }
+    
+    // Check rate limiting
+    if (this.isRateLimited(source)) {
+      return false;
+    }
+    
+    // Check health status
+    const health = this.healthStatus.get(source);
+    if (health && health.status === "down") {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  /**
+   * Execute provider request with comprehensive error handling and metrics
+   */
+  private async executeProviderRequest<T>(
+    source: Source,
+    operation: () => Promise<T>,
+    operationName: string = "request"
+  ): Promise<T> {
+    // Check availability before attempting
+    if (!this.isProviderAvailable(source)) {
+      if (this.isCircuitOpen(source)) {
+        throw ErrorUtils.createNetworkError(
+          `Circuit breaker is open for ${getProviderDisplayName(source)}. Please try again later.`,
+          { source, operation: operationName }
+        );
+      }
+      throw ErrorUtils.createRateLimitError(
+        `Rate limit exceeded for ${getProviderDisplayName(source)}`,
+        { source, operation: operationName }
+      );
+    }
+    
+    const startTime = Date.now();
+    try {
+      const result = await operation();
+      const responseTime = Date.now() - startTime;
+      
+      // Record success
+      this.recordSuccess(source);
+      this.updatePerformanceMetrics(source, true, responseTime);
+      
+      return result;
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      
+      // Record failure
+      this.recordFailure(source);
+      this.updatePerformanceMetrics(source, false, responseTime);
+      
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.message === "rate_limited" || error.message.includes("rate")) {
+          throw ErrorUtils.createRateLimitError(
+            this.getRateLimitErrorMessage(source),
+            { source, operation: operationName, originalError: error.message }
+          );
+        }
+        
+        if (error.message.includes("timeout") || error.message.includes("network") || error.message.includes("fetch")) {
+          throw ErrorUtils.createNetworkError(
+            `Network error fetching from ${getProviderDisplayName(source)}`,
+            { source, operation: operationName, originalError: error.message }
+          );
+        }
+      }
+      
+      // Re-throw with context
+      throw errorHandler.createError(
+        `Failed to ${operationName} from ${getProviderDisplayName(source)}`,
+        "PROVIDER_ERROR",
+        "api" as any,
+        "medium" as any,
+        { source, operation: operationName, originalError: error instanceof Error ? error.message : String(error) },
+        true,
+        `Unable to get quote from ${getProviderDisplayName(source)}. Trying another source...`
+      );
+    }
+  }
+
+  /**
+   * Get user-friendly error message for rate limiting
+   */
+  private getRateLimitErrorMessage(source: Source): string {
+    const providerName = getProviderDisplayName(source);
+    return `Too many requests to ${providerName}. Please wait a moment and try again.`;
+  }
+
+
+  /**
+   * Update health status based on performance metrics
+   * Automatically determines status based on success rate
+   */
+  private updateHealthStatus(
+    source: Source,
+    status?: "healthy" | "degraded" | "down",
+  ): void {
+    const health = this.healthStatus.get(source);
+    const metrics = this.performanceMetrics.get(source);
+
+    if (health && metrics) {
+      // Calculate success rate
+      const successRate = metrics.totalCalls > 0
+        ? metrics.successCalls / metrics.totalCalls
+        : 1.0;
+
+      // Auto-determine status if not provided
+      if (!status) {
+        if (successRate >= QuoteService.CONFIG.HEALTH_DEGRADED_THRESHOLD) {
+          status = "healthy";
+        } else if (successRate >= QuoteService.CONFIG.HEALTH_DOWN_THRESHOLD) {
+          status = "degraded";
+        } else {
+          status = "down";
+        }
+      }
+
+      health.status = status;
+      health.lastCheck = Date.now();
+      health.responseTime = metrics.avgResponseTime;
+      health.successRate = successRate;
+      
+      // Update error count based on failures
+      if (status === "down") {
+        health.errorCount = metrics.totalCalls - metrics.successCalls;
+      } else if (status === "healthy") {
+        // Reset error count when healthy
+        health.errorCount = 0;
+      }
+    }
+  }
+
+  private updatePerformanceMetrics(
+    source: Source,
+    success: boolean,
+    responseTime: number,
+  ): void {
+    const metrics = this.performanceMetrics.get(source);
+    if (metrics) {
+      metrics.totalCalls++;
+      if (success) {
+        metrics.successCalls++;
+      }
+      // Calculate weighted average response time
+      metrics.avgResponseTime =
+        (metrics.avgResponseTime * (metrics.totalCalls - 1) + responseTime) /
+        metrics.totalCalls;
+      
+      // Update health status based on new metrics
+      this.updateHealthStatus(source);
+    }
+  }
+
+  /**
+   * Prioritize providers by health status
+   * Healthy providers are tried first, then degraded, then down
+   */
+  private prioritizeProvidersByHealth(providers: Source[]): Source[] {
+    return [...providers].sort((a, b) => {
+      const healthA = this.healthStatus.get(a);
+      const healthB = this.healthStatus.get(b);
+      
+      if (!healthA && !healthB) return 0;
+      if (!healthA) return 1;
+      if (!healthB) return -1;
+      
+      // Priority: healthy > degraded > down
+      const statusPriority: Record<string, number> = {
+        healthy: 3,
+        degraded: 2,
+        down: 1,
+      };
+      
+      const priorityA = statusPriority[healthA.status] || 0;
+      const priorityB = statusPriority[healthB.status] || 0;
+      
+      if (priorityA !== priorityB) {
+        return priorityB - priorityA; // Higher priority first
+      }
+      
+      // If same status, prefer higher success rate
+      return healthB.successRate - healthA.successRate;
+    });
+  }
+
+  /**
+   * Start periodic health monitoring
+   * Performs health checks on all providers at regular intervals
+   */
+  private startHealthMonitoring(): void {
+    if (typeof window === "undefined") {
+      // Skip in non-browser environments
+      return;
+    }
+
+    // Clear any existing interval
+    if (this.healthCheckInterval !== null) {
+      clearInterval(this.healthCheckInterval);
+    }
+
+    // Perform initial health check
+    this.performHealthCheck().catch((error) => {
+      logDebug("Initial health check failed", { error });
+    });
+
+    // Set up periodic health checks
+    this.healthCheckInterval = window.setInterval(() => {
+      this.performHealthCheck().catch((error) => {
+        logDebug("Periodic health check failed", { error });
+      });
+    }, QuoteService.CONFIG.HEALTH_CHECK_INTERVAL_MS);
+  }
+
+  /**
+   * Perform health check on all providers
+   * Tests each provider with a lightweight request
+   */
+  private async performHealthCheck(): Promise<void> {
+    const providersToCheck = Array.from(this.healthStatus.keys());
+    
+    // Check providers in parallel with timeout
+    const healthCheckPromises = providersToCheck.map(async (source) => {
+      const provider = this.providers.find((p) => p.name === source);
+      if (!provider) return;
+
+      try {
+        const startTime = Date.now();
+        // Use a timeout for health checks (shorter than normal requests)
+        const healthCheckPromise = provider.random();
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Health check timeout")), 5000)
+        );
+
+        await Promise.race([healthCheckPromise, timeoutPromise]);
+        const responseTime = Date.now() - startTime;
+
+        // Update metrics for successful health check
+        this.updatePerformanceMetrics(source, true, responseTime);
+        logDebug(`Health check passed for ${source}`, {
+          source,
+          responseTime,
+        });
+      } catch (error) {
+        // Update metrics for failed health check
+        this.updatePerformanceMetrics(source, false, 0);
+        logDebug(`Health check failed for ${source}`, {
+          source,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    });
+
+    await Promise.allSettled(healthCheckPromises);
+  }
+
+  /**
+   * Stop health monitoring and cleanup resources
+   */
+  private stopHealthMonitoring(): void {
+    if (this.healthCheckInterval !== null && typeof window !== "undefined") {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
+    
+    // Also stop cleanup interval
+    if (this.cleanupInterval !== null && typeof window !== "undefined") {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
+  
+  /**
+   * Cleanup resources when service is no longer needed
+   * Call this when the service instance is being destroyed
+   */
+  public cleanup(): void {
+    this.stopHealthMonitoring();
+    this.prefetchQueue = [];
+    this.prefetchInProgress = false;
+    this.apiCache.clear();
+    this.lastCallAt.clear();
+    logDebug("QuoteService resources cleaned up");
+  }
+
+  /**
+   * Prefetch quotes in background for faster subsequent loads
+   * This runs asynchronously and doesn't block the main request
+   */
+  private async prefetchQuotesInBackground(): Promise<void> {
+    // Prevent multiple prefetch operations
+    if (this.prefetchInProgress) {
+      return;
+    }
+
+    // Check if we need more quotes in the prefetch queue
+    if (this.prefetchQueue.length >= QuoteService.CONFIG.PREFETCH_COUNT) {
+      return;
+    }
+
+    // Wait a bit before prefetching to not interfere with current request
+    setTimeout(async () => {
+      if (this.prefetchInProgress) return;
+      
+      this.prefetchInProgress = true;
+      
+      try {
+        const quotesNeeded = QuoteService.CONFIG.PREFETCH_COUNT - this.prefetchQueue.length;
+        
+        // Get working providers (not rate limited, not down)
+        const workingProviders = this.providers.filter((provider) => {
+          const source = provider.name as Source;
+          const health = this.healthStatus.get(source);
+          return (
+            !this.isRateLimited(source) &&
+            (!health || health.status !== "down")
+          );
+        });
+
+        if (workingProviders.length === 0) {
+          return;
+        }
+
+        // Prefetch quotes from different providers
+        const prefetchPromises: Promise<Quote | null>[] = [];
+        
+        for (let i = 0; i < quotesNeeded && i < workingProviders.length; i++) {
+          const provider = workingProviders[i % workingProviders.length];
+          const source = provider.name as Source;
+
+          // Prefetch with error handling (already filtered for availability)
+          const prefetchPromise = provider.random()
+            .then((quote) => {
+              // Update performance metrics
+              this.updatePerformanceMetrics(source, true, 0);
+              return quote;
+            })
+            .catch((error) => {
+              // Update performance metrics on failure
+              this.updatePerformanceMetrics(source, false, 0);
+              logDebug(`Prefetch failed for ${source}`, { error });
+              return null;
+            });
+
+          prefetchPromises.push(prefetchPromise);
+        }
+
+        // Wait for all prefetch requests (with timeout)
+        const results = await Promise.allSettled(
+          prefetchPromises.map(p => 
+            Promise.race([
+              p,
+              new Promise<null>((resolve) => 
+                setTimeout(() => resolve(null), QuoteService.CONFIG.PREFETCH_TIMEOUT_MS)
+              )
+            ])
+          )
+        );
+
+        // Add successful prefetches to queue
+        for (const result of results) {
+          if (result.status === "fulfilled" && result.value) {
+            this.prefetchQueue.push(result.value);
+          }
+        }
+
+        // Limit queue size
+        if (this.prefetchQueue.length > QuoteService.CONFIG.MAX_PREFETCH_QUEUE_SIZE) {
+          this.prefetchQueue = this.prefetchQueue.slice(0, QuoteService.CONFIG.PREFETCH_COUNT);
+        }
+
+        logDebug(`Prefetched ${this.prefetchQueue.length} quotes`);
+      } catch (error) {
+        logDebug("Error during prefetching", { error });
+      } finally {
+        this.prefetchInProgress = false;
+      }
+    }, QuoteService.CONFIG.PREFETCH_DELAY_MS);
+  }
+
+  /**
+   * Get a prefetched quote if available
+   */
+  private getPrefetchedQuote(): Quote | null {
+    if (this.prefetchQueue.length > 0) {
+      const quote = this.prefetchQueue.shift()!;
+      // Track analytics
+      this.updateAnalytics(quote, "view");
+      // Trigger new prefetch to maintain queue
+      this.prefetchQuotesInBackground();
+      return quote;
+    }
+    return null;
+  }
+
+  /**
+   * Enhanced analytics tracking with more events
+   */
   private updateAnalytics(
     quote: Quote,
-    operation: "view" | "like" | "search",
+    operation: "view" | "like" | "search" | "prefetch" | "share" | "save",
   ): void {
     try {
-      // Update total quotes
-      this.analytics.totalQuotes++;
+      // Update total quotes (only for views, not prefetches)
+      if (operation === "view") {
+        this.analytics.totalQuotes++;
+      }
 
       // Update source distribution
       if (quote.source) {
@@ -1610,7 +2375,7 @@ export class QuoteService extends BaseService {
           (this.analytics.categoryDistribution[quote.category] || 0) + 1;
       }
 
-      // Update recently viewed
+      // Update recently viewed (only for actual views)
       if (operation === "view") {
         this.analytics.recentlyViewed.unshift(quote);
         this.analytics.recentlyViewed = this.analytics.recentlyViewed.slice(
@@ -1636,37 +2401,6 @@ export class QuoteService extends BaseService {
         { operation: "updateAnalytics" },
         "QuoteService",
       );
-    }
-  }
-
-  private updateHealthStatus(
-    source: Source,
-    status: "healthy" | "degraded" | "down",
-  ): void {
-    const health = this.healthStatus.get(source);
-    const metrics = this.performanceMetrics.get(source);
-
-    if (health && metrics) {
-      health.status = status;
-      health.lastCheck = Date.now();
-      health.errorCount = 0; // Reset error count on successful status
-    }
-  }
-
-  private updatePerformanceMetrics(
-    source: Source,
-    success: boolean,
-    responseTime: number,
-  ): void {
-    const metrics = this.performanceMetrics.get(source);
-    if (metrics) {
-      metrics.totalCalls++;
-      if (success) {
-        metrics.successCalls++;
-      }
-      metrics.avgResponseTime =
-        (metrics.avgResponseTime * (metrics.totalCalls - 1) + responseTime) /
-        metrics.totalCalls;
     }
   }
 
