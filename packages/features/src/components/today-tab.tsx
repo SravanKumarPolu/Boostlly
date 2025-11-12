@@ -823,7 +823,8 @@ export const TodayTab = forwardRef<
         if (enabled === false) return;
 
         // Use the accessible TTS utility with improved settings
-        accessibleTTS.speak(`"${quote.text}" by ${quote.author}`, {
+        // Now async - waits for voices to be ready before speaking
+        await accessibleTTS.speak(`"${quote.text}" by ${quote.author}`, {
           rate: typeof rate === "number" ? Math.max(0.5, Math.min(2, rate)) : 1.0,
           volume: Math.max(
             0,

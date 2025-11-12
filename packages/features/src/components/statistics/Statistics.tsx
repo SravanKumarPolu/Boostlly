@@ -163,11 +163,6 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
       try {
         const analyticsService = new UserAnalyticsService(storage as any);
         setUserAnalyticsService(analyticsService);
-        
-        // Track homepage visit on initialization
-        analyticsService.trackHomepageVisit().catch((err) => {
-          console.warn("Failed to track homepage visit:", err);
-        });
       } catch (analyticsError) {
         console.error("Failed to initialize UserAnalyticsService:", analyticsError);
         // Continue without analytics service - tab will still be visible but show empty state
@@ -185,32 +180,6 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
       setIsLoading(true);
       try {
         let analytics = quoteService.getAnalytics();
-        
-        // Also try to load analytics from storage directly (in case QuoteService hasn't loaded it yet)
-        try {
-          let storedAnalytics: any = null;
-          if (typeof (storage as any).getSync === 'function') {
-            storedAnalytics = (storage as any).getSync("quoteAnalytics");
-          } else {
-            storedAnalytics = await storage.get("quoteAnalytics");
-          }
-          
-          if (storedAnalytics && typeof storedAnalytics === 'object') {
-            // Merge stored analytics with service analytics, prioritizing stored data for mostLikedQuotes and recentlyViewed
-            analytics = {
-              ...analytics,
-              mostLikedQuotes: storedAnalytics.mostLikedQuotes || analytics.mostLikedQuotes || [],
-              recentlyViewed: storedAnalytics.recentlyViewed || analytics.recentlyViewed || [],
-              // Keep other analytics from service
-              totalQuotes: analytics.totalQuotes,
-              sourceDistribution: storedAnalytics.sourceDistribution || analytics.sourceDistribution || {},
-              categoryDistribution: storedAnalytics.categoryDistribution || analytics.categoryDistribution || {},
-            };
-          }
-        } catch (err) {
-          console.warn("⚠️ Failed to load analytics from storage:", err);
-        }
-        
         const performanceMetrics = quoteService.getPerformanceMetrics();
         const healthStatus = quoteService.getHealthStatus();
         
@@ -334,19 +303,8 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
             
             if (extracted.length > 0) {
               enhancedAnalytics.mostLikedQuotes = extracted;
-              
-              // Persist the updated analytics to storage so it's available for future loads
-              try {
-                if (typeof (storage as any).setSync === 'function') {
-                  (storage as any).setSync("quoteAnalytics", enhancedAnalytics);
-                } else {
-                  await storage.set("quoteAnalytics", enhancedAnalytics);
-                }
-                if (process.env.NODE_ENV === "development") {
-                  console.log("✅ Populated and persisted mostLikedQuotes from saved/liked quotes:", extracted.length);
-                }
-              } catch (error) {
-                console.warn("⚠️ Failed to persist populated mostLikedQuotes:", error);
+              if (process.env.NODE_ENV === "development") {
+                console.log("✅ Populated mostLikedQuotes from saved/liked quotes:", extracted.length);
               }
             }
           }
@@ -390,19 +348,8 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
             
             if (extracted.length > 0) {
               enhancedAnalytics.recentlyViewed = extracted;
-              
-              // Persist the updated analytics to storage so it's available for future loads
-              try {
-                if (typeof (storage as any).setSync === 'function') {
-                  (storage as any).setSync("quoteAnalytics", enhancedAnalytics);
-                } else {
-                  await storage.set("quoteAnalytics", enhancedAnalytics);
-                }
-                if (process.env.NODE_ENV === "development") {
-                  console.log("✅ Populated and persisted recentlyViewed from quote history/saved quotes:", extracted.length);
-                }
-              } catch (error) {
-                console.warn("⚠️ Failed to persist populated recentlyViewed:", error);
+              if (process.env.NODE_ENV === "development") {
+                console.log("✅ Populated recentlyViewed from quote history/saved quotes:", extracted.length);
               }
             }
           }

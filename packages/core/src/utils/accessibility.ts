@@ -188,6 +188,92 @@ export class AccessibleTTS {
   private utterance: SpeechSynthesisUtterance | null = null;
   private isSpeaking = false;
   private cachedVoices: SpeechSynthesisVoice[] | null = null;
+  private voicesReady = false;
+  private voicesInitialized = false;
+
+  /**
+   * Initialize voices eagerly - call this on page load or first interaction
+   * This ensures voices are loaded before speaking
+   */
+  private initializeVoices(): void {
+    if (this.voicesInitialized || typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return;
+    }
+
+    this.voicesInitialized = true;
+
+    // Set up voiceschanged event listener to cache voices when they load
+    const onVoicesChanged = () => {
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          this.cachedVoices = voices;
+          this.voicesReady = true;
+        }
+      } catch (error) {
+        console.warn("Error loading voices:", error);
+      }
+    };
+
+    // Set up the event listener (only if not already set)
+    if (!window.speechSynthesis.onvoiceschanged) {
+      window.speechSynthesis.onvoiceschanged = onVoicesChanged;
+    }
+
+    // Try to get voices immediately (may be empty on first call)
+    try {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        this.cachedVoices = voices;
+        this.voicesReady = true;
+      } else {
+        // Trigger voice loading by calling getVoices and a dummy speak/cancel
+        // Some browsers need this to initialize voices
+        try {
+          const dummyUtterance = new SpeechSynthesisUtterance("");
+          window.speechSynthesis.speak(dummyUtterance);
+          window.speechSynthesis.cancel();
+        } catch (e) {
+          // Ignore errors from dummy utterance
+        }
+      }
+    } catch (error) {
+      console.warn("Error getting voices:", error);
+    }
+  }
+
+  /**
+   * Wait for voices to be ready (with timeout)
+   */
+  private async waitForVoices(maxWaitMs: number = 500): Promise<boolean> {
+    if (this.voicesReady && this.cachedVoices && this.cachedVoices.length > 0) {
+      return true;
+    }
+
+    const startTime = Date.now();
+    while (Date.now() - startTime < maxWaitMs) {
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          this.cachedVoices = voices;
+          this.voicesReady = true;
+          return true;
+        }
+        // Wait a bit before checking again
+        await new Promise(resolve => setTimeout(resolve, 50));
+      } catch (error) {
+        break;
+      }
+    }
+
+    // If still no voices, use cached if available
+    if (this.cachedVoices && this.cachedVoices.length > 0) {
+      this.voicesReady = true;
+      return true;
+    }
+
+    return false;
+  }
 
   /**
    * Get the best available voice for text-to-speech
@@ -198,6 +284,9 @@ export class AccessibleTTS {
       return null;
     }
 
+    // Initialize voices if not already done
+    this.initializeVoices();
+
     // Always get fresh voices list (voices may load asynchronously)
     let voices: SpeechSynthesisVoice[] = [];
     try {
@@ -205,42 +294,33 @@ export class AccessibleTTS {
     } catch (error) {
       // If getVoices fails, use cached voices or return null
       if (this.cachedVoices && this.cachedVoices.length > 0) {
-        return this.cachedVoices[0];
+        return this.selectBestVoiceFromList(this.cachedVoices);
       }
       return null;
     }
     
-    // If no voices yet, try to trigger loading
+    // If no voices yet, use cached voices
     if (voices.length === 0) {
-      // Try to load voices by triggering the voiceschanged event
-      // Note: Some browsers require a user interaction before voices are available
-      try {
-        // Trigger voice loading by setting up the event handler if not already set
-        if (!window.speechSynthesis.onvoiceschanged) {
-          window.speechSynthesis.onvoiceschanged = () => {
-            this.cachedVoices = window.speechSynthesis.getVoices();
-          };
-        }
-        // Try getting voices again (may still be empty if not loaded yet)
-        voices = window.speechSynthesis.getVoices();
-      } catch (error) {
-        // Silently fail and use cached voices if available
-        if (this.cachedVoices && this.cachedVoices.length > 0) {
-          voices = this.cachedVoices;
-        }
+      if (this.cachedVoices && this.cachedVoices.length > 0) {
+        voices = this.cachedVoices;
+      } else {
+        return null;
       }
     }
 
     // Cache voices for future use
-    if (voices.length > 0 && !this.cachedVoices) {
+    if (voices.length > 0 && (!this.cachedVoices || this.cachedVoices.length === 0)) {
       this.cachedVoices = voices;
+      this.voicesReady = true;
     }
 
-    // Use cached voices if fresh list is empty
-    if (voices.length === 0 && this.cachedVoices && this.cachedVoices.length > 0) {
-      voices = this.cachedVoices;
-    }
+    return this.selectBestVoiceFromList(voices);
+  }
 
+  /**
+   * Select the best voice from a list of voices
+   */
+  private selectBestVoiceFromList(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
     if (voices.length === 0) {
       return null;
     }
@@ -283,8 +363,9 @@ export class AccessibleTTS {
 
   /**
    * Speak text with accessibility announcements and high-quality voice
+   * Now waits for voices to be ready before speaking
    */
-  speak(
+  async speak(
     text: string,
     options: {
       rate?: number;
@@ -294,10 +375,21 @@ export class AccessibleTTS {
       onEnd?: () => void;
       onError?: (error: string) => void;
     } = {},
-  ): void {
+  ): Promise<void> {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       announceToScreenReader("Speech synthesis not supported", "assertive");
       return;
+    }
+
+    // Initialize voices and wait for them to be ready
+    this.initializeVoices();
+    
+    // Wait for voices to be ready (with timeout)
+    const voicesReady = await this.waitForVoices(500);
+    
+    if (!voicesReady && (!this.cachedVoices || this.cachedVoices.length === 0)) {
+      // If voices still not ready after waiting, try one more time with a short delay
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     // Cancel any existing speech
@@ -305,19 +397,20 @@ export class AccessibleTTS {
 
     this.utterance = new SpeechSynthesisUtterance(text);
     
-    // Set voice quality settings
+    // Set voice quality settings - ensure we have a good voice
     const bestVoice = this.getBestVoice();
     if (bestVoice) {
       this.utterance.voice = bestVoice;
+      this.utterance.lang = bestVoice.lang;
+    } else {
+      // Fallback: set language even if no voice selected
+      this.utterance.lang = "en-US";
     }
     
     // Use optimal settings for natural speech
     this.utterance.rate = options.rate || 1.0; // Default to 1.0 for more natural pace
     this.utterance.volume = options.volume ?? 0.9; // Slightly higher default volume
     this.utterance.pitch = options.pitch || 1.0; // Neutral pitch for clarity
-    
-    // Set language to match voice or default to en-US
-    this.utterance.lang = bestVoice?.lang || "en-US";
 
     this.utterance.onstart = () => {
       this.isSpeaking = true;

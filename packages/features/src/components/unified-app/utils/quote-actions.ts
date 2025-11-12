@@ -4,11 +4,12 @@
  * Utility functions for quote-related actions like speaking, saving as image, etc.
  */
 
-import { downloadImage, generateQuoteImage, logError, UserAnalyticsService } from '@boostlly/core';
+import { downloadImage, generateQuoteImage, logError, UserAnalyticsService, accessibleTTS } from '@boostlly/core';
 import { SavedQuote, StorageLike } from '../types';
 
 /**
  * Speak a quote using text-to-speech
+ * Now uses AccessibleTTS which properly waits for voices to be ready
  */
 export async function speakQuote(
   q: SavedQuote,
@@ -35,63 +36,15 @@ export async function speakQuote(
     const rate = (await (storage as any)?.get?.("speechRate")) ?? 1.0;
     const volumePct = (await (storage as any)?.get?.("speechVolume")) ?? 90;
     
-    // Cancel any existing speech
-    window.speechSynthesis.cancel();
-    
-    const utter = new SpeechSynthesisUtterance(`"${q.text}" by ${q.author}`);
-    
-    // Select best available voice for quality
-    // Ensure voices are loaded (they load asynchronously)
-    let voices = window.speechSynthesis.getVoices();
-    if (voices.length === 0) {
-      // Wait a bit for voices to load, then try again
-      await new Promise(resolve => setTimeout(resolve, 100));
-      voices = window.speechSynthesis.getVoices();
-    }
-    
-    const getBestVoice = () => {
-      if (voices.length === 0) return null;
-      
-      // Priority: Neural/Premium > Natural > US English > Any English
-      const neural = voices.find(v => 
-        v.name.toLowerCase().includes("neural") || 
-        v.name.toLowerCase().includes("premium") ||
-        v.name.toLowerCase().includes("enhanced")
-      );
-      if (neural) return neural;
-      
-      const natural = voices.find(v => 
-        v.name.toLowerCase().includes("natural") ||
-        v.name.toLowerCase().includes("samantha") ||
-        v.name.toLowerCase().includes("daniel") ||
-        v.name.toLowerCase().includes("karen") ||
-        v.name.toLowerCase().includes("zira")
-      );
-      if (natural) return natural;
-      
-      const usEnglish = voices.find(v => v.lang.startsWith("en-US"));
-      if (usEnglish) return usEnglish;
-      
-      const english = voices.find(v => v.lang.startsWith("en"));
-      if (english) return english;
-      
-      return voices[0] || null;
-    };
-    
-    const bestVoice = getBestVoice();
-    if (bestVoice) {
-      utter.voice = bestVoice;
-      utter.lang = bestVoice.lang;
-    } else {
-      utter.lang = "en-US";
-    }
-    
-    // Use optimal settings for natural, clear speech
-    utter.rate = typeof rate === "number" ? Math.max(0.5, Math.min(2, rate)) : 1.0;
-    utter.volume = Math.max(0, Math.min(1, (typeof volumePct === "number" ? volumePct : 90) / 100));
-    utter.pitch = 1.0; // Neutral pitch for clarity
-    
-    window.speechSynthesis.speak(utter);
+    // Use AccessibleTTS which properly waits for voices to be ready
+    await accessibleTTS.speak(`"${q.text}" by ${q.author}`, {
+      rate: typeof rate === "number" ? Math.max(0.5, Math.min(2, rate)) : 1.0,
+      volume: Math.max(0, Math.min(1, (typeof volumePct === "number" ? volumePct : 90) / 100)),
+      pitch: 1.0, // Neutral pitch for clarity
+      onError: (error) => {
+        logError("Failed to speak quote:", { error });
+      },
+    });
   } catch (error) {
     logError("Failed to speak quote:", { error });
   }
