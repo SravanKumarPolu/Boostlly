@@ -15,12 +15,15 @@
     "build:android": "pnpm --filter @boostlly/android build:android",
     "build:apk": "pnpm --filter @boostlly/android build:apk",
     "build:aab": "pnpm --filter @boostlly/android build:aab",
+    "build:verify": "pnpm verify:build && pnpm build",
+    "build:commit": "./scripts/build-and-commit.sh",
     "test": "pnpm --recursive run test",
     "type-check": "pnpm --recursive run type-check",
     "lint": "pnpm --recursive run lint",
     "clean": "pnpm --recursive run clean",
     "cleanup": "node scripts/project-cleanup.js",
     "verify": "node scripts/verify-setup.js",
+    "verify:build": "node scripts/verify-build.js",
     "audit:colors": "node scripts/audit-color-accessibility.js"
   },
   "devDependencies": {

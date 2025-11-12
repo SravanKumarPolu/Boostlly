@@ -55,12 +55,61 @@ pnpm install
 
 # Start development servers
 pnpm dev
-
-# Or start specific apps
-pnpm web      # Web app only
-pnpm extension # Extension only
-pnpm android  # Android app only
 ```
+
+### Building for Production
+
+#### Verify All Builds Before Committing
+
+Before committing changes, verify that all platforms build successfully:
+
+```bash
+# Verify all builds (web, extension, android type-check)
+pnpm verify:build
+
+# Or build with verification
+pnpm build:verify
+```
+
+#### Build and Commit Workflow
+
+For a complete build, verify, commit, and push workflow:
+
+```bash
+# Option 1: Use the automated script
+pnpm build:commit
+
+# Option 2: Use the script with custom commit message
+./scripts/build-and-commit.sh "Your custom commit message"
+```
+
+This script will:
+1. ✅ Run type-check on all packages
+2. ✅ Build web app
+3. ✅ Build extension
+4. ✅ Type-check Android app
+5. ✅ Attempt Android build (non-blocking)
+6. ✅ Stage all changes
+7. ✅ Commit with message
+8. ✅ Push to remote
+
+If any critical build fails, the script will exit without committing.
+
+#### Individual Platform Builds
+
+```bash
+# Build specific platforms
+pnpm build:web      # Web app only
+pnpm build:ext      # Extension only
+pnpm build:android  # Android (EAS build)
+pnpm build:apk      # Android APK for testing
+pnpm build:aab      # Android AAB for Play Store
+
+# Build all platforms
+pnpm build
+```
+
+**Note**: The main `pnpm build` command builds all platforms. Android build may fail due to Metro bundler configuration, but this is acceptable if type-check passes.
 
 ### Project Structure
 
