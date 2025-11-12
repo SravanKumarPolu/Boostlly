@@ -194,13 +194,29 @@ export class AccessibleTTS {
   /**
    * Initialize voices eagerly - call this on page load or first interaction
    * This ensures voices are loaded before speaking
+   * Enhanced for production builds with code splitting
    */
   private initializeVoices(): void {
     if (this.voicesInitialized || typeof window === "undefined" || !("speechSynthesis" in window)) {
+      // Even if initialized, check for cached voices from pre-initialization
+      if (!this.cachedVoices || this.cachedVoices.length === 0) {
+        const cached = (window as any).__boostlly_tts_voices;
+        if (cached && Array.isArray(cached) && cached.length > 0) {
+          this.cachedVoices = cached;
+          this.voicesReady = true;
+        }
+      }
       return;
     }
 
     this.voicesInitialized = true;
+
+    // Check for pre-cached voices from monitoring bootstrap
+    const preCached = (window as any).__boostlly_tts_voices;
+    if (preCached && Array.isArray(preCached) && preCached.length > 0) {
+      this.cachedVoices = preCached;
+      this.voicesReady = true;
+    }
 
     // Set up voiceschanged event listener to cache voices when they load
     const onVoicesChanged = () => {
@@ -209,6 +225,8 @@ export class AccessibleTTS {
         if (voices.length > 0) {
           this.cachedVoices = voices;
           this.voicesReady = true;
+          // Also store globally for other instances
+          (window as any).__boostlly_tts_voices = voices;
         }
       } catch (error) {
         console.warn("Error loading voices:", error);
@@ -226,11 +244,13 @@ export class AccessibleTTS {
       if (voices.length > 0) {
         this.cachedVoices = voices;
         this.voicesReady = true;
+        (window as any).__boostlly_tts_voices = voices;
       } else {
         // Trigger voice loading by calling getVoices and a dummy speak/cancel
         // Some browsers need this to initialize voices
         try {
           const dummyUtterance = new SpeechSynthesisUtterance("");
+          dummyUtterance.volume = 0;
           window.speechSynthesis.speak(dummyUtterance);
           window.speechSynthesis.cancel();
         } catch (e) {
@@ -243,26 +263,75 @@ export class AccessibleTTS {
   }
 
   /**
-   * Wait for voices to be ready (with timeout)
+   * Wait for voices to be ready (with timeout and retries)
+   * More aggressive in production to handle code splitting delays
    */
-  private async waitForVoices(maxWaitMs: number = 500): Promise<boolean> {
+  private async waitForVoices(maxWaitMs: number = 1500): Promise<boolean> {
     if (this.voicesReady && this.cachedVoices && this.cachedVoices.length > 0) {
       return true;
     }
 
-    const startTime = Date.now();
-    while (Date.now() - startTime < maxWaitMs) {
-      try {
+    // Try multiple strategies to get voices
+    const strategies = [
+      // Strategy 1: Check immediately
+      async () => {
         const voices = window.speechSynthesis.getVoices();
         if (voices.length > 0) {
           this.cachedVoices = voices;
           this.voicesReady = true;
           return true;
         }
-        // Wait a bit before checking again
-        await new Promise(resolve => setTimeout(resolve, 50));
-      } catch (error) {
-        break;
+        return false;
+      },
+      // Strategy 2: Wait and check periodically
+      async () => {
+        const startTime = Date.now();
+        const checkInterval = 50;
+        while (Date.now() - startTime < maxWaitMs) {
+          try {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+              this.cachedVoices = voices;
+              this.voicesReady = true;
+              return true;
+            }
+            await new Promise(resolve => setTimeout(resolve, checkInterval));
+          } catch (error) {
+            break;
+          }
+        }
+        return false;
+      },
+      // Strategy 3: Trigger voiceschanged event by speaking/canceling a dummy utterance
+      async () => {
+        try {
+          // Some browsers need this to trigger voice loading
+          const dummyUtterance = new SpeechSynthesisUtterance("");
+          dummyUtterance.volume = 0;
+          window.speechSynthesis.speak(dummyUtterance);
+          window.speechSynthesis.cancel();
+          
+          // Wait a bit for voices to load
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          const voices = window.speechSynthesis.getVoices();
+          if (voices.length > 0) {
+            this.cachedVoices = voices;
+            this.voicesReady = true;
+            return true;
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+        return false;
+      },
+    ];
+
+    // Try each strategy
+    for (const strategy of strategies) {
+      const result = await strategy();
+      if (result) {
+        return true;
       }
     }
 
@@ -363,7 +432,7 @@ export class AccessibleTTS {
 
   /**
    * Speak text with accessibility announcements and high-quality voice
-   * Now waits for voices to be ready before speaking
+   * Now waits for voices to be ready before speaking with aggressive initialization
    */
   async speak(
     text: string,
@@ -381,15 +450,34 @@ export class AccessibleTTS {
       return;
     }
 
-    // Initialize voices and wait for them to be ready
+    // Initialize voices aggressively
     this.initializeVoices();
     
-    // Wait for voices to be ready (with timeout)
-    const voicesReady = await this.waitForVoices(500);
+    // Wait for voices to be ready with longer timeout for production
+    // Production builds may have code splitting delays
+    const voicesReady = await this.waitForVoices(1500);
     
+    // Final check: if still no voices, try one more aggressive attempt
     if (!voicesReady && (!this.cachedVoices || this.cachedVoices.length === 0)) {
-      // If voices still not ready after waiting, try one more time with a short delay
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Last resort: try triggering voices with a user-interaction-like event
+      try {
+        const dummyUtterance = new SpeechSynthesisUtterance("");
+        dummyUtterance.volume = 0;
+        dummyUtterance.rate = 10; // Very fast, won't be heard
+        window.speechSynthesis.speak(dummyUtterance);
+        window.speechSynthesis.cancel();
+        
+        // Wait a bit more
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          this.cachedVoices = voices;
+          this.voicesReady = true;
+        }
+      } catch (e) {
+        // Ignore errors
+      }
     }
 
     // Cancel any existing speech
@@ -404,7 +492,19 @@ export class AccessibleTTS {
       this.utterance.lang = bestVoice.lang;
     } else {
       // Fallback: set language even if no voice selected
-      this.utterance.lang = "en-US";
+      // But try to get voices one more time
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        const fallbackVoice = this.selectBestVoiceFromList(voices);
+        if (fallbackVoice) {
+          this.utterance.voice = fallbackVoice;
+          this.utterance.lang = fallbackVoice.lang;
+        } else {
+          this.utterance.lang = "en-US";
+        }
+      } else {
+        this.utterance.lang = "en-US";
+      }
     }
     
     // Use optimal settings for natural speech
