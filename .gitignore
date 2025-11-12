@@ -188,6 +188,10 @@ web-ext-artifacts/
 # Performance monitoring
 .perf/
 
+# Large audit/report files
+*_AUDIT_REPORT.json
+*_AUDIT_REPORT.*
+
 # Mobile development
 *.apk
 *.ipa

@@ -1236,17 +1236,34 @@ export function AdvancedSearch({
 
       {/* Phase 1: Search History Modal */}
       {showSearchHistory && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
-          <div className="w-full max-w-md p-4 rounded-xl border border-border bg-background/10 backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSearchHistory(false);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowSearchHistory(false);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div 
+            className="w-full max-w-md p-6 rounded-xl border border-border bg-card backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 Search History
               </h3>
               <button
                 onClick={() => setShowSearchHistory(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-lg text-foreground/80 hover:text-foreground bg-background/50 hover:bg-accent border border-border/50 hover:border-border transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Close search history dialog"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-2">
@@ -1304,17 +1321,34 @@ export function AdvancedSearch({
 
       {/* Phase 1: Saved Searches Modal */}
       {showSavedSearches && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
-          <div className="w-full max-w-md p-4 rounded-xl border border-border bg-background/10 backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSavedSearches(false);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowSavedSearches(false);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div 
+            className="w-full max-w-md p-6 rounded-xl border border-border bg-card backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 Saved Searches
               </h3>
               <button
                 onClick={() => setShowSavedSearches(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-lg text-foreground/80 hover:text-foreground bg-background/50 hover:bg-accent border border-border/50 hover:border-border transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Close saved searches dialog"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-2">
@@ -1374,17 +1408,34 @@ export function AdvancedSearch({
 
       {/* Phase 1: Search Analytics Modal */}
       {showAnalytics && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
-          <div className="w-full max-w-md p-4 rounded-xl border border-border bg-background/10 backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAnalytics(false);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowAnalytics(false);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div 
+            className="w-full max-w-md p-6 rounded-xl border border-border bg-card backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 Search Analytics
               </h3>
               <button
                 onClick={() => setShowAnalytics(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-lg text-foreground/80 hover:text-foreground bg-background/50 hover:bg-accent border border-border/50 hover:border-border transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Close search analytics dialog"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-4">
@@ -1510,17 +1561,34 @@ export function AdvancedSearch({
 
       {/* Phase 2: Search Insights Modal */}
       {showInsights && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
-          <div className="w-full max-w-md p-4 rounded-xl border border-border bg-background/10 backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowInsights(false);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowInsights(false);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div 
+            className="w-full max-w-md p-6 rounded-xl border border-border bg-card backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 Search Insights
               </h3>
               <button
                 onClick={() => setShowInsights(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-lg text-foreground/80 hover:text-foreground bg-background/50 hover:bg-accent border border-border/50 hover:border-border transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Close search insights dialog"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-4">
@@ -1637,17 +1705,34 @@ export function AdvancedSearch({
 
       {/* Phase 2: Smart Recommendations Modal */}
       {showRecommendations && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
-          <div className="w-full max-w-md p-4 rounded-xl border border-border bg-background/10 backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowRecommendations(false);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowRecommendations(false);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div 
+            className="w-full max-w-md p-6 rounded-xl border border-border bg-card backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 Smart Recommendations
               </h3>
               <button
                 onClick={() => setShowRecommendations(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-lg text-foreground/80 hover:text-foreground bg-background/50 hover:bg-accent border border-border/50 hover:border-border transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Close smart recommendations dialog"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-3">
@@ -1719,17 +1804,34 @@ export function AdvancedSearch({
 
       {/* Phase 2: Related Content Modal */}
       {showRelatedContent && selectedQuote && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
-          <div className="w-full max-w-md p-4 rounded-xl border border-border bg-background/10 backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowRelatedContent(false);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowRelatedContent(false);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div 
+            className="w-full max-w-md p-6 rounded-xl border border-border bg-card backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 Related Content
               </h3>
               <button
                 onClick={() => setShowRelatedContent(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-lg text-foreground/80 hover:text-foreground bg-background/50 hover:bg-accent border border-border/50 hover:border-border transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Close related content dialog"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-4">
@@ -1850,17 +1952,34 @@ export function AdvancedSearch({
 
       {/* Phase 3: Advanced Filters Modal */}
       {showAdvancedFilters && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
-          <div className="w-full max-w-md p-4 rounded-xl border border-border bg-background/10 backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAdvancedFilters(false);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowAdvancedFilters(false);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div 
+            className="w-full max-w-md p-6 rounded-xl border border-border bg-card backdrop-blur-xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 Advanced Filters
               </h3>
               <button
                 onClick={() => setShowAdvancedFilters(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-lg text-foreground/80 hover:text-foreground bg-background/50 hover:bg-accent border border-border/50 hover:border-border transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Close advanced filters dialog"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-4">
@@ -2098,17 +2217,34 @@ export function AdvancedSearch({
 
       {/* Phase 3: Bulk Operations Modal */}
       {showBulkOperations && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
-          <div className="w-full max-w-md p-4 rounded-xl border border-border bg-background/10 backdrop-blur-xl shadow-2xl">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowBulkOperations(false);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowBulkOperations(false);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div 
+            className="w-full max-w-md p-6 rounded-xl border border-border bg-card backdrop-blur-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 Bulk Operations
               </h3>
               <button
                 onClick={() => setShowBulkOperations(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-lg text-foreground/80 hover:text-foreground bg-background/50 hover:bg-accent border border-border/50 hover:border-border transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Close bulk operations dialog"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-3">
@@ -2194,53 +2330,81 @@ export function AdvancedSearch({
 
       {/* Phase 3: Export Options Modal */}
       {showExportOptions && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
-          <div className="w-full max-w-md p-4 rounded-xl border border-border bg-background/10 backdrop-blur-xl shadow-2xl">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowExportOptions(false);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowExportOptions(false);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div 
+            className="w-full max-w-md p-6 rounded-xl border border-border bg-card backdrop-blur-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 Export Search Results
               </h3>
               <button
                 onClick={() => setShowExportOptions(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-lg text-foreground/80 hover:text-foreground bg-background/50 hover:bg-accent border border-border/50 hover:border-border transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                aria-label="Close export dialog"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="space-y-3">
-              <div className="p-3 bg-background/5 rounded-lg border border-border">
-                <p className="text-sm text-foreground mb-2">
-                  Export {filteredResults.length} search results
+            <div className="space-y-4">
+              <div className="p-4 bg-muted/30 rounded-lg border border-border">
+                <p className="text-base font-medium text-foreground mb-1">
+                  Export {filteredResults.length} search {filteredResults.length === 1 ? 'result' : 'results'}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Includes search query, filters, and quote data
                 </p>
               </div>
 
-              <Button
-                onClick={() => {
-                  exportSelectedQuotes(filteredResults.map((r) => r.item.id));
-                  setShowExportOptions(false);
-                }}
-                className="w-full"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export All Results
-              </Button>
-
-              {selectedQuotes.size > 0 && (
+              <div className="space-y-2">
                 <Button
                   onClick={() => {
-                    exportSelectedQuotes(Array.from(selectedQuotes));
+                    exportSelectedQuotes(filteredResults.map((r) => r.item.id));
                     setShowExportOptions(false);
                   }}
-                  variant="outline"
                   className="w-full"
+                  disabled={filteredResults.length === 0}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Export Selected ({selectedQuotes.size})
+                  Export All Results
                 </Button>
-              )}
+
+                {selectedQuotes.size > 0 && (
+                  <Button
+                    onClick={() => {
+                      exportSelectedQuotes(Array.from(selectedQuotes));
+                      setShowExportOptions(false);
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Selected ({selectedQuotes.size})
+                  </Button>
+                )}
+
+                <Button
+                  onClick={() => setShowExportOptions(false)}
+                  variant="ghost"
+                  className="w-full"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </div>
         </div>

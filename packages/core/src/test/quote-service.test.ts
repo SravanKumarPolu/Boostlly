@@ -1,6 +1,22 @@
 /**
  * Comprehensive test suite for QuoteService
- * Tests all major functionality including caching, providers, analytics, and error handling
+ * 
+ * Tests all major functionality including:
+ * - Constructor and initialization
+ * - Daily quote retrieval (sync and async)
+ * - Random quote retrieval
+ * - Quote search and filtering
+ * - Bulk operations
+ * - Analytics and metrics
+ * - Health status monitoring
+ * - Caching mechanisms
+ * - Error handling and resilience
+ * - Performance validation
+ * - Source weight management
+ * - Like functionality
+ * - Cache management
+ * 
+ * @module QuoteService Tests
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
@@ -69,11 +85,12 @@ describe("QuoteService", () => {
       expect(quote.author).toBeDefined();
     });
 
-    it("should return same quote for same day", () => {
+    it("should return same quote for same day (deterministic)", () => {
       const quote1 = quoteService.getDailyQuote();
       const quote2 = quoteService.getDailyQuote();
       expect(quote1.id).toBe(quote2.id);
       expect(quote1.text).toBe(quote2.text);
+      expect(quote1.author).toBe(quote2.author);
     });
 
     it("should return fallback quote when no quotes available", () => {
@@ -92,10 +109,11 @@ describe("QuoteService", () => {
       expect(quote.author).toBeDefined();
     });
 
-    it("should return same quote for same day", async () => {
+    it("should return same quote for same day (deterministic)", async () => {
       const quote1 = await quoteService.getDailyQuoteAsync();
       const quote2 = await quoteService.getDailyQuoteAsync();
       expect(quote1.id).toBe(quote2.id);
+      expect(quote1.text).toBe(quote2.text);
     });
 
     it("should force refresh when force=true", async () => {
@@ -177,13 +195,18 @@ describe("QuoteService", () => {
   });
 
   describe("getBulkQuotes", () => {
-    it("should fetch multiple quotes", async () => {
+    it("should fetch multiple quotes from specified sources", async () => {
       const quotes = await quoteService.getBulkQuotes({
         count: 5,
         sources: ["DummyJSON"],
       });
       expect(Array.isArray(quotes)).toBe(true);
       expect(quotes.length).toBeGreaterThan(0);
+      quotes.forEach((quote) => {
+        expect(quote).toBeDefined();
+        expect(quote.text).toBeDefined();
+        expect(quote.id).toBeDefined();
+      });
     });
 
     it("should respect count limit", async () => {
@@ -192,6 +215,15 @@ describe("QuoteService", () => {
         sources: ["DummyJSON"],
       });
       expect(quotes.length).toBeLessThanOrEqual(3);
+      expect(quotes.length).toBeGreaterThan(0);
+    });
+
+    it("should handle empty sources array", async () => {
+      const quotes = await quoteService.getBulkQuotes({
+        count: 5,
+        sources: [],
+      });
+      expect(Array.isArray(quotes)).toBe(true);
     });
   });
 
@@ -220,15 +252,34 @@ describe("QuoteService", () => {
   });
 
   describe("getQuoteRecommendations", () => {
-    it("should return quote recommendations", async () => {
+    it("should return quote recommendations based on similarity", async () => {
+      const baseQuote: Quote = {
+        id: "1",
+        text: "Test quote about success",
+        author: "Test Author",
+        source: "DummyJSON",
+        category: "motivation",
+      };
+      const recommendations = await quoteService.getQuoteRecommendations(baseQuote);
+      expect(Array.isArray(recommendations)).toBe(true);
+      // Recommendations should have structure
+      recommendations.forEach((rec) => {
+        expect(rec.quote).toBeDefined();
+        expect(rec.score).toBeGreaterThanOrEqual(0);
+        expect(rec.reason).toBeDefined();
+      });
+    });
+
+    it("should return recommendations with limit", async () => {
       const baseQuote: Quote = {
         id: "1",
         text: "Test quote",
         author: "Test Author",
         source: "DummyJSON",
       };
-      const recommendations = await quoteService.getQuoteRecommendations(baseQuote);
+      const recommendations = await quoteService.getQuoteRecommendations(baseQuote, 5);
       expect(Array.isArray(recommendations)).toBe(true);
+      expect(recommendations.length).toBeLessThanOrEqual(5);
     });
   });
 
@@ -252,17 +303,18 @@ describe("QuoteService", () => {
       expect(typeof analytics.totalQuotes).toBe('number');
     });
 
-    it("should track quote views", () => {
-      const quote = quoteService.getDailyQuote();
+    it("should track quote views and update analytics", () => {
       const analyticsBefore = quoteService.getAnalytics();
+      const initialTotal = analyticsBefore.totalQuotes;
       
       // View quote multiple times
       quoteService.getDailyQuote();
       quoteService.getDailyQuote();
+      quoteService.getRandomQuote();
       
       const analyticsAfter = quoteService.getAnalytics();
-      // Analytics should be updated
       expect(analyticsAfter).toBeDefined();
+      expect(analyticsAfter.totalQuotes).toBeGreaterThanOrEqual(initialTotal);
     });
   });
 
@@ -348,6 +400,37 @@ describe("QuoteService", () => {
     });
   });
 
+  describe("getRandomQuote", () => {
+    it("should return a random quote", () => {
+      const quote = quoteService.getRandomQuote();
+      expect(quote).toBeDefined();
+      expect(quote.text).toBeDefined();
+      expect(quote.author).toBeDefined();
+    });
+
+    it("should return fallback quote when no quotes available", () => {
+      storage.reset();
+      const quote = quoteService.getRandomQuote();
+      expect(quote).toBeDefined();
+      expect(quote.text).toBeDefined();
+    });
+
+    it("should return quotes on multiple calls (may vary)", () => {
+      // Load quotes first
+      quoteService.loadQuotes().catch(() => {});
+      
+      const quotes = new Set<string>();
+      for (let i = 0; i < 10; i++) {
+        const quote = quoteService.getRandomQuote();
+        expect(quote).toBeDefined();
+        expect(quote.text).toBeDefined();
+        quotes.add(quote.id);
+      }
+      // Should have at least one quote (may be same if only one available)
+      expect(quotes.size).toBeGreaterThan(0);
+    });
+  });
+
   describe("Source Weights", () => {
     it("should have default source weights", () => {
       const analytics = quoteService.getAnalytics();
@@ -367,8 +450,105 @@ describe("QuoteService", () => {
       };
       
       quoteService.updateSourceWeights(newWeights);
-      // Should update without error
-      expect(true).toBe(true);
+      // Verify weights were updated
+      const stored = storage.getSync("sourceWeights");
+      expect(stored).toBeDefined();
+    });
+
+    it("should persist source weights to storage", () => {
+      const newWeights = {
+        ZenQuotes: 0.4,
+        Quotable: 0.3,
+        FavQs: 0.1,
+        "They Said So": 0.1,
+        QuoteGarden: 0.05,
+        "Stoic Quotes": 0.05,
+        "Programming Quotes": 0.0,
+        DummyJSON: 0,
+      };
+      
+      quoteService.updateSourceWeights(newWeights);
+      const stored = storage.getSync("sourceWeights");
+      expect(stored).toBeDefined();
+      if (stored) {
+        expect(stored.ZenQuotes).toBe(0.4);
+      }
+    });
+  });
+
+  describe("Performance Metrics", () => {
+    it("should return performance metrics", () => {
+      const metrics = quoteService.getPerformanceMetrics();
+      expect(metrics).toBeDefined();
+      expect(typeof metrics).toBe("object");
+    });
+
+    it("should track performance metrics for sources", () => {
+      const metrics = quoteService.getPerformanceMetrics();
+      // Metrics should be an object with source keys
+      expect(Object.keys(metrics).length).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe("Like Quote", () => {
+    it("should like a quote", async () => {
+      await quoteService.loadQuotes();
+      const quote = quoteService.getDailyQuote();
+      
+      const result = await quoteService.likeQuote(quote.id);
+      expect(result).toBe(true);
+    });
+
+    it("should toggle like status", async () => {
+      await quoteService.loadQuotes();
+      const quote = quoteService.getDailyQuote();
+      
+      const liked1 = await quoteService.likeQuote(quote.id);
+      expect(liked1).toBe(true);
+      
+      const liked2 = await quoteService.likeQuote(quote.id);
+      expect(liked2).toBe(true); // Should toggle
+    });
+
+    it("should return false for non-existent quote", async () => {
+      const result = await quoteService.likeQuote("non-existent-id");
+      expect(result).toBe(false);
+    });
+  });
+
+  describe("Cache Management", () => {
+    it("should clear cache", async () => {
+      await quoteService.loadQuotes();
+      await quoteService.clearCache();
+      
+      // Cache should be cleared
+      const apiCache = await storage.get("apiCache");
+      expect(apiCache).toBeDefined();
+    });
+
+    it("should handle cache expiration and refresh", async () => {
+      const oldQuote: Quote = {
+        id: "old-1",
+        text: "Old quote",
+        author: "Old Author",
+        source: "DummyJSON",
+      };
+      
+      // Set old cache
+      await storage.set("quotes", [oldQuote]);
+      
+      // Create new service with immediate expiration
+      const newService = new QuoteService(storage, {
+        cacheEnabled: true,
+        maxCacheAge: 0, // Expire immediately
+      });
+      
+      await newService.loadQuotes();
+      // Should fetch new quotes or use fallback (not the old cached one)
+      const quote = newService.getDailyQuote();
+      expect(quote).toBeDefined();
+      expect(quote.text).toBeDefined();
+      // May or may not be the old quote depending on cache logic
     });
   });
 

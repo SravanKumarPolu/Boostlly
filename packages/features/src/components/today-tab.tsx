@@ -11,6 +11,7 @@ import {
   meetsWCAGAA,
   meetsWCAGAAA,
   calculateEffectiveBackground,
+  UserAnalyticsService,
 } from "@boostlly/core";
 import { getDateKey } from "@boostlly/core/utils/date-utils";
 import { getCategoryDisplay } from "@boostlly/core/utils/category-display";
@@ -275,6 +276,30 @@ export const TodayTab = forwardRef<
     useEffect(() => {
       setIsHydrated(true);
     }, []);
+
+    // Track homepage visit when TodayTab mounts
+    useEffect(() => {
+      if (!storage || !isHydrated) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("⏸️ Homepage visit tracking skipped:", { storage: !!storage, isHydrated });
+        }
+        return;
+      }
+      
+      try {
+        const analyticsService = new UserAnalyticsService(storage as any);
+        console.log("🏠 Tracking homepage visit...");
+        analyticsService.trackHomepageVisit()
+          .then(() => {
+            console.log("✅ Homepage visit tracked successfully");
+          })
+          .catch((error) => {
+            console.error("❌ Failed to track homepage visit:", error);
+          });
+      } catch (error) {
+        console.error("❌ Failed to initialize analytics service:", error);
+      }
+    }, [storage, isHydrated]);
 
     // CRITICAL: Clear stale quote cache immediately on mount if date has changed
     // This must run BEFORE any quote loading to ensure we get today's quote
@@ -754,30 +779,41 @@ export const TodayTab = forwardRef<
     };
 
     const handleSpeak = async () => {
+      // Track read button click
+      if (storage) {
+        try {
+          const analyticsService = new UserAnalyticsService(storage as any);
+          analyticsService.trackReadButtonClick().catch((error) => {
+            console.error("Failed to track read button click:", error);
+          });
+        } catch (error) {
+          console.error("Failed to initialize analytics service for read tracking:", error);
+        }
+      }
       try {
         if (!quote) return;
 
-        // Read TTS settings from storage with defaults
+        // Read TTS settings from storage with improved defaults
         let enabled = true;
-        let rate = 0.8;
-        let volumePct = 80;
+        let rate = 1.0; // Default to 1.0 for more natural pace
+        let volumePct = 90; // Higher default volume for clarity
 
         if (storage) {
           try {
             // Try sync first, then async fallback
             enabled = storage.getSync?.("textToSpeech") ?? true;
-            rate = storage.getSync?.("speechRate") ?? 0.8;
-            volumePct = storage.getSync?.("speechVolume") ?? 80;
+            rate = storage.getSync?.("speechRate") ?? 1.0;
+            volumePct = storage.getSync?.("speechVolume") ?? 90;
 
             // If sync returned null/undefined, try async
             if (enabled === null || enabled === undefined) {
               enabled = (await storage.get("textToSpeech")) ?? true;
             }
             if (rate === null || rate === undefined) {
-              rate = (await storage.get("speechRate")) ?? 0.8;
+              rate = (await storage.get("speechRate")) ?? 1.0;
             }
             if (volumePct === null || volumePct === undefined) {
-              volumePct = (await storage.get("speechVolume")) ?? 80;
+              volumePct = (await storage.get("speechVolume")) ?? 90;
             }
           } catch (error) {
             console.warn("Failed to read TTS settings, using defaults:", error);
@@ -786,13 +822,14 @@ export const TodayTab = forwardRef<
 
         if (enabled === false) return;
 
-        // Use the accessible TTS utility
+        // Use the accessible TTS utility with improved settings
         accessibleTTS.speak(`"${quote.text}" by ${quote.author}`, {
-          rate: typeof rate === "number" ? rate : 0.8,
+          rate: typeof rate === "number" ? Math.max(0.5, Math.min(2, rate)) : 1.0,
           volume: Math.max(
             0,
-            Math.min(1, (typeof volumePct === "number" ? volumePct : 80) / 100),
+            Math.min(1, (typeof volumePct === "number" ? volumePct : 90) / 100),
           ),
+          pitch: 1.0, // Neutral pitch for clarity
           onError: (error) => {
             console.error("Failed to speak quote:", error);
             announceToScreenReader(

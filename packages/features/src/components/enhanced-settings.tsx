@@ -135,6 +135,8 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
     | "performance"
   >("general");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPlayingSound, setIsPlayingSound] = useState(false);
 
   useEffect(() => {
     loadPreferences();
@@ -561,6 +563,7 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
         cardTitle: "hsl(var(--foreground))",
         cardText: "hsl(var(--foreground))",
         pageSecondary: "hsl(var(--foreground) / 0.85)", // For page background subtitles
+        border: "hsl(var(--border))",
       };
     }
 
@@ -621,6 +624,9 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
       pageSecondaryContrast = getContrastRatio(pageSecondaryText, pageBg);
     }
     
+    // Border color: subtle border that works on card background
+    const borderColor = bgLuminance < 0.5 ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)";
+    
     return {
       primary: primaryText,
       secondary: secondaryText,
@@ -628,6 +634,7 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
       cardTitle: primaryText,
       cardText: primaryText,
       cardBg,
+      border: borderColor,
     };
   }, [palette]);
 
@@ -761,27 +768,82 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
   const renderAudioTab = () => {
     // Sound preview function (requires user gesture)
     const handleSoundPreview = async () => {
+      if (isPlayingSound) return;
+      setIsPlayingSound(true);
       try {
-        // Import sound manager dynamically to avoid SSR issues
         const { playSound } = await import("@boostlly/core");
         await playSound("crystal-chime", preferences.soundVolume);
+        setTimeout(() => setIsPlayingSound(false), 1000);
       } catch (error) {
         logWarning("Sound preview failed:", { error: error });
-        // Fallback: show a brief visual feedback
-        const button = document.querySelector(
-          "[data-sound-preview]",
-        ) as HTMLElement;
-        if (button) {
-          button.style.transform = "scale(0.95)";
-          setTimeout(() => {
-            button.style.transform = "scale(1)";
-          }, 100);
+        setIsPlayingSound(false);
+      }
+    };
+
+    // Text-to-speech test function
+    const handleSpeechTest = () => {
+      if (isSpeaking || !preferences.textToSpeech) return;
+      
+      // Check if speech synthesis is available
+      if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+        logWarning("Speech synthesis not available");
+        return;
+      }
+      
+      setIsSpeaking(true);
+      try {
+        // Cancel any existing speech
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(
+          "This is a test of the text-to-speech feature. You can adjust the rate and volume to your preference."
+        );
+        
+        // Select best available voice for quality
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          // Try to find a high-quality voice
+          const bestVoice = voices.find(v => 
+            v.name.toLowerCase().includes("neural") || 
+            v.name.toLowerCase().includes("premium") ||
+            v.name.toLowerCase().includes("enhanced") ||
+            v.name.toLowerCase().includes("natural")
+          ) || voices.find(v => v.lang.startsWith("en-US")) || voices[0];
+          
+          if (bestVoice) {
+            utterance.voice = bestVoice;
+            utterance.lang = bestVoice.lang;
+          }
+        } else {
+          utterance.lang = "en-US";
         }
+        
+        utterance.rate = Math.max(0.5, Math.min(2, preferences.speechRate || 1.0));
+        utterance.volume = Math.max(0, Math.min(1, (preferences.speechVolume || 90) / 100));
+        utterance.pitch = 1.0;
+        
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        
+        window.speechSynthesis.speak(utterance);
+      } catch (error) {
+        logWarning("Speech test failed:", { error: error });
+        setIsSpeaking(false);
       }
     };
 
     return (
       <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h3 className="text-lg font-semibold mb-1" style={{ color: textColors.cardTitle }}>
+            Audio Settings
+          </h3>
+          <p className="text-sm" style={{ color: textColors.secondary }}>
+            Configure notification sounds and text-to-speech preferences
+          </p>
+        </div>
+
         {/* Notification Sounds */}
         <Card style={{ backgroundColor: textColors.cardBg }}>
           <CardHeader>
@@ -792,7 +854,14 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Enable Notification Sounds</span>
+              <div>
+                <span className="text-sm font-medium block" style={{ color: textColors.cardText }}>
+                  Enable Notification Sounds
+                </span>
+                <span className="text-xs" style={{ color: textColors.secondary }}>
+                  Play sounds for notifications and alerts
+                </span>
+              </div>
               <Switch
                 checked={preferences.notificationSounds}
                 onCheckedChange={(checked) =>
@@ -802,10 +871,17 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
             </div>
 
             {preferences.notificationSounds && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold" style={{ color: textColors.cardText }}>Sound Volume</label>
-                  <div className="flex items-center gap-2">
+              <div className="space-y-4 pt-2 border-t" style={{ borderColor: textColors.border }}>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-semibold" style={{ color: textColors.cardText }}>
+                      Sound Volume
+                    </label>
+                    <span className="text-sm font-medium px-2 py-1 rounded bg-primary/10" style={{ color: textColors.cardText }}>
+                      {preferences.soundVolume}%
+                    </span>
+                  </div>
+                  <div className="space-y-2">
                     <input
                       type="range"
                       min="0"
@@ -817,29 +893,28 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
                           soundVolume: parseInt(e.target.value),
                         })
                       }
-                      className="flex-1"
+                      className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                      style={{
+                        background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${preferences.soundVolume}%, hsl(var(--muted)) ${preferences.soundVolume}%, hsl(var(--muted)) 100%)`
+                      }}
                     />
-                    <span className="text-sm w-12 font-medium" style={{ color: textColors.cardText }}>
-                      {preferences.soundVolume}%
-                    </span>
+                    <div className="flex items-center justify-between text-xs" style={{ color: textColors.secondary }}>
+                      <span>Mute</span>
+                      <span>Full Volume</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    data-sound-preview
-                    onClick={handleSoundPreview}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium"
-                    aria-label="Preview notification sound"
-                  >
-                    <Volume2 className="w-4 h-4" strokeWidth={2} />
-                    Preview Sound
-                  </button>
-                  <span className="text-xs font-medium" style={{ color: textColors.secondary }}>
-                    Click to test sound (requires user interaction)
-                  </span>
-                </div>
-              </>
+                <Button
+                  onClick={handleSoundPreview}
+                  disabled={isPlayingSound}
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
+                  <Volume2 className="w-4 h-4 mr-2" />
+                  {isPlayingSound ? "Playing..." : "Preview Sound"}
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -854,7 +929,14 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Enable Text-to-Speech</span>
+              <div>
+                <span className="text-sm font-medium block" style={{ color: textColors.cardText }}>
+                  Enable Text-to-Speech
+                </span>
+                <span className="text-xs" style={{ color: textColors.secondary }}>
+                  Read quotes and content aloud
+                </span>
+              </div>
               <Switch
                 checked={preferences.textToSpeech}
                 onCheckedChange={(checked) =>
@@ -864,54 +946,98 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
             </div>
 
             {preferences.textToSpeech && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold" style={{ color: textColors.cardText }}>Speech Rate</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="2"
-                      step="0.1"
-                      value={preferences.speechRate}
-                      onChange={(e) =>
-                        savePreferences({
-                          speechRate: parseFloat(e.target.value),
-                        })
-                      }
-                      className="flex-1"
-                    />
-                    <span className="text-sm w-12 font-medium" style={{ color: textColors.cardText }}>
-                      {preferences.speechRate}x
-                    </span>
+              <div className="space-y-4 pt-2 border-t" style={{ borderColor: textColors.border }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Speech Rate */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold" style={{ color: textColors.cardText }}>
+                        Speech Rate
+                      </label>
+                      <span className="text-sm font-medium px-2 py-1 rounded bg-primary/10" style={{ color: textColors.cardText }}>
+                        {preferences.speechRate.toFixed(1)}x
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="2"
+                        step="0.1"
+                        value={preferences.speechRate}
+                        onChange={(e) =>
+                          savePreferences({
+                            speechRate: parseFloat(e.target.value),
+                          })
+                        }
+                        className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                        style={{
+                          background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${((preferences.speechRate - 0.5) / 1.5) * 100}%, hsl(var(--muted)) ${((preferences.speechRate - 0.5) / 1.5) * 100}%, hsl(var(--muted)) 100%)`
+                        }}
+                      />
+                      <div className="flex items-center justify-between text-xs" style={{ color: textColors.secondary }}>
+                        <span>Slow (0.5x)</span>
+                        <span>Fast (2.0x)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Speech Volume */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold" style={{ color: textColors.cardText }}>
+                        Speech Volume
+                      </label>
+                      <span className="text-sm font-medium px-2 py-1 rounded bg-primary/10" style={{ color: textColors.cardText }}>
+                        {preferences.speechVolume}%
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="5"
+                        value={preferences.speechVolume}
+                        onChange={(e) =>
+                          savePreferences({
+                            speechVolume: parseInt(e.target.value),
+                          })
+                        }
+                        className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                        style={{
+                          background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${preferences.speechVolume}%, hsl(var(--muted)) ${preferences.speechVolume}%, hsl(var(--muted)) 100%)`
+                        }}
+                      />
+                      <div className="flex items-center justify-between text-xs" style={{ color: textColors.secondary }}>
+                        <span>Quiet (0%)</span>
+                        <span>Loud (100%)</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold" style={{ color: textColors.cardText }}>Volume</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="5"
-                      value={preferences.speechVolume}
-                      onChange={(e) =>
-                        savePreferences({
-                          speechVolume: parseInt(e.target.value),
-                        })
-                      }
-                      className="flex-1"
-                    />
-                    <span className="text-sm w-12 font-medium" style={{ color: textColors.cardText }}>
-                      {preferences.speechVolume}%
-                    </span>
-                  </div>
-                </div>
-              </>
+                <Button
+                  onClick={handleSpeechTest}
+                  disabled={isSpeaking}
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
+                  <Volume2 className="w-4 h-4 mr-2" />
+                  {isSpeaking ? "Speaking..." : "Test Speech"}
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Info Note */}
+        <div className="p-4 rounded-lg border" style={{ backgroundColor: textColors.cardBg, borderColor: textColors.border }}>
+          <p className="text-xs leading-relaxed" style={{ color: textColors.secondary }}>
+            <strong className="font-medium" style={{ color: textColors.cardText }}>Note:</strong>{" "}
+            These settings sync with the Voice tab. You can test voice features in the Voice tab, but all configuration is managed here.
+          </p>
+        </div>
       </div>
     );
   };

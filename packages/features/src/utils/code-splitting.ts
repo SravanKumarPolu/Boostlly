@@ -131,7 +131,7 @@ export const criticalPath = {
    * Preload non-critical components
    */
   preloadNonCritical: (): void => {
-    const nonCriticalModules = [
+    const nonCriticalModules: Array<() => Promise<{ default: ComponentType<any> }>> = [
       () => import('../components/advanced-analytics').then(m => ({ default: m.AdvancedAnalytics })),
       () => import('../components/pattern-recognition').then(m => ({ default: m.PatternRecognition })),
       () => import('../components/voice-commands').then(m => ({ default: m.VoiceCommands })),

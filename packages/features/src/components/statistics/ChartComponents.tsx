@@ -31,6 +31,9 @@ export function StatAreaChart({ data, dataKey, color, height = 300, xAxisFormatt
     >
       {(recharts) => {
         const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = recharts;
+        const textColor = "hsl(var(--foreground))";
+        const gridColor = "hsl(var(--border))";
+        
         return (
           <ResponsiveContainer width="100%" height={height}>
             <AreaChart data={data}>
@@ -40,21 +43,34 @@ export function StatAreaChart({ data, dataKey, color, height = 300, xAxisFormatt
                   <stop offset="95%" stopColor={color} stopOpacity={0.1} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.2} />
               <XAxis
                 dataKey="date"
                 tickFormatter={xAxisFormatter || ((value: any) => {
                   const date = new Date(value);
                   return `${date.getMonth() + 1}/${date.getDate()}`;
                 })}
-                style={{ fontSize: "12px" }}
+                tick={{ fill: textColor, fontSize: 12 }}
+                tickLine={{ stroke: textColor }}
+                axisLine={{ stroke: textColor }}
               />
-              <YAxis style={{ fontSize: "12px" }} />
+              <YAxis 
+                tick={{ fill: textColor, fontSize: 12 }}
+                tickLine={{ stroke: textColor }}
+                axisLine={{ stroke: textColor }}
+              />
               <Tooltip
                 labelFormatter={tooltipFormatter || ((value: any) => {
                   const date = new Date(value);
                   return date.toLocaleDateString();
                 })}
+                contentStyle={{ 
+                  backgroundColor: "hsl(var(--background))",
+                  border: "1px solid hsl(var(--border))",
+                  color: textColor,
+                  borderRadius: "8px"
+                }}
+                labelStyle={{ color: textColor }}
               />
               <Area
                 type="monotone"
@@ -91,14 +107,30 @@ export function StatBarChart({ data, dataKey, color, height = 300, layout, xAxis
     >
       {(recharts) => {
         const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = recharts;
+        // Use CSS variables for text color to ensure proper contrast
+        const textColor = "hsl(var(--foreground))";
+        const gridColor = "hsl(var(--border))";
+        
         return (
           <ResponsiveContainer width="100%" height={height}>
             <BarChart data={data} layout={layout}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.2} />
               {layout === "vertical" ? (
                 <>
-                  <XAxis type="number" style={{ fontSize: "12px" }} />
-                  <YAxis dataKey="name" type="category" width={100} style={{ fontSize: "12px" }} />
+                  <XAxis 
+                    type="number" 
+                    tick={{ fill: textColor, fontSize: 12 }}
+                    tickLine={{ stroke: textColor }}
+                    axisLine={{ stroke: textColor }}
+                  />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    width={100} 
+                    tick={{ fill: textColor, fontSize: 12 }}
+                    tickLine={{ stroke: textColor }}
+                    axisLine={{ stroke: textColor }}
+                  />
                 </>
               ) : (
                 <>
@@ -107,12 +139,26 @@ export function StatBarChart({ data, dataKey, color, height = 300, layout, xAxis
                     angle={xAxisAngle || 0}
                     textAnchor={xAxisAngle ? "end" : "middle"}
                     height={xAxisAngle ? 80 : undefined}
-                    style={{ fontSize: "12px" }}
+                    tick={{ fill: textColor, fontSize: 12 }}
+                    tickLine={{ stroke: textColor }}
+                    axisLine={{ stroke: textColor }}
                   />
-                  <YAxis style={{ fontSize: "12px" }} />
+                  <YAxis 
+                    tick={{ fill: textColor, fontSize: 12 }}
+                    tickLine={{ stroke: textColor }}
+                    axisLine={{ stroke: textColor }}
+                  />
                 </>
               )}
-              <Tooltip />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: "hsl(var(--background))",
+                  border: "1px solid hsl(var(--border))",
+                  color: textColor,
+                  borderRadius: "8px"
+                }}
+                labelStyle={{ color: textColor }}
+              />
               <Bar
                 dataKey={dataKey}
                 fill={color}

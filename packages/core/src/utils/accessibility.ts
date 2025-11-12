@@ -187,9 +187,102 @@ export class FocusManager {
 export class AccessibleTTS {
   private utterance: SpeechSynthesisUtterance | null = null;
   private isSpeaking = false;
+  private cachedVoices: SpeechSynthesisVoice[] | null = null;
 
   /**
-   * Speak text with accessibility announcements
+   * Get the best available voice for text-to-speech
+   * Prioritizes high-quality, natural-sounding voices
+   */
+  private getBestVoice(): SpeechSynthesisVoice | null {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return null;
+    }
+
+    // Always get fresh voices list (voices may load asynchronously)
+    let voices: SpeechSynthesisVoice[] = [];
+    try {
+      voices = window.speechSynthesis.getVoices();
+    } catch (error) {
+      // If getVoices fails, use cached voices or return null
+      if (this.cachedVoices && this.cachedVoices.length > 0) {
+        return this.cachedVoices[0];
+      }
+      return null;
+    }
+    
+    // If no voices yet, try to trigger loading
+    if (voices.length === 0) {
+      // Try to load voices by triggering the voiceschanged event
+      // Note: Some browsers require a user interaction before voices are available
+      try {
+        // Trigger voice loading by setting up the event handler if not already set
+        if (!window.speechSynthesis.onvoiceschanged) {
+          window.speechSynthesis.onvoiceschanged = () => {
+            this.cachedVoices = window.speechSynthesis.getVoices();
+          };
+        }
+        // Try getting voices again (may still be empty if not loaded yet)
+        voices = window.speechSynthesis.getVoices();
+      } catch (error) {
+        // Silently fail and use cached voices if available
+        if (this.cachedVoices && this.cachedVoices.length > 0) {
+          voices = this.cachedVoices;
+        }
+      }
+    }
+
+    // Cache voices for future use
+    if (voices.length > 0 && !this.cachedVoices) {
+      this.cachedVoices = voices;
+    }
+
+    // Use cached voices if fresh list is empty
+    if (voices.length === 0 && this.cachedVoices && this.cachedVoices.length > 0) {
+      voices = this.cachedVoices;
+    }
+
+    if (voices.length === 0) {
+      return null;
+    }
+
+    // Priority order for voice selection (best to worst)
+    const voicePreferences = [
+      // 1. Premium/Neural voices (highest quality)
+      (v: SpeechSynthesisVoice) => 
+        v.name.toLowerCase().includes("neural") || 
+        v.name.toLowerCase().includes("premium") ||
+        v.name.toLowerCase().includes("enhanced"),
+      
+      // 2. Natural-sounding voices
+      (v: SpeechSynthesisVoice) => 
+        v.name.toLowerCase().includes("natural") ||
+        v.name.toLowerCase().includes("samantha") ||
+        v.name.toLowerCase().includes("daniel") ||
+        v.name.toLowerCase().includes("karen") ||
+        v.name.toLowerCase().includes("zira"),
+      
+      // 3. English voices (prefer US English)
+      (v: SpeechSynthesisVoice) => 
+        v.lang.startsWith("en-US") || v.lang.startsWith("en-GB"),
+      
+      // 4. Any English voice
+      (v: SpeechSynthesisVoice) => v.lang.startsWith("en"),
+    ];
+
+    // Try to find a voice matching each preference level
+    for (const preference of voicePreferences) {
+      const matchingVoice = voices.find(preference);
+      if (matchingVoice) {
+        return matchingVoice;
+      }
+    }
+
+    // Fallback: return first available voice
+    return voices[0] || null;
+  }
+
+  /**
+   * Speak text with accessibility announcements and high-quality voice
    */
   speak(
     text: string,
@@ -211,9 +304,20 @@ export class AccessibleTTS {
     window.speechSynthesis.cancel();
 
     this.utterance = new SpeechSynthesisUtterance(text);
-    this.utterance.rate = options.rate || 0.8;
-    this.utterance.volume = options.volume || 0.8;
-    this.utterance.pitch = options.pitch || 1;
+    
+    // Set voice quality settings
+    const bestVoice = this.getBestVoice();
+    if (bestVoice) {
+      this.utterance.voice = bestVoice;
+    }
+    
+    // Use optimal settings for natural speech
+    this.utterance.rate = options.rate || 1.0; // Default to 1.0 for more natural pace
+    this.utterance.volume = options.volume ?? 0.9; // Slightly higher default volume
+    this.utterance.pitch = options.pitch || 1.0; // Neutral pitch for clarity
+    
+    // Set language to match voice or default to en-US
+    this.utterance.lang = bestVoice?.lang || "en-US";
 
     this.utterance.onstart = () => {
       this.isSpeaking = true;

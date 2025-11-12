@@ -1,13 +1,19 @@
 import { logError, logDebug, logWarning } from "../utils/logger";
 import { QuoteCollection } from "../types";
 import { StorageService } from "@boostlly/platform";
+import { CollectionExportManager } from "./collection-export";
+import { CollectionTemplateManager } from "./collection-templates";
 
 export class CollectionService {
   private storage: StorageService;
   private collections: QuoteCollection[] = [];
+  private exportManager: CollectionExportManager;
+  private templateManager: CollectionTemplateManager;
 
   constructor(storage: StorageService) {
     this.storage = storage;
+    this.exportManager = new CollectionExportManager();
+    this.templateManager = new CollectionTemplateManager();
     this.loadCollections();
   }
 
@@ -430,160 +436,29 @@ export class CollectionService {
 
   // Export collections as JSON
   async exportCollectionsAsJSON(): Promise<string> {
-    const exportData = {
-      collections: this.collections,
-      exportDate: new Date().toISOString(),
-      version: "1.0.0",
-      totalCollections: this.collections.length,
-      totalQuotes: this.collections.reduce(
-        (sum, c) => sum + c.quoteIds.length,
-        0,
-      ),
-    };
-    return JSON.stringify(exportData, null, 2);
+    return this.exportManager.exportAsJSON(this.collections);
   }
 
   // Export collections as CSV
   async exportCollectionsAsCSV(): Promise<string> {
-    const headers = [
-      "Name",
-      "Description",
-      "Category",
-      "Priority",
-      "Tags",
-      "Quote Count",
-      "Created Date",
-    ];
-    const rows = this.collections.map((collection) => [
-      collection.name,
-      collection.description || "",
-      collection.category || "",
-      collection.priority || "",
-      (collection.tags || []).join(", "),
-      collection.quoteIds.length.toString(),
-      collection.createdAt.toISOString().split("T")[0],
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map((field) => `"${field}"`).join(","))
-      .join("\n");
-
-    return csvContent;
+    return this.exportManager.exportAsCSV(this.collections);
   }
 
   // Export collections as PDF (HTML format for PDF generation)
   async exportCollectionsAsPDF(): Promise<string> {
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Boostlly Collections Report</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .collection { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
-        .collection-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 5px; }
-        .collection-desc { color: #666; margin-bottom: 10px; }
-        .collection-meta { font-size: 12px; color: #888; }
-        .stats { background: #f5f5f5; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
-        .export-info { font-size: 10px; color: #999; text-align: center; margin-top: 30px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Boostlly Collections Report</h1>
-        <p>Generated on ${new Date().toLocaleDateString()}</p>
-    </div>
-    
-    <div class="stats">
-        <h3>Summary</h3>
-        <p>Total Collections: ${this.collections.length}</p>
-        <p>Total Quotes: ${this.collections.reduce((sum, c) => sum + c.quoteIds.length, 0)}</p>
-    </div>
-    
-    ${this.collections
-      .map(
-        (collection) => `
-        <div class="collection">
-            <div class="collection-title">${collection.name}</div>
-            <div class="collection-desc">${collection.description || "No description"}</div>
-            <div class="collection-meta">
-                Category: ${collection.category || "Uncategorized"} | 
-                Priority: ${collection.priority || "Medium"} | 
-                Quotes: ${collection.quoteIds.length} | 
-                Created: ${collection.createdAt.toLocaleDateString()}
-                ${collection.tags && collection.tags.length > 0 ? ` | Tags: ${collection.tags.join(", ")}` : ""}
-            </div>
-        </div>
-    `,
-      )
-      .join("")}
-    
-    <div class="export-info">
-        <p>Exported from Boostlly - Your Personal Motivation App</p>
-    </div>
-</body>
-</html>`;
-
-    return htmlContent;
+    return this.exportManager.exportAsPDF(this.collections);
   }
 
   // Import collections from JSON
   async importCollectionsFromJSON(
     jsonData: string,
   ): Promise<{ success: number; errors: string[] }> {
-    try {
-      const data = JSON.parse(jsonData);
-      const collections = Array.isArray(data) ? data : data.collections || [];
-
-      let successCount = 0;
-      const errors: string[] = [];
-
-      for (const collection of collections) {
-        try {
-          if (collection.name && collection.id) {
-            // Check if collection already exists
-            const existing = this.collections.find(
-              (c) => c.id === collection.id,
-            );
-            if (existing) {
-              // Update existing collection
-              Object.assign(existing, {
-                name: collection.name,
-                description: collection.description,
-                color: collection.color,
-                icon: collection.icon,
-                category: collection.category,
-                priority: collection.priority,
-                tags: collection.tags,
-                updatedAt: new Date(),
-              });
-            } else {
-              // Add new collection
-              this.collections.push({
-                ...collection,
-                createdAt: new Date(collection.createdAt || Date.now()),
-                updatedAt: new Date(),
-              });
-            }
-            successCount++;
-          }
-        } catch (error) {
-          errors.push(
-            `Failed to import collection "${collection.name}": ${error}`,
-          );
-        }
-      }
-
-      if (successCount > 0) {
-        await this.storage.set("collections", this.collections);
-      }
-
-      return { success: successCount, errors };
-    } catch (error) {
-      return { success: 0, errors: [`Failed to parse JSON: ${error}`] };
+    const result = this.exportManager.importFromJSON(jsonData, this.collections);
+    if (result.success > 0) {
+      this.collections = result.collections;
+      await this.storage.set("collections", this.collections);
     }
+    return { success: result.success, errors: result.errors };
   }
 
   // Backup all collection data
@@ -878,58 +753,15 @@ export class CollectionService {
       isTemplate: boolean;
     }>
   > {
-    return [
-      {
-        id: "daily-motivation",
-        name: "Daily Motivation",
-        description: "Quotes to start your day with energy and purpose",
-        category: "Motivation",
-        color: "#F59E0B",
-        icon: "sun",
-        tags: ["daily", "motivation", "morning"],
-        isTemplate: true,
-      },
-      {
-        id: "weekly-goals",
-        name: "Weekly Goals",
-        description: "Quotes to keep you focused on your weekly objectives",
-        category: "Goals",
-        color: "#8B5CF6",
-        icon: "target",
-        tags: ["weekly", "goals", "focus"],
-        isTemplate: true,
-      },
-      {
-        id: "leadership",
-        name: "Leadership",
-        description: "Quotes for developing leadership skills and mindset",
-        category: "Professional",
-        color: "#1E40AF",
-        icon: "crown",
-        tags: ["leadership", "professional", "management"],
-        isTemplate: true,
-      },
-      {
-        id: "creativity",
-        name: "Creativity",
-        description: "Quotes to inspire creative thinking and innovation",
-        category: "Creative",
-        color: "#EC4899",
-        icon: "sparkles",
-        tags: ["creativity", "innovation", "art"],
-        isTemplate: true,
-      },
-      {
-        id: "health-wellness",
-        name: "Health & Wellness",
-        description: "Quotes for physical and mental well-being",
-        category: "Health",
-        color: "#10B981",
-        icon: "heart",
-        tags: ["health", "wellness", "fitness"],
-        isTemplate: true,
-      },
-    ];
+    const templates = this.templateManager.getTemplates();
+    return templates.map((t) => ({
+      ...t,
+      isTemplate: true,
+      category: t.category || "Personal",
+      color: t.color || "#3B82F6",
+      icon: t.icon || "collection",
+      tags: t.tags || [],
+    }));
   }
 
   // Create collection from template
@@ -937,26 +769,17 @@ export class CollectionService {
     templateId: string,
     customName?: string,
   ): Promise<QuoteCollection | null> {
-    const templates = await this.getCollectionTemplates();
-    const template = templates.find((t) => t.id === templateId);
-
-    if (!template) return null;
-
-    const now = new Date();
-    const collection: QuoteCollection = {
-      id: this.generateId(),
-      name: customName || template.name,
-      description: template.description,
-      quoteIds: [],
-      createdAt: now,
-      updatedAt: now,
-      color: template.color,
-      icon: template.icon,
-      category: template.category,
-      priority: "medium",
-      tags: template.tags,
-    };
-
+    const collection = this.templateManager.createCollectionFromTemplate(
+      templateId,
+      this.generateId.bind(this)
+    );
+    
+    if (!collection) return null;
+    
+    if (customName) {
+      collection.name = customName;
+    }
+    
     this.collections.push(collection);
     await this.storage.set("collections", this.collections);
     return collection;

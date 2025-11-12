@@ -40,13 +40,39 @@ export function SearchResults({
     );
   }
 
+  // Don't show results section if no results - show empty state instead
   if (results.length === 0) {
     return (
-      <div className="text-center py-8">
-        <div className="text-muted-foreground mb-4">
-          <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium">No quotes found</p>
-          <p className="text-sm">Try adjusting your search terms or filters</p>
+      <div className="flex flex-col items-center justify-center py-12 px-4">
+        <div className="text-center max-w-md">
+          <div className="mb-6">
+            <Search className="w-16 h-16 mx-auto mb-4 opacity-50 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2 text-foreground">No quotes found</h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            We couldn't find any quotes matching your search. Try different keywords or adjust your filters.
+          </p>
+          <div className="space-y-2 text-left">
+            <p className="text-xs font-medium text-foreground/70 mb-3">Search tips:</p>
+            <ul className="text-xs text-muted-foreground space-y-1.5">
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">•</span>
+                <span>Try searching by author name, quote text, or category</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">•</span>
+                <span>Use shorter, more general search terms</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">•</span>
+                <span>Check your filters - they might be too restrictive</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">•</span>
+                <span>Browse by category or author to discover quotes</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     );
@@ -55,9 +81,14 @@ export function SearchResults({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">
-          Search Results ({results.length})
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-foreground">
+            Search Results
+          </h3>
+          <Badge variant="secondary" className="font-medium">
+            {results.length} {results.length === 1 ? 'quote' : 'quotes'}
+          </Badge>
+        </div>
       </div>
 
       <div className="space-y-3">

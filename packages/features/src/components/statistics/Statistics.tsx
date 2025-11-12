@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { QuoteService, getContrastRatio, ensureContrast, ContrastLevel, getLuminance } from "@boostlly/core";
+import { QuoteService, getContrastRatio, ensureContrast, ContrastLevel, getLuminance, UserAnalyticsService } from "@boostlly/core";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@boostlly/ui";
 import {
   BarChart3,
@@ -16,6 +16,8 @@ import {
   RefreshCw,
   Calendar,
   Tag,
+  Home,
+  Volume2,
   type LucideIcon,
 } from "lucide-react";
 import type { StorageLike } from "../unified-app/types";
@@ -127,10 +129,23 @@ function TabButton({
 
 export function Statistics({ storage, variant = "web", palette }: StatisticsProps) {
   const [quoteService, setQuoteService] = useState<QuoteService | null>(null);
+  const [userAnalyticsService, setUserAnalyticsService] = useState<UserAnalyticsService | null>(null);
   const [statsData, setStatsData] = useState<StatsData | null>(null);
+  const [userAnalytics, setUserAnalytics] = useState<{
+    homepageVisits: Array<{ date: string; visits: number }>;
+    readButtonClicks: Array<{ date: string; clicks: number }>;
+    summary: {
+      totalHomepageVisits: number;
+      totalReadButtonClicks: number;
+      todayHomepageVisits: number;
+      todayReadButtonClicks: number;
+      averageDailyVisits: number;
+      averageDailyClicks: number;
+    };
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d" | "all">("30d");
-  const [activeView, setActiveView] = useState<"overview" | "sources" | "performance" | "engagement">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "sources" | "performance" | "engagement" | "user">("overview");
 
   useEffect(() => {
     if (!storage) {
@@ -143,6 +158,15 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
       // Cast it as any since the interface is compatible for our use case
       const service = new QuoteService(storage as any);
       setQuoteService(service);
+      
+      // Initialize UserAnalyticsService - always try to initialize even if it might fail
+      try {
+        const analyticsService = new UserAnalyticsService(storage as any);
+        setUserAnalyticsService(analyticsService);
+      } catch (analyticsError) {
+        console.error("Failed to initialize UserAnalyticsService:", analyticsError);
+        // Continue without analytics service - tab will still be visible but show empty state
+      }
     } catch (error) {
       console.error("Failed to initialize QuoteService:", error);
       setIsLoading(false);
@@ -155,7 +179,7 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
     const loadStats = async () => {
       setIsLoading(true);
       try {
-        const analytics = quoteService.getAnalytics();
+        let analytics = quoteService.getAnalytics();
         const performanceMetrics = quoteService.getPerformanceMetrics();
         const healthStatus = quoteService.getHealthStatus();
         
@@ -175,13 +199,217 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
           quoteHistory = [];
         }
 
+        // If analytics source distribution is empty, try to populate from quote history and saved quotes
+        const hasSourceData = analytics.sourceDistribution && 
+          Object.values(analytics.sourceDistribution).some((v: any) => v > 0);
+        
+        if (!hasSourceData && (quoteHistory.length > 0 || (Array.isArray(savedQuotes) && savedQuotes.length > 0))) {
+          // Create a temporary source distribution map
+          const tempSourceDist: Record<string, number> = { ...(analytics.sourceDistribution || {}) };
+          
+          // Count sources from quote history
+          if (Array.isArray(quoteHistory)) {
+            quoteHistory.forEach((quote: any) => {
+              if (quote && quote.source && typeof quote.source === 'string') {
+                const source = quote.source;
+                tempSourceDist[source] = (tempSourceDist[source] || 0) + 1;
+              }
+            });
+          }
+          
+          // Count sources from saved quotes
+          if (Array.isArray(savedQuotes)) {
+            savedQuotes.forEach((quote: any) => {
+              if (quote && quote.source && typeof quote.source === 'string') {
+                const source = quote.source;
+                tempSourceDist[source] = (tempSourceDist[source] || 0) + 1;
+              }
+            });
+          }
+          
+          // If we found sources, update analytics and persist to storage
+          if (Object.values(tempSourceDist).some(v => v > 0)) {
+            analytics = {
+              ...analytics,
+              sourceDistribution: tempSourceDist as Record<Source, number>,
+            };
+            
+            // Persist the updated analytics to storage so it's available for future loads
+            try {
+              if (typeof (storage as any).setSync === 'function') {
+                (storage as any).setSync("quoteAnalytics", analytics);
+              } else {
+                await storage.set("quoteAnalytics", analytics);
+              }
+              console.log("✅ Populated source distribution from quote history and saved quotes");
+            } catch (error) {
+              console.warn("⚠️ Failed to persist populated analytics:", error);
+            }
+          }
+        }
+
+        // Enhance analytics with fallback data for engagement metrics
+        let enhancedAnalytics = { ...analytics };
+        
+        // Helper function to extract quote data from various formats
+        const extractQuoteData = (q: any): Quote | null => {
+          const text = q.text || q.quote || q.content || '';
+          const author = q.author || q.authorName || 'Unknown';
+          const category = q.category || q.tag || q.tags?.[0];
+          const source = q.source || q.provider || 'Unknown';
+          const id = q.id || q._id || Math.random().toString(36).slice(2, 10);
+          
+          if (!text || text.trim() === '') return null;
+          
+          return {
+            id,
+            text: text.trim(),
+            author: author.trim() || undefined,
+            category: category || undefined,
+            categories: category ? [category] : undefined,
+            source: source || undefined,
+          };
+        };
+        
+        // If mostLikedQuotes is empty, try to populate from saved quotes and liked quotes
+        if ((!enhancedAnalytics.mostLikedQuotes || enhancedAnalytics.mostLikedQuotes.length === 0)) {
+          const likedQuotesList: any[] = [];
+          
+          // Try to get liked quotes from storage
+          try {
+            let likedQuotes: any[] = [];
+            if (typeof (storage as any).getSync === 'function') {
+              likedQuotes = (storage as any).getSync("likedQuotes") || [];
+            } else {
+              likedQuotes = (await storage.get("likedQuotes")) || [];
+            }
+            if (Array.isArray(likedQuotes) && likedQuotes.length > 0) {
+              likedQuotesList.push(...likedQuotes);
+            }
+          } catch (err) {
+            // Ignore errors
+          }
+          
+          // Also check saved quotes (assuming saved = liked)
+          if (Array.isArray(savedQuotes) && savedQuotes.length > 0) {
+            likedQuotesList.push(...savedQuotes);
+          }
+          
+          if (likedQuotesList.length > 0) {
+            const extracted = likedQuotesList
+              .map(extractQuoteData)
+              .filter((q): q is Quote => q !== null)
+              .slice(0, 10);
+            
+            if (extracted.length > 0) {
+              enhancedAnalytics.mostLikedQuotes = extracted;
+              if (process.env.NODE_ENV === "development") {
+                console.log("✅ Populated mostLikedQuotes from saved/liked quotes:", extracted.length);
+              }
+            }
+          }
+        }
+        
+        // If recentlyViewed is empty, try to populate from quote history (most recent)
+        if ((!enhancedAnalytics.recentlyViewed || enhancedAnalytics.recentlyViewed.length === 0)) {
+          const viewedQuotesList: any[] = [];
+          
+          // Check quote history
+          if (Array.isArray(quoteHistory) && quoteHistory.length > 0) {
+            viewedQuotesList.push(...quoteHistory);
+          }
+          
+          // Also check saved quotes as recently viewed (reverse order for most recent first)
+          if (Array.isArray(savedQuotes) && savedQuotes.length > 0) {
+            // Sort by timestamp if available, otherwise use reverse order
+            const sorted = [...savedQuotes].sort((a: any, b: any) => {
+              const aTs = a._ts || a.createdAt || a.timestamp || 0;
+              const bTs = b._ts || b.createdAt || b.timestamp || 0;
+              return bTs - aTs;
+            });
+            viewedQuotesList.push(...sorted);
+          }
+          
+          if (viewedQuotesList.length > 0) {
+            // Remove duplicates by id or text, and sort by timestamp
+            const uniqueQuotes = new Map();
+            viewedQuotesList.forEach((q: any) => {
+              const extracted = extractQuoteData(q);
+              if (extracted) {
+                const key = extracted.id || extracted.text;
+                if (!uniqueQuotes.has(key)) {
+                  uniqueQuotes.set(key, extracted);
+                }
+              }
+            });
+            
+            const extracted = Array.from(uniqueQuotes.values())
+              .slice(0, 10);
+            
+            if (extracted.length > 0) {
+              enhancedAnalytics.recentlyViewed = extracted;
+              if (process.env.NODE_ENV === "development") {
+                console.log("✅ Populated recentlyViewed from quote history/saved quotes:", extracted.length);
+              }
+            }
+          }
+        }
+
         setStatsData({
-          analytics,
+          analytics: enhancedAnalytics,
           performanceMetrics,
           healthStatus,
           savedQuotes: Array.isArray(savedQuotes) ? savedQuotes : [],
           quoteHistory: Array.isArray(quoteHistory) ? quoteHistory : [],
         });
+
+        // Load user analytics data if service is available
+        if (userAnalyticsService) {
+          try {
+            console.log("📊 Loading user analytics data...");
+            const [chartData, summary] = await Promise.all([
+              userAnalyticsService.getDailyChartData(timeRange),
+              userAnalyticsService.getSummary(),
+            ]);
+            
+            console.log("📊 User analytics loaded:", { summary, chartDataLength: chartData.homepageVisits.length });
+            
+            setUserAnalytics({
+              homepageVisits: chartData.homepageVisits,
+              readButtonClicks: chartData.readButtonClicks,
+              summary,
+            });
+          } catch (error) {
+            console.error("❌ Failed to load user analytics:", error);
+            setUserAnalytics({
+              homepageVisits: [],
+              readButtonClicks: [],
+              summary: {
+                totalHomepageVisits: 0,
+                totalReadButtonClicks: 0,
+                todayHomepageVisits: 0,
+                todayReadButtonClicks: 0,
+                averageDailyVisits: 0,
+                averageDailyClicks: 0,
+              },
+            });
+          }
+        } else {
+          console.log("⚠️ UserAnalyticsService not available, showing empty state");
+          // Set empty data if service not available - tab will still be visible
+          setUserAnalytics({
+            homepageVisits: [],
+            readButtonClicks: [],
+            summary: {
+              totalHomepageVisits: 0,
+              totalReadButtonClicks: 0,
+              todayHomepageVisits: 0,
+              todayReadButtonClicks: 0,
+              averageDailyVisits: 0,
+              averageDailyClicks: 0,
+            },
+          });
+        }
       } catch (error) {
         console.error("Failed to load statistics:", error);
         // Set empty data on error to prevent crashes
@@ -200,13 +428,25 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
           savedQuotes: [],
           quoteHistory: [],
         });
+        setUserAnalytics({
+          homepageVisits: [],
+          readButtonClicks: [],
+          summary: {
+            totalHomepageVisits: 0,
+            totalReadButtonClicks: 0,
+            todayHomepageVisits: 0,
+            todayReadButtonClicks: 0,
+            averageDailyVisits: 0,
+            averageDailyClicks: 0,
+          },
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     loadStats();
-  }, [quoteService, storage]);
+  }, [quoteService, storage, userAnalyticsService, timeRange]);
 
   const chartData = useMemo(() => {
     if (!statsData) {
@@ -220,7 +460,32 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
     }
 
     // Source distribution data for pie chart
-    const sourceDistEntries = Object.entries(statsData.analytics.sourceDistribution || {})
+    // First try from analytics, then fallback to quote history
+    let sourceDistributionMap: Record<string, number> = { ...(statsData.analytics.sourceDistribution || {}) };
+    
+    // If analytics is empty, try to populate from quote history
+    const hasSourceData = Object.values(sourceDistributionMap).some(v => v > 0);
+    if (!hasSourceData && statsData.quoteHistory && Array.isArray(statsData.quoteHistory) && statsData.quoteHistory.length > 0) {
+      // Count sources from quote history
+      statsData.quoteHistory.forEach((quote: any) => {
+        if (quote && quote.source) {
+          const source = quote.source as string;
+          sourceDistributionMap[source] = (sourceDistributionMap[source] || 0) + 1;
+        }
+      });
+    }
+    
+    // Also check saved quotes as a fallback
+    if (!hasSourceData && statsData.savedQuotes && Array.isArray(statsData.savedQuotes) && statsData.savedQuotes.length > 0) {
+      statsData.savedQuotes.forEach((quote: any) => {
+        if (quote && quote.source) {
+          const source = quote.source as string;
+          sourceDistributionMap[source] = (sourceDistributionMap[source] || 0) + 1;
+        }
+      });
+    }
+    
+    const sourceDistEntries = Object.entries(sourceDistributionMap)
       .filter(([_, value]) => value > 0);
     const sourceDistribution = sourceDistEntries.map(([name, value], index) => ({
       name: name.replace(/([A-Z])/g, " $1").trim(),
@@ -229,7 +494,35 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
     }));
 
     // Category distribution data for bar chart
-    const categoryDistribution = Object.entries(statsData.analytics.categoryDistribution || {})
+    // First try from analytics, then fallback to quote history and saved quotes
+    let categoryDistributionMap: Record<string, number> = { ...(statsData.analytics.categoryDistribution || {}) };
+    
+    // If analytics is empty, try to populate from quote history and saved quotes
+    const hasCategoryData = Object.values(categoryDistributionMap).some(v => v > 0);
+    if (!hasCategoryData) {
+      // Count categories from quote history
+      if (statsData.quoteHistory && Array.isArray(statsData.quoteHistory)) {
+        statsData.quoteHistory.forEach((quote: any) => {
+          if (quote && quote.category && typeof quote.category === 'string') {
+            const category = quote.category;
+            categoryDistributionMap[category] = (categoryDistributionMap[category] || 0) + 1;
+          }
+        });
+      }
+      
+      // Count categories from saved quotes
+      if (statsData.savedQuotes && Array.isArray(statsData.savedQuotes)) {
+        statsData.savedQuotes.forEach((quote: any) => {
+          if (quote && quote.category && typeof quote.category === 'string') {
+            const category = quote.category;
+            categoryDistributionMap[category] = (categoryDistributionMap[category] || 0) + 1;
+          }
+        });
+      }
+    }
+    
+    const categoryDistribution = Object.entries(categoryDistributionMap)
+      .filter(([_, value]) => value > 0)
       .sort(([, a], [, b]) => (b as number) - (a as number))
       .slice(0, 10)
       .map(([name, value]) => ({
@@ -250,21 +543,66 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
         totalCalls: metrics.totalCalls,
       }));
 
-    // Daily activity from quote history
+    // Daily activity from quote history, saved quotes, and analytics
     const dailyActivityMap = new Map<string, number>();
     const now = new Date();
     const daysToShow = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : 365;
     
-    statsData.quoteHistory.forEach((entry: any) => {
-      if (entry.date) {
-        const entryDate = new Date(entry.date);
-        const daysDiff = Math.floor((now.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysDiff >= 0 && daysDiff < daysToShow) {
-          const dateKey = entryDate.toISOString().split("T")[0];
-          dailyActivityMap.set(dateKey, (dailyActivityMap.get(dateKey) || 0) + 1);
+    // Process quote history
+    if (statsData.quoteHistory && Array.isArray(statsData.quoteHistory)) {
+      statsData.quoteHistory.forEach((entry: any) => {
+        if (entry) {
+          let entryDate: Date | null = null;
+          
+          // Try different date field formats
+          if (entry.date) {
+            entryDate = new Date(entry.date);
+          } else if (entry.createdAt) {
+            entryDate = new Date(entry.createdAt);
+          } else if (entry._ts) {
+            entryDate = new Date(entry._ts);
+          } else if (entry.timestamp) {
+            entryDate = new Date(entry.timestamp);
+          }
+          
+          if (entryDate && !isNaN(entryDate.getTime())) {
+            const daysDiff = Math.floor((now.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysDiff >= 0 && daysDiff < daysToShow) {
+              const dateKey = entryDate.toISOString().split("T")[0];
+              dailyActivityMap.set(dateKey, (dailyActivityMap.get(dateKey) || 0) + 1);
+            }
+          }
         }
-      }
-    });
+      });
+    }
+    
+    // Also process saved quotes if they have timestamps
+    if (statsData.savedQuotes && Array.isArray(statsData.savedQuotes)) {
+      statsData.savedQuotes.forEach((quote: any) => {
+        if (quote) {
+          let entryDate: Date | null = null;
+          
+          // Try different date field formats
+          if (quote._ts) {
+            entryDate = new Date(quote._ts);
+          } else if (quote.createdAt) {
+            entryDate = new Date(quote.createdAt);
+          } else if (quote.date) {
+            entryDate = new Date(quote.date);
+          } else if (quote.timestamp) {
+            entryDate = new Date(quote.timestamp);
+          }
+          
+          if (entryDate && !isNaN(entryDate.getTime())) {
+            const daysDiff = Math.floor((now.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysDiff >= 0 && daysDiff < daysToShow) {
+              const dateKey = entryDate.toISOString().split("T")[0];
+              dailyActivityMap.set(dateKey, (dailyActivityMap.get(dateKey) || 0) + 1);
+            }
+          }
+        }
+      });
+    }
 
     // Fill in missing dates with 0
     const dailyActivity: { date: string; quotes: number }[] = [];
@@ -505,7 +843,7 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
             variant="outline"
             size="sm"
             onClick={async () => {
-              if (quoteService && storage) {
+              if (quoteService && storage && userAnalyticsService) {
                 setIsLoading(true);
                 try {
                   // Reload stats data
@@ -532,6 +870,22 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
                     savedQuotes: Array.isArray(savedQuotes) ? savedQuotes : [],
                     quoteHistory: Array.isArray(quoteHistory) ? quoteHistory : [],
                   });
+
+                  // Reload user analytics
+                  try {
+                    const [chartData, summary] = await Promise.all([
+                      userAnalyticsService.getDailyChartData(timeRange),
+                      userAnalyticsService.getSummary(),
+                    ]);
+                    
+                    setUserAnalytics({
+                      homepageVisits: chartData.homepageVisits,
+                      readButtonClicks: chartData.readButtonClicks,
+                      summary,
+                    });
+                  } catch (error) {
+                    console.error("Failed to reload user analytics:", error);
+                  }
                 } catch (error) {
                   console.error("Failed to refresh statistics:", error);
                 } finally {
@@ -647,6 +1001,7 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
       >
         {[
           { id: "overview", label: "Overview", icon: BarChart3 },
+          { id: "user", label: "User Activity", icon: Activity },
           { id: "sources", label: "Sources", icon: Database },
           { id: "performance", label: "Performance", icon: Zap },
           { id: "engagement", label: "Engagement", icon: Heart },
@@ -690,8 +1045,12 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
                     height={isCompact ? 250 : 300}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-[300px] text-foreground/60">
-                    <p className="font-medium">No activity data available for the selected time range.</p>
+                  <div className="flex flex-col items-center justify-center h-[300px] text-foreground/60">
+                    <TrendingUp className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="font-medium text-center">Daily Activity</p>
+                    <p className="text-sm mt-2 text-foreground/50 text-center max-w-md">
+                      This feature is currently in beta and will be updated in a future release.
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -700,10 +1059,15 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
             {/* Category Distribution Bar Chart */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <BarChart3 className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.secondary }} />
-                  <span className="font-semibold">Top Categories</span>
-                </CardTitle>
+                <div className="flex flex-col gap-2">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <BarChart3 className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.secondary }} />
+                    <span className="font-semibold">Top Categories</span>
+                  </CardTitle>
+                  <p className="text-sm text-foreground/70 font-normal">
+                    Shows the most popular quote categories based on your saved quotes and viewing history. Categories like "motivation", "success", "wisdom", etc.
+                  </p>
+                </div>
               </CardHeader>
               <CardContent>
                 {chartData.categoryDistribution.length > 0 ? (
@@ -715,8 +1079,12 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
                     layout="vertical"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-[300px] text-foreground/60">
-                    <p className="font-medium">No category data available.</p>
+                  <div className="flex flex-col items-center justify-center h-[300px] text-foreground/60">
+                    <BarChart3 className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="font-medium text-center">Top Categories</p>
+                    <p className="text-sm mt-2 text-foreground/50 text-center max-w-md">
+                      This feature is currently in beta and will be updated in a future release.
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -738,12 +1106,157 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
                     outerRadius={isCompact ? 80 : 100}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-[300px] text-foreground/60">
-                    <p className="font-medium">No source distribution data available.</p>
+                  <div className="flex flex-col items-center justify-center h-[300px] text-foreground/60">
+                    <Activity className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="font-medium text-center">Source Distribution</p>
+                    <p className="text-sm mt-2 text-foreground/50 text-center max-w-md">
+                      This feature is currently in beta and will be updated in a future release.
+                    </p>
                   </div>
                 )}
               </CardContent>
             </Card>
+          </>
+        )}
+
+        {activeView === "user" && (
+          <>
+            {!userAnalytics ? (
+              <Card>
+                <CardContent>
+                  <div className="flex flex-col items-center justify-center h-[400px] text-foreground/60">
+                    <Activity className="w-16 h-16 mb-4 opacity-50 animate-pulse" />
+                    <p className="font-medium text-lg mb-2">Loading user activity data...</p>
+                    <p className="text-sm text-foreground/50">Please wait while we load your analytics.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Summary Cards for User Activity */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="border-2 hover:shadow-lg transition-shadow bg-card/95 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-foreground/70 mb-1.5 uppercase tracking-wide">Homepage Visits</p>
+                      <p className="text-3xl font-bold text-foreground">{userAnalytics.summary.totalHomepageVisits}</p>
+                      <p className="text-xs text-foreground/60 mt-1">Today: {userAnalytics.summary.todayHomepageVisits}</p>
+                    </div>
+                    <Home 
+                      className="w-10 h-10 flex-shrink-0" 
+                      style={{ color: COLORS.primary }}
+                      strokeWidth={2}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 hover:shadow-lg transition-shadow bg-card/95 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-foreground/70 mb-1.5 uppercase tracking-wide">Read Clicks</p>
+                      <p className="text-3xl font-bold text-foreground">{userAnalytics.summary.totalReadButtonClicks}</p>
+                      <p className="text-xs text-foreground/60 mt-1">Today: {userAnalytics.summary.todayReadButtonClicks}</p>
+                    </div>
+                    <Volume2 
+                      className="w-10 h-10 flex-shrink-0" 
+                      style={{ color: COLORS.secondary }}
+                      strokeWidth={2}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 hover:shadow-lg transition-shadow bg-card/95 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-foreground/70 mb-1.5 uppercase tracking-wide">Avg Daily Visits</p>
+                      <p className="text-3xl font-bold text-foreground">{userAnalytics.summary.averageDailyVisits}</p>
+                      <p className="text-xs text-foreground/60 mt-1">Last 30 days</p>
+                    </div>
+                    <TrendingUp 
+                      className="w-10 h-10 flex-shrink-0" 
+                      style={{ color: COLORS.accent }}
+                      strokeWidth={2}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 hover:shadow-lg transition-shadow bg-card/95 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-foreground/70 mb-1.5 uppercase tracking-wide">Avg Daily Clicks</p>
+                      <p className="text-3xl font-bold text-foreground">{userAnalytics.summary.averageDailyClicks}</p>
+                      <p className="text-xs text-foreground/60 mt-1">Last 30 days</p>
+                    </div>
+                    <Activity 
+                      className="w-10 h-10 flex-shrink-0" 
+                      style={{ color: COLORS.info }}
+                      strokeWidth={2}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Homepage Visits Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Home className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.primary }} />
+                  <span className="font-semibold">Homepage Visits Over Time</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {userAnalytics && userAnalytics.homepageVisits && userAnalytics.homepageVisits.some(d => d.visits > 0) ? (
+                  <StatAreaChart
+                    data={userAnalytics.homepageVisits.map(d => ({ date: d.date, visits: d.visits }))}
+                    dataKey="visits"
+                    color={COLORS.primary}
+                    height={isCompact ? 250 : 300}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[300px] text-foreground/60">
+                    <Home className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="font-medium text-center">No homepage visit data available</p>
+                    <p className="text-sm mt-2 text-foreground/50 text-center">Visit the homepage (Today tab) to start tracking your visits!</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Read Button Clicks Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Volume2 className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.secondary }} />
+                  <span className="font-semibold">Read Button Clicks Over Time</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {userAnalytics && userAnalytics.readButtonClicks && userAnalytics.readButtonClicks.some(d => d.clicks > 0) ? (
+                  <StatAreaChart
+                    data={userAnalytics.readButtonClicks.map(d => ({ date: d.date, clicks: d.clicks }))}
+                    dataKey="clicks"
+                    color={COLORS.secondary}
+                    height={isCompact ? 250 : 300}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[300px] text-foreground/60">
+                    <Volume2 className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="font-medium text-center">No read button click data available</p>
+                    <p className="text-sm mt-2 text-foreground/50 text-center">Click the "Read" button on quotes to start tracking your reading activity!</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+              </>
+            )}
           </>
         )}
 
@@ -767,8 +1280,12 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
                     xAxisAngle={-45}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-[300px] text-foreground/60">
-                    <p className="font-medium">No source data available.</p>
+                  <div className="flex flex-col items-center justify-center h-[300px] text-foreground/60">
+                    <Database className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="font-medium text-center">Source Distribution</p>
+                    <p className="text-sm mt-2 text-foreground/50 text-center max-w-md">
+                      This feature is currently in beta and will be updated in a future release.
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -881,10 +1398,15 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
             {/* Most Liked Quotes */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Heart className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.danger }} />
-                  <span className="font-semibold">Most Liked Quotes</span>
-                </CardTitle>
+                <div className="flex flex-col gap-2">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Heart className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.danger }} />
+                    <span className="font-semibold">Most Liked Quotes</span>
+                  </CardTitle>
+                  <p className="text-sm text-foreground/70 font-normal">
+                    Your favorite quotes that you've liked or saved. These are the quotes that resonated most with you.
+                  </p>
+                </div>
               </CardHeader>
               <CardContent>
                 {statsData.analytics.mostLikedQuotes && statsData.analytics.mostLikedQuotes.length > 0 ? (
@@ -892,9 +1414,9 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
                     {statsData.analytics.mostLikedQuotes.slice(0, 5).map((quote, index) => (
                       <div
                         key={quote.id || index}
-                        className="p-4 rounded-lg border hover:shadow-md transition-shadow"
+                        className="p-4 rounded-lg border bg-card/50 hover:shadow-md transition-shadow hover:bg-card/70"
                       >
-                        <p className="text-sm mb-2 line-clamp-2 text-foreground font-medium">"{quote.text}"</p>
+                        <p className="text-sm mb-2 line-clamp-3 text-foreground font-medium">"{quote.text}"</p>
                         {quote.author && (
                           <p className="text-xs text-foreground/70 font-medium">— {quote.author}</p>
                         )}
@@ -907,8 +1429,12 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-[200px] text-foreground/60">
-                    <p className="font-medium">No liked quotes yet.</p>
+                  <div className="flex flex-col items-center justify-center h-[200px] text-foreground/60">
+                    <Heart className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="font-medium text-center">No liked quotes yet</p>
+                    <p className="text-sm mt-2 text-foreground/50 text-center max-w-md">
+                      Like or save quotes to see them appear here.
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -917,10 +1443,15 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
             {/* Recently Viewed */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Eye className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.info }} />
-                  <span className="font-semibold">Recently Viewed</span>
-                </CardTitle>
+                <div className="flex flex-col gap-2">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Eye className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.info }} />
+                    <span className="font-semibold">Recently Viewed</span>
+                  </CardTitle>
+                  <p className="text-sm text-foreground/70 font-normal">
+                    Quotes you've recently viewed or interacted with. This helps you rediscover quotes you've seen before.
+                  </p>
+                </div>
               </CardHeader>
               <CardContent>
                 {statsData.analytics.recentlyViewed && statsData.analytics.recentlyViewed.length > 0 ? (
@@ -928,51 +1459,32 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
                     {statsData.analytics.recentlyViewed.slice(0, 5).map((quote, index) => (
                       <div
                         key={quote.id || index}
-                        className="p-4 rounded-lg border hover:shadow-md transition-shadow"
+                        className="p-4 rounded-lg border bg-card/50 hover:shadow-md transition-shadow hover:bg-card/70"
                       >
-                        <p className="text-sm mb-2 line-clamp-2 text-foreground font-medium">"{quote.text}"</p>
+                        <p className="text-sm mb-2 line-clamp-3 text-foreground font-medium">"{quote.text}"</p>
                         {quote.author && (
                           <p className="text-xs text-foreground/70 font-medium">— {quote.author}</p>
+                        )}
+                        {quote.category && (
+                          <Badge variant="secondary" className="mt-2 font-medium text-foreground/80 border-foreground/20">
+                            {quote.category}
+                          </Badge>
                         )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-[200px] text-foreground/60">
-                    <p className="font-medium">No recently viewed quotes.</p>
+                  <div className="flex flex-col items-center justify-center h-[200px] text-foreground/60">
+                    <Eye className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="font-medium text-center">No recently viewed quotes</p>
+                    <p className="text-sm mt-2 text-foreground/50 text-center max-w-md">
+                      View quotes to see your recent activity here.
+                    </p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Search History */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Search className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.info }} />
-                  <span className="font-semibold">Recent Searches</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {chartData.searchHistory.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {chartData.searchHistory.map((search, index) => (
-                      <Badge
-                        key={index}
-                        variant="outline"
-                        className="px-3 py-1.5 text-sm font-medium border-foreground/20 text-foreground bg-background/50 hover:bg-background/70"
-                      >
-                        {search}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[100px] text-foreground/60">
-                    <p className="font-medium">No search history available.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </>
         )}
       </div>

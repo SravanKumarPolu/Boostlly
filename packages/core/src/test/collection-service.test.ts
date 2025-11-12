@@ -1,9 +1,23 @@
 /**
  * Comprehensive test suite for CollectionService
- * Tests all major functionality including CRUD operations, search, filtering, and analytics
+ * 
+ * Tests all major functionality including:
+ * - Constructor and initialization
+ * - CRUD operations (Create, Read, Update, Delete)
+ * - Quote management within collections
+ * - Search and filtering
+ * - Statistics and analytics
+ * - Smart suggestions
+ * - Export/Import functionality
+ * - Collection templates
+ * - Archived collections
+ * - Edge cases and error handling
+ * - Data persistence
+ * 
+ * @module CollectionService Tests
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { CollectionService } from "../services/collection-service";
 import { MockStorageService } from "./mocks/storage-mock";
 import type { QuoteCollection } from "../types";
@@ -16,6 +30,11 @@ describe("CollectionService", () => {
     storage = new MockStorageService();
     storage.reset();
     collectionService = new CollectionService(storage);
+  });
+
+  afterEach(() => {
+    // Clean up any test data
+    storage.reset();
   });
 
   describe("Constructor", () => {
@@ -478,6 +497,228 @@ describe("CollectionService", () => {
     });
   });
 
+  describe("Export/Import", () => {
+    it("should export collections as JSON", async () => {
+      await collectionService.createCollection("Export Test", "Test description");
+      
+      const json = await collectionService.exportCollectionsAsJSON();
+      expect(json).toBeDefined();
+      expect(typeof json).toBe("string");
+      
+      const parsed = JSON.parse(json);
+      expect(parsed.collections).toBeDefined();
+      expect(Array.isArray(parsed.collections)).toBe(true);
+      expect(parsed.exportDate).toBeDefined();
+    });
+
+    it("should export collections as CSV", async () => {
+      await collectionService.createCollection("CSV Test", "Test description", {
+        category: "Test",
+      });
+      
+      const csv = await collectionService.exportCollectionsAsCSV();
+      expect(csv).toBeDefined();
+      expect(typeof csv).toBe("string");
+      expect(csv).toContain("Name");
+      expect(csv).toContain("CSV Test");
+    });
+
+    it("should import collections from JSON", async () => {
+      const importData = {
+        collections: [
+          {
+            id: "imported-1",
+            name: "Imported Collection",
+            description: "Imported",
+            quoteIds: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ],
+        exportDate: new Date().toISOString(),
+        version: "1.0.0",
+      };
+      
+      const result = await collectionService.importCollectionsFromJSON(JSON.stringify(importData));
+      expect(result.success).toBeGreaterThan(0);
+      expect(Array.isArray(result.errors)).toBe(true);
+      
+      const collections = await collectionService.getAllCollections();
+      const imported = collections.find((c) => c.name === "Imported Collection");
+      expect(imported).toBeDefined();
+    });
+
+    it("should handle invalid JSON import gracefully", async () => {
+      const result = await collectionService.importCollectionsFromJSON("invalid json");
+      expect(result.success).toBe(0);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Collection Templates", () => {
+    it("should return collection templates", async () => {
+      const templates = await collectionService.getCollectionTemplates();
+      expect(Array.isArray(templates)).toBe(true);
+      templates.forEach((template) => {
+        expect(template.id).toBeDefined();
+        expect(template.name).toBeDefined();
+      });
+    });
+
+    it("should create collection from template", async () => {
+      const templates = await collectionService.getCollectionTemplates();
+      if (templates.length > 0) {
+        const template = templates[0];
+        const collection = await collectionService.createCollectionFromTemplate(template.id);
+        
+        expect(collection).toBeDefined();
+        if (collection) {
+          expect(collection.name).toBeDefined();
+        }
+      }
+    });
+
+    it("should return null for invalid template", async () => {
+      const collection = await collectionService.createCollectionFromTemplate("invalid-template");
+      expect(collection).toBeNull();
+    });
+  });
+
+  describe("Collection Analytics", () => {
+    it("should return collection analytics", async () => {
+      const collection = await collectionService.createCollection("Analytics Test");
+      await collectionService.addQuoteToCollection(collection.id, "quote-1");
+      await collectionService.addQuoteToCollection(collection.id, "quote-2");
+      
+      const analytics = await collectionService.getCollectionAnalytics();
+      expect(analytics).toBeDefined();
+      expect(analytics.totalCollections).toBeGreaterThan(0);
+      expect(analytics.totalQuotes).toBeGreaterThanOrEqual(2);
+    });
+
+    it("should identify most active collection", async () => {
+      const activeCollection = await collectionService.createCollection("Active");
+      await collectionService.addQuoteToCollection(activeCollection.id, "quote-1");
+      await collectionService.addQuoteToCollection(activeCollection.id, "quote-2");
+      await collectionService.addQuoteToCollection(activeCollection.id, "quote-3");
+      
+      const analytics = await collectionService.getCollectionAnalytics();
+      expect(analytics.mostActiveCollection).toBeDefined();
+    });
+  });
+
+  describe("Archived Collections", () => {
+    it("should return archived collections", async () => {
+      const archived = await collectionService.getArchivedCollections();
+      expect(Array.isArray(archived)).toBe(true);
+    });
+
+    it("should handle collections without archive status", async () => {
+      await collectionService.createCollection("Regular Collection");
+      const archived = await collectionService.getArchivedCollections();
+      // Should return empty array if no collections are archived
+      expect(Array.isArray(archived)).toBe(true);
+    });
+  });
+
+  describe("Advanced Search", () => {
+    it("should handle complex search filters", async () => {
+      const collection1 = await collectionService.createCollection("Test 1", undefined, {
+        category: "Work",
+      });
+      await collectionService.updateCollection(collection1.id, {
+        priority: "high",
+        tags: ["urgent", "work"],
+      });
+      await collectionService.addQuoteToCollection(collection1.id, "quote-1");
+      
+      const results = await collectionService.searchCollections({
+        search: "Test",
+        category: "Work",
+        priority: "high",
+        hasQuotes: true,
+        tags: ["work"],
+      });
+      
+      expect(Array.isArray(results)).toBe(true);
+      results.forEach((collection) => {
+        expect(collection.category).toBe("Work");
+        expect(collection.priority).toBe("high");
+        expect(collection.quoteIds.length).toBeGreaterThan(0);
+      });
+    });
+
+    it("should handle empty search results", async () => {
+      const results = await collectionService.searchCollections({
+        search: "NonExistentCollectionName12345",
+      });
+      expect(Array.isArray(results)).toBe(true);
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle empty collection name (edge case)", async () => {
+      const collection = await collectionService.createCollection("");
+      expect(collection.name).toBe("");
+      expect(collection.id).toBeDefined();
+      // Empty name should still create a valid collection
+      const found = await collectionService.getCollection(collection.id);
+      expect(found).toBeDefined();
+    });
+
+    it("should handle very long collection names (1000+ chars)", async () => {
+      const longName = "A".repeat(1000);
+      const collection = await collectionService.createCollection(longName);
+      expect(collection.name).toBe(longName);
+      expect(collection.name.length).toBe(1000);
+      // Should persist correctly
+      const found = await collectionService.getCollection(collection.id);
+      expect(found?.name.length).toBe(1000);
+    });
+
+    it("should handle special characters in collection name", async () => {
+      const specialName = "Test & Collection < > \" '";
+      const collection = await collectionService.createCollection(specialName);
+      expect(collection.name).toBe(specialName);
+    });
+
+    it("should handle adding many quotes to collection (100 quotes)", async () => {
+      const collection = await collectionService.createCollection("Large Collection");
+      const quoteIds = Array.from({ length: 100 }, (_, i) => `quote-${i}`);
+      
+      // Add all quotes
+      for (const quoteId of quoteIds) {
+        await collectionService.addQuoteToCollection(collection.id, quoteId);
+      }
+      
+      const updated = await collectionService.getCollection(collection.id);
+      expect(updated?.quoteIds.length).toBe(100);
+      expect(updated?.quoteIds).toEqual(expect.arrayContaining(quoteIds));
+    });
+
+    it("should handle concurrent operations safely", async () => {
+      const collection = await collectionService.createCollection("Concurrent Test");
+      
+      // Simulate concurrent operations (race condition test)
+      const promises = [
+        collectionService.addQuoteToCollection(collection.id, "quote-1"),
+        collectionService.addQuoteToCollection(collection.id, "quote-2"),
+        collectionService.addQuoteToCollection(collection.id, "quote-3"),
+        collectionService.updateCollection(collection.id, { description: "Updated" }),
+      ];
+      
+      await Promise.all(promises);
+      
+      const updated = await collectionService.getCollection(collection.id);
+      expect(updated).toBeDefined();
+      expect(updated?.quoteIds.length).toBeGreaterThanOrEqual(2); // At least 2 quotes added
+      expect(updated?.description).toBe("Updated");
+      // Verify no duplicates were added
+      const uniqueIds = new Set(updated?.quoteIds);
+      expect(uniqueIds.size).toBe(updated?.quoteIds.length);
+    });
+  });
+
   describe("Data Persistence", () => {
     it("should persist collections to storage", async () => {
       await collectionService.createCollection("Persistent Collection");
@@ -505,6 +746,17 @@ describe("CollectionService", () => {
       await new Promise(resolve => setTimeout(resolve, 100));
       const collections = await service.getAllCollections();
       expect(collections.some((c) => c.id === "stored-1")).toBe(true);
+    });
+
+    it("should handle corrupted storage data gracefully", async () => {
+      await storage.set("collections", "invalid data" as any);
+      
+      const service = new CollectionService(storage);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const collections = await service.getAllCollections();
+      // Should fall back to default collections
+      expect(Array.isArray(collections)).toBe(true);
+      expect(collections.length).toBeGreaterThan(0);
     });
   });
 });

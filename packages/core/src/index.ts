@@ -79,3 +79,6 @@ export * from "./utils/scalability-monitor";
 export * from "./services/base-service";
 export * from "./services/quote-service-refactored";
 export * from "./utils/error-handler";
+
+// User Analytics Service
+export * from "./services/user-analytics-service";

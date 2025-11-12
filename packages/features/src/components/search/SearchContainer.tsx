@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Button, Input, Badge } from '@boostlly/ui';
-import { Search, Filter, X, Clock, Bookmark, BarChart3 } from 'lucide-react';
+import { Search, Filter, X, Clock, Bookmark, BarChart3, Heart, FolderOpen } from 'lucide-react';
 import { useSearchState } from '../../hooks/useSearchState';
 import { SearchInput } from './SearchInput';
 import { SearchFilters } from './SearchFilters';
@@ -57,10 +57,12 @@ export function SearchContainer({
 
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Perform search when query or filters change
   const handleSearch = async () => {
     setIsSearching(true);
+    setHasSearched(true);
     try {
       const results = await performSearch();
       setSearchResults(results);
@@ -76,6 +78,7 @@ export function SearchContainer({
       handleSearch();
     } else {
       setSearchResults([]);
+      setHasSearched(false);
     }
   };
 
@@ -223,15 +226,70 @@ export function SearchContainer({
         <SearchAnalytics analytics={searchAnalytics} />
       )}
 
-      {/* Search Results */}
-      <SearchResults
-        results={searchResults}
-        isSearching={isSearching}
-        onRemoveQuote={onRemoveQuote}
-        onSpeakQuote={onSpeakQuote}
-        onSaveAsImage={onSaveAsImage}
-        onAddToCollection={onAddToCollection}
-      />
+      {/* Search Results - Only show if user has searched */}
+      {hasSearched && (
+        <SearchResults
+          results={searchResults}
+          isSearching={isSearching}
+          onRemoveQuote={onRemoveQuote}
+          onSpeakQuote={onSpeakQuote}
+          onSaveAsImage={onSaveAsImage}
+          onAddToCollection={onAddToCollection}
+        />
+      )}
+
+      {/* Initial State - Show when no search has been performed */}
+      {!hasSearched && !isSearching && (
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+          <div className="text-center max-w-lg">
+            <div className="mb-6">
+              <Search className="w-20 h-20 mx-auto mb-4 opacity-30 text-muted-foreground" />
+            </div>
+            <h3 className="text-2xl font-semibold mb-3 text-foreground">Search Quotes</h3>
+            <p className="text-sm text-muted-foreground mb-8">
+              Search through your saved quotes, collections, and discover new quotes by author, category, or keywords.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
+              <div className="p-4 rounded-lg border bg-card/50">
+                <div className="flex items-start gap-3">
+                  <Search className="w-5 h-5 mt-0.5 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-sm mb-1 text-foreground">Search by Text</p>
+                    <p className="text-xs text-muted-foreground">Find quotes containing specific words or phrases</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg border bg-card/50">
+                <div className="flex items-start gap-3">
+                  <Heart className="w-5 h-5 mt-0.5 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-sm mb-1 text-foreground">Search by Author</p>
+                    <p className="text-xs text-muted-foreground">Discover quotes from your favorite authors</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg border bg-card/50">
+                <div className="flex items-start gap-3">
+                  <FolderOpen className="w-5 h-5 mt-0.5 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-sm mb-1 text-foreground">Filter by Category</p>
+                    <p className="text-xs text-muted-foreground">Browse quotes by topic or theme</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg border bg-card/50">
+                <div className="flex items-start gap-3">
+                  <BarChart3 className="w-5 h-5 mt-0.5 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-sm mb-1 text-foreground">Use Filters</p>
+                    <p className="text-xs text-muted-foreground">Refine your search with advanced filters</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
