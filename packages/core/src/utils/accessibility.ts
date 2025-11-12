@@ -265,33 +265,51 @@ export class AccessibleTTS {
   /**
    * Wait for voices to be ready (with timeout and retries)
    * More aggressive in production to handle code splitting delays
+   * Optimized for desktop browsers that require user interaction
    */
   private async waitForVoices(maxWaitMs: number = 1500): Promise<boolean> {
     if (this.voicesReady && this.cachedVoices && this.cachedVoices.length > 0) {
       return true;
     }
 
+    // Check global cache first (from pre-initialization or warmup)
+    const globalCache = (window as any).__boostlly_tts_voices;
+    if (globalCache && Array.isArray(globalCache) && globalCache.length > 0) {
+      this.cachedVoices = globalCache;
+      this.voicesReady = true;
+      return true;
+    }
+
     // Try multiple strategies to get voices
     const strategies = [
-      // Strategy 1: Check immediately
+      // Strategy 1: Check immediately (voices might be ready from warmup)
       async () => {
         const voices = window.speechSynthesis.getVoices();
         if (voices.length > 0) {
           this.cachedVoices = voices;
           this.voicesReady = true;
+          (window as any).__boostlly_tts_voices = voices;
           return true;
         }
         return false;
       },
-      // Strategy 2: Wait and check periodically
+      // Strategy 2: Wait and check frequently (desktop browsers may need a moment)
       async () => {
         const startTime = Date.now();
-        const checkInterval = 50;
+        const checkInterval = 25; // Check more frequently for desktop browsers
         while (Date.now() - startTime < maxWaitMs) {
           try {
             const voices = window.speechSynthesis.getVoices();
             if (voices.length > 0) {
               this.cachedVoices = voices;
+              this.voicesReady = true;
+              (window as any).__boostlly_tts_voices = voices;
+              return true;
+            }
+            // Check global cache on each iteration
+            const cached = (window as any).__boostlly_tts_voices;
+            if (cached && Array.isArray(cached) && cached.length > 0) {
+              this.cachedVoices = cached;
               this.voicesReady = true;
               return true;
             }
@@ -311,13 +329,14 @@ export class AccessibleTTS {
           window.speechSynthesis.speak(dummyUtterance);
           window.speechSynthesis.cancel();
           
-          // Wait a bit for voices to load
-          await new Promise(resolve => setTimeout(resolve, 200));
+          // Wait a bit for voices to load (desktop browsers may need this)
+          await new Promise(resolve => setTimeout(resolve, 100));
           
           const voices = window.speechSynthesis.getVoices();
           if (voices.length > 0) {
             this.cachedVoices = voices;
             this.voicesReady = true;
+            (window as any).__boostlly_tts_voices = voices;
             return true;
           }
         } catch (e) {
@@ -335,8 +354,16 @@ export class AccessibleTTS {
       }
     }
 
-    // If still no voices, use cached if available
+    // Final check: use cached if available (from any source)
     if (this.cachedVoices && this.cachedVoices.length > 0) {
+      this.voicesReady = true;
+      return true;
+    }
+
+    // Last resort: check global cache one more time
+    const finalCache = (window as any).__boostlly_tts_voices;
+    if (finalCache && Array.isArray(finalCache) && finalCache.length > 0) {
+      this.cachedVoices = finalCache;
       this.voicesReady = true;
       return true;
     }
@@ -370,8 +397,8 @@ export class AccessibleTTS {
     
     // If no voices yet, use cached voices
     if (voices.length === 0) {
-      if (this.cachedVoices && this.cachedVoices.length > 0) {
-        voices = this.cachedVoices;
+        if (this.cachedVoices && this.cachedVoices.length > 0) {
+          voices = this.cachedVoices;
       } else {
         return null;
       }
@@ -384,7 +411,7 @@ export class AccessibleTTS {
     }
 
     return this.selectBestVoiceFromList(voices);
-  }
+    }
 
   /**
    * Select the best voice from a list of voices
@@ -431,8 +458,70 @@ export class AccessibleTTS {
   }
 
   /**
+   * Warm up voices using the current user interaction context
+   * Desktop browsers require user interaction before voices are available
+   * This should be called from a user interaction handler (click, touch, etc.)
+   * Returns true if voices are immediately available
+   */
+  private warmupVoicesWithUserInteraction(): boolean {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return false;
+    }
+
+    try {
+      // Strategy 1: Check immediately - user interaction might have unlocked voices
+      let voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        this.cachedVoices = voices;
+        this.voicesReady = true;
+        (window as any).__boostlly_tts_voices = voices;
+        return true;
+      }
+
+      // Strategy 2: Trigger voice loading with a dummy utterance
+      // This works because we're in a user interaction context
+      // Desktop browsers (Chrome/Edge) need this to unlock voices
+      try {
+        const dummyUtterance = new SpeechSynthesisUtterance("");
+        dummyUtterance.volume = 0;
+        dummyUtterance.rate = 10; // Very fast, won't be heard
+        window.speechSynthesis.speak(dummyUtterance);
+        window.speechSynthesis.cancel();
+      } catch (e) {
+        // Ignore errors
+      }
+
+      // Strategy 3: Check again immediately (some browsers unlock instantly)
+      voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        this.cachedVoices = voices;
+        this.voicesReady = true;
+        (window as any).__boostlly_tts_voices = voices;
+        return true;
+      }
+
+      // Strategy 4: Set up async check for voices that load after a brief delay
+      // Store in global cache for waitForVoices to pick up
+      setTimeout(() => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          this.cachedVoices = voices;
+          this.voicesReady = true;
+          (window as any).__boostlly_tts_voices = voices;
+        }
+      }, 10);
+
+      return false; // Voices not immediately available, will need to wait
+    } catch (error) {
+      console.warn("Error warming up voices with user interaction:", error);
+      return false;
+    }
+  }
+
+  /**
    * Speak text with accessibility announcements and high-quality voice
    * Now waits for voices to be ready before speaking with aggressive initialization
+   * Handles desktop browser requirement for user interaction
    */
   async speak(
     text: string,
@@ -450,16 +539,28 @@ export class AccessibleTTS {
       return;
     }
 
+    // CRITICAL: Warm up voices using the current user interaction
+    // Desktop browsers (Chrome/Edge) require user interaction before voices are available
+    // The button click IS the user interaction, so we use it here
+    const voicesImmediatelyReady = this.warmupVoicesWithUserInteraction();
+
     // Initialize voices aggressively
     this.initializeVoices();
     
-    // Wait for voices to be ready with longer timeout for production
-    // Production builds may have code splitting delays
-    const voicesReady = await this.waitForVoices(1500);
+    // Desktop browsers may need a brief moment after user interaction to load voices
+    // Give them a small delay if voices aren't immediately ready
+    if (!voicesImmediatelyReady) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    
+    // If voices are immediately ready, we can proceed faster
+    // Otherwise, wait with longer timeout for production/code splitting
+    const waitTime = voicesImmediatelyReady ? 200 : 1500;
+    const voicesReady = await this.waitForVoices(waitTime);
     
     // Final check: if still no voices, try one more aggressive attempt
     if (!voicesReady && (!this.cachedVoices || this.cachedVoices.length === 0)) {
-      // Last resort: try triggering voices with a user-interaction-like event
+      // Last resort: try triggering voices again (user interaction context still valid)
       try {
         const dummyUtterance = new SpeechSynthesisUtterance("");
         dummyUtterance.volume = 0;
@@ -474,6 +575,7 @@ export class AccessibleTTS {
         if (voices.length > 0) {
           this.cachedVoices = voices;
           this.voicesReady = true;
+          (window as any).__boostlly_tts_voices = voices;
         }
       } catch (e) {
         // Ignore errors
