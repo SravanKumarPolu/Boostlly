@@ -50,9 +50,9 @@ export class QuoteFetcher {
    */
   private loadCachedApiQuotes(): void {
     try {
-      const persistedApiQuotes = (this.storage.getSync as any)?.("quotes-cache");
+      const persistedApiQuotes = this.storage.getSync<Quote[]>("quotes-cache");
       if (Array.isArray(persistedApiQuotes)) {
-        this.cachedApiQuotes = persistedApiQuotes as Quote[];
+        this.cachedApiQuotes = persistedApiQuotes;
       }
     } catch (error) {
       logDebug("Could not load cached API quotes", { error });
@@ -137,7 +137,7 @@ export class QuoteFetcher {
       // Only run in browser/runtime environments with storage
       const timezone = this.getTimezonePreference();
       const today = getDateKey(new Date(), timezone);
-      const lastFetched = (this.storage.getSync as any)?.("quotes-last-fetch");
+      const lastFetched = this.storage.getSync<string>("quotes-last-fetch");
       if (lastFetched === today) return;
 
       // Try primary providers quickly; fall back to local if needed, but only cache API ones
@@ -160,7 +160,7 @@ export class QuoteFetcher {
 
       if (!fetched) {
         // Nothing to cache today
-        (this.storage.setSync as any)?.("quotes-last-fetch", today);
+        this.storage.setSync("quotes-last-fetch", today);
         return;
       }
 
@@ -184,7 +184,7 @@ export class QuoteFetcher {
         await this.storage.set("quotes-cache", this.cachedApiQuotes);
       }
 
-      (this.storage.setSync as any)?.("quotes-last-fetch", today);
+      this.storage.setSync("quotes-last-fetch", today);
     } catch (error) {
       logDebug("Error in daily quote enrichment", { error });
     }
@@ -235,7 +235,11 @@ export class QuoteFetcher {
   getTimezonePreference(): TimezoneMode {
     try {
       // Try to get from settings
-      const settings = this.storage.getSync("settings") as any;
+      interface SettingsWithTimezone {
+        timezone?: string;
+        [key: string]: unknown;
+      }
+      const settings = this.storage.getSync<SettingsWithTimezone>("settings");
       if (settings?.timezone) {
         const tz = settings.timezone;
         // Convert IANA timezone to our format, or use as-is if it's "utc" or "local"
@@ -248,7 +252,7 @@ export class QuoteFetcher {
         }
       }
       // Check for explicit timezone preference
-      const timezonePref = this.storage.getSync("quoteTimezone") as TimezoneMode | null;
+      const timezonePref = this.storage.getSync<TimezoneMode>("quoteTimezone");
       if (timezonePref) {
         return timezonePref;
       }

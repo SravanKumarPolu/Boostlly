@@ -18,6 +18,9 @@
     "build:verify": "pnpm verify:build && pnpm build",
     "build:commit": "./scripts/build-and-commit.sh",
     "test": "pnpm --recursive run test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
     "type-check": "pnpm --recursive run type-check",
     "lint": "pnpm --recursive run lint",
     "clean": "pnpm --recursive run clean",
@@ -27,6 +30,7 @@
     "audit:colors": "node scripts/audit-color-accessibility.js"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.0",
     "chokidar": "^4.0.3",
     "glob": "^11.0.3",
     "typescript": "^5.3.0"
