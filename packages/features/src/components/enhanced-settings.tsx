@@ -20,6 +20,7 @@ import {
   getOptimalForeground,
   ColorPalette,
   calculateEffectiveBackground,
+  accessibleTTS,
 } from "@boostlly/core";
 import {
   Palette,
@@ -781,7 +782,8 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
     };
 
     // Text-to-speech test function
-    const handleSpeechTest = () => {
+    // Now uses AccessibleTTS which properly handles voice loading for desktop browsers
+    const handleSpeechTest = async () => {
       if (isSpeaking || !preferences.textToSpeech) return;
       
       // Check if speech synthesis is available
@@ -792,40 +794,27 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
       
       setIsSpeaking(true);
       try {
-        // Cancel any existing speech
-        window.speechSynthesis.cancel();
-        
-        const utterance = new SpeechSynthesisUtterance(
-          "This is a test of the text-to-speech feature. You can adjust the rate and volume to your preference."
-        );
-        
-        // Select best available voice for quality
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          // Try to find a high-quality voice
-          const bestVoice = voices.find(v => 
-            v.name.toLowerCase().includes("neural") || 
-            v.name.toLowerCase().includes("premium") ||
-            v.name.toLowerCase().includes("enhanced") ||
-            v.name.toLowerCase().includes("natural")
-          ) || voices.find(v => v.lang.startsWith("en-US")) || voices[0];
-          
-          if (bestVoice) {
-            utterance.voice = bestVoice;
-            utterance.lang = bestVoice.lang;
+        // Use AccessibleTTS which properly waits for voices to be ready
+        // This ensures good voice quality on first click (especially on desktop browsers)
+        // The button click provides user interaction context needed for desktop browsers
+        await accessibleTTS.speak(
+          "This is a test of the text-to-speech feature. You can adjust the rate and volume to your preference.",
+          {
+            rate: Math.max(0.5, Math.min(2, preferences.speechRate || 1.0)),
+            volume: Math.max(0, Math.min(1, (preferences.speechVolume || 90) / 100)),
+            pitch: 1.0,
+            onStart: () => {
+              setIsSpeaking(true);
+            },
+            onEnd: () => {
+              setIsSpeaking(false);
+            },
+            onError: (error) => {
+              logWarning("Speech test failed:", { error });
+              setIsSpeaking(false);
+            },
           }
-        } else {
-          utterance.lang = "en-US";
-        }
-        
-        utterance.rate = Math.max(0.5, Math.min(2, preferences.speechRate || 1.0));
-        utterance.volume = Math.max(0, Math.min(1, (preferences.speechVolume || 90) / 100));
-        utterance.pitch = 1.0;
-        
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-        
-        window.speechSynthesis.speak(utterance);
+        );
       } catch (error) {
         logWarning("Speech test failed:", { error: error });
         setIsSpeaking(false);
