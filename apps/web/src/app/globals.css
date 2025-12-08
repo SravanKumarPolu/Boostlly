@@ -222,6 +222,19 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  
+  /* Snap scrolling for navigation */
+  .snap-x {
+    scroll-snap-type: x mandatory;
+  }
+  
+  .snap-start {
+    scroll-snap-align: start;
+  }
+  
+  .snap-mandatory {
+    scroll-snap-type: x mandatory;
+  }
 
   /* Modern elevation ramp - refined shadows for 2024-2025 */
   .elevation-1 { 
@@ -245,17 +258,35 @@
   .hover-soft { 
     transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), 
                 box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
-                background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+                background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+                scale 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, box-shadow;
   }
   .hover-soft:hover { 
-    transform: translateY(-2px);
+    transform: translateY(-2px) scale(1.01);
     box-shadow: 0 4px 6px -1px hsl(224 20% 10% / 0.1), 
                 0 2px 4px -1px hsl(224 20% 10% / 0.06);
   }
   .hover-soft:active,
   .press-soft:active { 
-    transform: translateY(0);
+    transform: translateY(0) scale(0.99);
     transition-duration: 100ms;
+  }
+  
+  /* Smooth quote card transitions */
+  @keyframes quoteCardFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  [data-card="true"] {
+    animation: quoteCardFadeIn 0.4s ease-out;
   }
   
   /* Glassmorphism utility */
@@ -266,9 +297,18 @@
     border: 1px solid hsl(var(--border) / 0.5);
   }
   
-  /* Smooth focus ring */
+  /* Smooth focus ring - Enhanced for better visibility */
   .focus-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background;
+  }
+  
+  /* Enhanced focus visibility for glassmorphism elements */
+  .glass-adaptive:focus-visible,
+  .card-adaptive:focus-visible,
+  [data-card="true"]:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 4px;
+    box-shadow: 0 0 0 4px hsl(var(--ring) / 0.2);
   }
   
   /* Modern gradient backgrounds */
@@ -394,6 +434,18 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Pulse glow animation for today badge */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px hsl(var(--primary) / 0.4),
+                0 0 16px hsl(var(--primary) / 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px hsl(var(--primary) / 0.6),
+                0 0 32px hsl(var(--primary) / 0.4);
   }
 }
 
@@ -534,6 +586,23 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: opacity 0.5s ease-in-out;
+  }
+  
+  /* Smooth quote transition animation */
+  @keyframes quoteFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .quote-text-professional {
+    animation: quoteFadeIn 0.5s ease-out;
   }
   
   /* Author text - Refined styling */

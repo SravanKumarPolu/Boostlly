@@ -28,10 +28,10 @@ export function AppHeader({
   onVoiceToggle,
 }: AppHeaderProps) {
   return (
-    <header className={variant === "popup" ? "mb-4" : "mb-8"}>
+    <header className={variant === "popup" ? "mb-4" : "mb-6 sm:mb-8"}>
       <div
         className={
-          variant === "popup" ? "mb-4" : "container mx-auto px-4 mb-4"
+          variant === "popup" ? "mb-4" : "container mx-auto px-4 sm:px-6 lg:px-8 mb-4 sm:mb-6 max-w-7xl"
         }
       >
         <div
@@ -52,12 +52,14 @@ export function AppHeader({
             >
               <img
                 src="/boostlly-logo.png"
-                alt="Boostlly Logo"
+                alt="Boostlly - Motivational Quotes App"
                 className={
                   variant === "popup"
                     ? "w-8 h-8 rounded-lg"
                     : "w-8 sm:w-10 h-8 sm:h-10 rounded-lg"
                 }
+                width={variant === "popup" ? 32 : 40}
+                height={variant === "popup" ? 32 : 40}
               />
               <div>
                 <h1

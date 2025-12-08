@@ -37,17 +37,14 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#ffffff",
-          "sounds": [
-            "./assets/sounds/notification.wav"
-          ]
+          "icon": "./assets/icon.png",
+          "color": "#7C3AED"
         }
       ]
     ],
     "extra": {
       "eas": {
-        "projectId": "your-project-id-here"
+        "projectId": "boostlly-android-app"
       }
     }
   }

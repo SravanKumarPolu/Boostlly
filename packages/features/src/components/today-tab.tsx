@@ -978,8 +978,9 @@ export const TodayTab = forwardRef<
       : {};
 
     return (
-      <div 
-        className="w-full max-w-3xl mx-auto relative overflow-hidden rounded-3xl shadow-2xl border border-border/20 backdrop-blur-xl backdrop-saturate-150" 
+      <article 
+        className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto relative overflow-hidden rounded-3xl shadow-2xl border border-border/20 backdrop-blur-xl backdrop-saturate-150"
+        aria-label="Today's motivational quote"
         style={{
           ...cardBackgroundStyle,
           backgroundColor: imageUrl 
@@ -988,6 +989,7 @@ export const TodayTab = forwardRef<
           backdropFilter: "blur(24px) saturate(150%)",
           WebkitBackdropFilter: "blur(24px) saturate(150%)",
           boxShadow: "0 20px 60px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -6px rgba(0, 0, 0, 0.15)",
+          willChange: "transform, opacity",
         }}
       >
         {/* Subtle overlay for text readability - light enough to show background image */}
@@ -1003,7 +1005,7 @@ export const TodayTab = forwardRef<
         <div className="relative z-10 p-6 sm:p-10 lg:p-12">
           {/* Category Badge - Only show if category exists */}
           {quote.category && (
-            <div className="flex justify-center mb-8 sm:mb-10">
+            <div className="flex justify-center mb-6 sm:mb-8 md:mb-10">
               <Badge
                 variant="glass"
                 className="text-xs sm:text-sm px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full backdrop-blur-xl shadow-md border font-medium"
@@ -1021,7 +1023,7 @@ export const TodayTab = forwardRef<
           )}
 
           {/* Quote Display - Enhanced typography and spacing */}
-          <div className="relative mb-10 sm:mb-12">
+          <div className="relative mb-8 sm:mb-10 md:mb-12">
             {/* Decorative quotation marks - more subtle and refined */}
             <div
               className="absolute -top-2 -left-2 sm:-top-4 sm:-left-4 text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-serif leading-none opacity-20 select-none pointer-events-none"
@@ -1044,7 +1046,7 @@ export const TodayTab = forwardRef<
               "
             </div>
             <blockquote
-              className="quote-text-professional text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light leading-[1.4] sm:leading-[1.35] md:leading-[1.3] pt-8 sm:pt-12 pb-12 sm:pb-16 px-6 sm:px-10 md:px-12 text-center"
+              className="quote-text-professional text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light leading-[1.4] sm:leading-[1.35] md:leading-[1.3] lg:leading-[1.25] pt-8 sm:pt-10 md:pt-12 pb-10 sm:pb-12 md:pb-16 px-4 sm:px-6 md:px-10 lg:px-12 text-center transition-opacity duration-500 ease-in-out"
               data-current-quote={quote.text}
               style={{ 
                 color: "#ffffff", // Always white for glassmorphism cards
@@ -1052,6 +1054,7 @@ export const TodayTab = forwardRef<
                   ? "0 5px 24px rgba(0,0,0,0.95), 0 4px 16px rgba(0,0,0,0.85), 0 3px 10px rgba(0,0,0,0.75), 0 2px 6px rgba(0,0,0,0.65), 0 1px 3px rgba(0,0,0,0.55)"
                   : "0 4px 20px rgba(0,0,0,0.75), 0 3px 12px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.45)",
                 WebkitTextStroke: "0.5px rgba(0,0,0,0.3)", // Subtle stroke for additional contrast
+                willChange: "opacity, transform",
               }}
             >
               {quote.text}
@@ -1059,7 +1062,7 @@ export const TodayTab = forwardRef<
           </div>
 
           {/* Author Section - Refined presentation */}
-          <div className="text-center mb-10 sm:mb-12">
+          <div className="text-center mb-8 sm:mb-10 md:mb-12">
             {showAuthor && (
               <div className="inline-flex items-center gap-3">
                 <div 
@@ -1067,7 +1070,7 @@ export const TodayTab = forwardRef<
                   style={{ backgroundColor: `hsl(var(--fg-hsl) / 0.5)` }}
                 />
                 <p
-                  className="quote-author-professional text-base sm:text-lg md:text-xl font-medium px-5 py-2.5 sm:px-6 sm:py-3 rounded-full backdrop-blur-xl border shadow-md"
+                  className="quote-author-professional text-sm sm:text-base md:text-lg font-medium px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 rounded-full backdrop-blur-xl border shadow-md transition-opacity duration-500 ease-in-out"
                   style={{
                     color: "#ffffff", // Always white for glassmorphism cards
                     backgroundColor: "hsl(var(--bg-hsl) / 0.6)",
@@ -1117,12 +1120,12 @@ export const TodayTab = forwardRef<
           </div>
 
           {/* Action Buttons - Professional organization and styling */}
-          <div className="space-y-4">
+          <div className="space-y-4 sm:space-y-5">
             {/* Primary Actions - Main interactions */}
-            <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3">
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5 md:gap-3">
               <button
                 onClick={handleLike}
-                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-xl text-sm font-medium shadow-md hover:shadow-lg min-w-[110px] sm:min-w-[120px] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+                className="inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-4 sm:px-5 md:px-6 rounded-xl text-sm sm:text-base font-medium shadow-md hover:shadow-lg hover:scale-[1.02] min-w-[100px] sm:min-w-[110px] md:min-w-[120px] min-h-[44px] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               style={
                 isLiked
                   ? {
@@ -1171,7 +1174,7 @@ export const TodayTab = forwardRef<
 
               <button
                 onClick={handleSave}
-                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-xl text-sm font-medium shadow-md hover:shadow-lg min-w-[110px] sm:min-w-[120px] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+                className="inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-4 sm:px-5 md:px-6 rounded-xl text-sm sm:text-base font-medium shadow-md hover:shadow-lg hover:scale-[1.02] min-w-[100px] sm:min-w-[110px] md:min-w-[120px] min-h-[44px] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               style={
                 isSaved
                   ? {
@@ -1224,7 +1227,7 @@ export const TodayTab = forwardRef<
 
               <button
                 onClick={handleShare}
-                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-xl text-sm font-medium shadow-md hover:shadow-lg min-w-[110px] sm:min-w-[120px] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+                className="inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-4 sm:px-5 md:px-6 rounded-xl text-sm sm:text-base font-medium shadow-md hover:shadow-lg hover:scale-[1.02] min-w-[100px] sm:min-w-[110px] md:min-w-[120px] min-h-[44px] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                 style={adaptiveButtonStyle}
               onMouseEnter={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
               onMouseLeave={(e) => applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor)}
@@ -1239,7 +1242,7 @@ export const TodayTab = forwardRef<
 
               <button
                 onClick={handleCopy}
-                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-xl text-sm font-medium shadow-md hover:shadow-lg min-w-[110px] sm:min-w-[120px] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+                className="inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-4 sm:px-5 md:px-6 rounded-xl text-sm sm:text-base font-medium shadow-md hover:shadow-lg hover:scale-[1.02] min-w-[100px] sm:min-w-[110px] md:min-w-[120px] min-h-[44px] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                 style={adaptiveButtonStyle}
               onMouseEnter={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
               onMouseLeave={(e) => applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor)}
@@ -1254,7 +1257,7 @@ export const TodayTab = forwardRef<
 
               <button
                 onClick={handleSpeak}
-                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-5 sm:px-6 rounded-xl text-sm font-medium shadow-md hover:shadow-lg min-w-[110px] sm:min-w-[120px] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+                className="inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-4 sm:px-5 md:px-6 rounded-xl text-sm sm:text-base font-medium shadow-md hover:shadow-lg hover:scale-[1.02] min-w-[100px] sm:min-w-[110px] md:min-w-[120px] min-h-[44px] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                 style={adaptiveButtonStyle}
               onMouseEnter={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
               onMouseLeave={(e) => applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor)}
@@ -1277,7 +1280,7 @@ export const TodayTab = forwardRef<
             <div className="flex justify-center">
               <button
                 onClick={handleSaveAsImage}
-                className="inline-flex items-center justify-center gap-2 h-10 sm:h-11 px-6 sm:px-8 rounded-xl text-sm font-medium shadow-md hover:shadow-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97]"
+                className="inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-5 sm:px-6 md:px-8 rounded-xl text-sm sm:text-base font-medium shadow-md hover:shadow-lg hover:scale-[1.02] min-h-[44px] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                 style={adaptiveButtonStyle}
               onMouseEnter={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
               onMouseLeave={(e) => applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor)}
@@ -1292,7 +1295,7 @@ export const TodayTab = forwardRef<
             </div>
           </div>
         </div>
-      </div>
+      </article>
     );
   },
 );

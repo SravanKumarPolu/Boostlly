@@ -81,15 +81,22 @@ export function Navigation({
   return (
     <nav
       className={
-        variant === "popup" ? "mb-4" : "container mx-auto px-4 mb-8"
+        variant === "popup" ? "mb-4" : "w-full mb-6 sm:mb-8 md:mb-10"
       }
+      role="navigation"
+      aria-label="Main navigation"
     >
       <div
         className={
           variant === "popup"
-            ? "flex items-center gap-1 bg-card/60 backdrop-blur-sm rounded-lg p-1 border border-border overflow-x-auto elevation-1 hover-soft scrollbar-hide"
-            : "flex items-center gap-2 bg-background/20 backdrop-blur-sm rounded-2xl p-2 border border-border/20 overflow-x-auto shadow-2xl"
+            ? "flex items-center gap-1 bg-card/60 backdrop-blur-sm rounded-lg p-1 border border-border overflow-x-auto elevation-1 hover-soft scrollbar-hide snap-x snap-mandatory"
+            : "flex items-center gap-1.5 sm:gap-2 bg-background/20 backdrop-blur-sm rounded-2xl p-1.5 sm:p-2 border border-border/20 overflow-x-auto shadow-2xl snap-x snap-mandatory scrollbar-hide mx-2 sm:mx-4"
         }
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+        }}
       >
         {tabs.map((tab) => {
           const Icon = tab.icon as any;
@@ -105,11 +112,11 @@ export function Navigation({
               className={
                 activeTab === tab.id
                   ? variant === "popup"
-                    ? "flex items-center gap-1 px-2 py-1.5 rounded-md shadow-md text-xs whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors backdrop-blur-md border-2"
-                    : "group relative flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors font-semibold backdrop-blur-md border-2"
+                    ? "flex items-center justify-center gap-1.5 px-3 py-2 rounded-md shadow-md text-xs whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-all duration-200 backdrop-blur-md border-2 min-h-[44px] min-w-[60px] sm:min-w-[auto] flex-shrink-0 snap-start"
+                    : "group relative flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2.5 sm:py-3 rounded-xl shadow-lg whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-transparent transition-all duration-200 font-semibold backdrop-blur-md border-2 min-h-[44px] min-w-[60px] sm:min-w-[auto] flex-shrink-0 snap-start text-xs sm:text-sm"
                   : variant === "popup"
-                    ? "flex items-center gap-1 px-2 py-1.5 rounded-md text-xs whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors backdrop-blur-sm hover:backdrop-blur-md"
-                    : "group relative flex items-center gap-2 px-4 py-3 rounded-xl whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors font-medium backdrop-blur-sm hover:backdrop-blur-md"
+                    ? "flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-all duration-200 backdrop-blur-sm hover:backdrop-blur-md hover:scale-[1.02] min-h-[44px] min-w-[60px] sm:min-w-[auto] flex-shrink-0 snap-start"
+                    : "group relative flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2.5 sm:py-3 rounded-xl whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-transparent transition-all duration-200 font-medium backdrop-blur-sm hover:backdrop-blur-md hover:scale-[1.02] min-h-[44px] min-w-[60px] sm:min-w-[auto] flex-shrink-0 snap-start text-xs sm:text-sm"
               }
               style={
                 activeTab === tab.id
@@ -132,13 +139,26 @@ export function Navigation({
               }
             >
               <Icon
-                className={variant === "popup" ? "w-3 h-3" : "w-4 h-4"}
+                className={variant === "popup" ? "w-4 h-4 flex-shrink-0" : "w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"}
                 style={{
                   filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))",
                 }}
+                aria-hidden="true"
               />
-              <span className={variant === "popup" ? "" : "font-medium"}>
+              {/* Show abbreviated text on mobile, full text on larger screens */}
+              <span className="font-medium hidden sm:inline truncate">
                 {tab.label}
+              </span>
+              <span className="font-medium sm:hidden">
+                {tab.label === "Today" ? "Today" :
+                 tab.label === "Search" ? "Search" :
+                 tab.label === "Collections" ? "Collections" :
+                 tab.label === "Saved" ? "Saved" :
+                 tab.label === "Your Quotes" ? "Quotes" :
+                 tab.label === "Stats" ? "Stats" :
+                 tab.label === "Voice" ? "Voice" :
+                 tab.label === "Settings" ? "Settings" :
+                 tab.label.length > 8 ? tab.label.substring(0, 8) : tab.label}
               </span>
             </button>
           );

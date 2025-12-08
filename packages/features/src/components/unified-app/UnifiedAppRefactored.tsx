@@ -348,7 +348,9 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
 
           <div
             className={
-              variant === "popup" ? "space-y-4" : "container mx-auto px-4 py-8"
+              variant === "popup" 
+                ? "space-y-4" 
+                : "container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16 max-w-7xl"
             }
           >
             <ErrorBoundary>

@@ -12,6 +12,7 @@ import {
   Image,
   Share2,
   FolderOpen,
+  Heart,
 } from 'lucide-react';
 import { Variant, SavedQuote } from '../types';
 import { speakQuote, saveQuoteAsImage, shareQuote } from '../utils/quote-actions';
@@ -46,15 +47,15 @@ export function SavedTab({
 }: SavedTabProps) {
   if (variant === "popup") {
     return (
-      <div className="space-y-4">
+      <section className="space-y-4" aria-label="Saved quotes">
         <div className="flex items-center justify-between">
           <h2 
-            className="text-lg font-bold"
+            className="text-lg sm:text-xl font-bold"
             style={{
               color: "hsl(var(--fg-hsl, var(--foreground)))",
             }}
           >
-            Saved
+            Saved Quotes
           </h2>
           <Badge 
             variant="glass" 
@@ -70,43 +71,53 @@ export function SavedTab({
         </div>
         {savedQuotes.length === 0 ? (
           <div 
-            className="p-10 text-center rounded-xl border elevation-1 backdrop-blur-xl transition-all duration-200"
+            className="p-10 sm:p-12 md:p-16 text-center rounded-xl border elevation-1 backdrop-blur-xl transition-all duration-200 max-w-2xl mx-auto"
             style={{
               backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
               borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
             }}
           >
-            <div className="mx-auto mb-3 w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500" />
-            <p 
-              className="font-medium"
+            <div className="mx-auto mb-6 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 animate-pulse-glow flex items-center justify-center">
+              <Heart className="w-8 h-8 sm:w-10 sm:h-10 text-white" aria-hidden="true" />
+            </div>
+            <h3 
+              className="text-xl sm:text-2xl md:text-3xl font-semibold mb-3"
               style={{
                 color: "hsl(var(--fg-hsl, var(--foreground)))",
               }}
             >
-              No items yet
-            </p>
+              No saved quotes yet
+            </h3>
             <p 
-              className="text-sm"
+              className="text-sm sm:text-base md:text-lg mb-6 max-w-md mx-auto leading-relaxed"
               style={{
                 color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.9)",
               }}
             >
-              Save quotes to see them here.
+              Start building your collection by saving quotes that inspire you. Each quote you save will appear here.
+            </p>
+            <p 
+              className="text-xs sm:text-sm md:text-base opacity-75"
+              style={{
+                color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.8)",
+              }}
+            >
+              💡 Tip: Click the "Save" button on any quote to add it to your collection
             </p>
           </div>
         ) : (
           <div className="space-y-3">
             {savedQuotes.map((quote) => (
-              <div
+              <article
                 key={quote.id}
-                className="p-4 rounded-xl border elevation-1 hover-soft backdrop-blur-xl transition-all duration-200"
+                className="p-4 rounded-xl border elevation-1 hover-soft backdrop-blur-xl transition-all duration-200 hover:scale-[1.01]"
                 style={{
                   backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
                   borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
                 }}
               >
                 <p 
-                  className="text-sm italic mb-3 leading-relaxed"
+                  className="text-sm sm:text-base italic mb-3 leading-relaxed"
                   style={{
                     color: "hsl(var(--fg-hsl, var(--foreground)))",
                   }}
@@ -129,32 +140,33 @@ export function SavedTab({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="w-6 h-6"
+                      className="min-w-[44px] min-h-[44px] w-11 h-11"
                       onClick={() => onRemoveQuote(quote.id)}
-                      aria-label={`Remove quote`}
+                      aria-label={`Remove quote "${quote.text.substring(0, 30)}..."`}
+                      title="Remove quote"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         )}
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <section className="space-y-6 sm:space-y-8" aria-label="Saved quotes">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
         <h2
-          className="text-2xl font-bold"
+          className="text-2xl sm:text-3xl font-bold"
           style={{
             color: palette?.fg || "hsl(var(--foreground))",
           }}
         >
-          Saved
+          Saved Quotes
         </h2>
         <div className="flex items-center gap-2">
           <div 
@@ -172,7 +184,7 @@ export function SavedTab({
                   }),
                 );
               }}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${savedFilter === "all" ? "bg-primary text-primary-foreground" : ""}`}
+              className={`px-4 py-2 text-xs rounded-md transition-all duration-200 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${savedFilter === "all" ? "bg-primary text-primary-foreground shadow-md scale-[1.05]" : "hover:scale-[1.02]"}`}
               style={
                 savedFilter !== "all"
                   ? {
@@ -180,6 +192,8 @@ export function SavedTab({
                     }
                   : undefined
               }
+              aria-pressed={savedFilter === "all"}
+              aria-label="Show all saved and liked quotes"
             >
               All
             </button>
@@ -191,7 +205,7 @@ export function SavedTab({
                   }),
                 );
               }}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${savedFilter === "saved" ? "bg-primary text-primary-foreground" : ""}`}
+              className={`px-4 py-2 text-xs rounded-md transition-all duration-200 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${savedFilter === "saved" ? "bg-primary text-primary-foreground shadow-md scale-[1.05]" : "hover:scale-[1.02]"}`}
               style={
                 savedFilter !== "saved"
                   ? {
@@ -199,6 +213,8 @@ export function SavedTab({
                     }
                   : undefined
               }
+              aria-pressed={savedFilter === "saved"}
+              aria-label="Show only saved quotes"
             >
               Saved
             </button>
@@ -210,7 +226,7 @@ export function SavedTab({
                   }),
                 );
               }}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${savedFilter === "liked" ? "bg-primary text-primary-foreground" : ""}`}
+              className={`px-4 py-2 text-xs rounded-md transition-all duration-200 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${savedFilter === "liked" ? "bg-primary text-primary-foreground shadow-md scale-[1.05]" : "hover:scale-[1.02]"}`}
               style={
                 savedFilter !== "liked"
                   ? {
@@ -218,6 +234,8 @@ export function SavedTab({
                     }
                   : undefined
               }
+              aria-pressed={savedFilter === "liked"}
+              aria-label="Show only liked quotes"
             >
               Liked
             </button>
@@ -240,10 +258,11 @@ export function SavedTab({
                 );
               }}
               placeholder="Search saved..."
-              className="bg-transparent px-2 py-1 text-sm outline-none"
+              className="bg-transparent px-2 py-1 text-sm outline-none min-h-[44px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
               style={{
                 color: "hsl(var(--fg-hsl, var(--foreground)))",
               }}
+              aria-label="Search saved quotes"
             />
             <select
               value={savedSort}
@@ -254,10 +273,11 @@ export function SavedTab({
                   }),
                 );
               }}
-              className="bg-transparent text-sm outline-none"
+              className="bg-transparent text-sm outline-none min-h-[44px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
               style={{
                 color: "hsl(var(--fg-hsl, var(--foreground)))",
               }}
+              aria-label="Sort saved quotes"
             >
               <option value="recent">Recent</option>
               <option value="az">Author A–Z</option>
@@ -278,44 +298,55 @@ export function SavedTab({
         </div>
       </div>
       {filteredSavedQuotes.length === 0 ? (
-        <div 
-          className="p-10 text-center rounded-xl border elevation-1 backdrop-blur-xl transition-all duration-200"
-          style={{
-            backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
-            borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
-          }}
-        >
-          <div className="mx-auto mb-3 w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500" />
-          <p 
-            className="font-medium"
+          <div 
+            className="p-12 sm:p-16 text-center rounded-xl border elevation-1 backdrop-blur-xl transition-all duration-200"
             style={{
-              color: "hsl(var(--fg-hsl, var(--foreground)))",
+              backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
+              borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
             }}
           >
-            No items yet
-          </p>
-          <p 
-            className="text-sm"
-            style={{
-              color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.9)",
-            }}
-          >
-            Save or like quotes to see them here.
-          </p>
-        </div>
+            <div className="mx-auto mb-6 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 animate-pulse-glow flex items-center justify-center">
+              <Heart className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+            </div>
+            <h3 
+              className="text-xl sm:text-2xl font-semibold mb-3"
+              style={{
+                color: "hsl(var(--fg-hsl, var(--foreground)))",
+              }}
+            >
+              No saved quotes yet
+            </h3>
+            <p 
+              className="text-sm sm:text-base mb-6 max-w-md mx-auto"
+              style={{
+                color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.9)",
+              }}
+            >
+              Start building your collection by saving quotes that inspire you. Each quote you save will appear here.
+            </p>
+            <p 
+              className="text-xs sm:text-sm"
+              style={{
+                color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.7)",
+              }}
+            >
+              💡 Tip: Click the "Save" button on any quote to add it to your collection
+            </p>
+          </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
           {filteredSavedQuotes.map((quote) => (
-            <div
+            <article
               key={quote.id}
-              className="p-4 rounded-xl border elevation-1 hover-soft backdrop-blur-xl transition-all duration-200"
+              className="p-5 sm:p-6 rounded-xl border elevation-1 hover-soft backdrop-blur-xl transition-all duration-200 hover:shadow-lg hover:scale-[1.01] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
               style={{
                 backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.85)",
                 borderColor: "hsl(var(--fg-hsl, var(--border)) / 0.4)",
+                willChange: "transform, box-shadow",
               }}
             >
               <p 
-                className="text-sm italic mb-3 leading-relaxed"
+                className="text-sm sm:text-base md:text-lg italic mb-4 leading-relaxed font-light min-h-[3rem] sm:min-h-[4rem]"
                 style={{
                   color: "hsl(var(--fg-hsl, var(--foreground)))",
                 }}
@@ -326,9 +357,9 @@ export function SavedTab({
               <div className="mb-3 space-y-2">
                 {quote.author && (
                   <p 
-                    className="text-xs font-medium"
+                    className="text-xs sm:text-sm font-medium opacity-80"
                     style={{
-                      color: "hsl(var(--fg-hsl, var(--foreground)) / 0.8)",
+                      color: "hsl(var(--fg-hsl, var(--foreground)) / 0.9)",
                     }}
                   >
                     — {quote.author}
@@ -366,54 +397,59 @@ export function SavedTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-6 h-6"
+                    className="min-w-[44px] min-h-[44px] w-11 h-11"
                     onClick={() => onAddToCollection(quote)}
-                    aria-label={`Add quote to collection`}
+                    aria-label={`Add quote "${quote.text.substring(0, 30)}..." to collection`}
+                    title="Add to collection"
                   >
-                    <FolderOpen className="w-3 h-3" />
+                    <FolderOpen className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-6 h-6"
+                    className="min-w-[44px] min-h-[44px] w-11 h-11"
                     onClick={() => onRemoveQuote(quote.id)}
-                    aria-label={`Remove quote`}
+                    aria-label={`Remove quote "${quote.text.substring(0, 30)}..."`}
+                    title="Remove quote"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-6 h-6"
+                    className="min-w-[44px] min-h-[44px] w-11 h-11"
                     onClick={() => speakQuote(quote, storage)}
-                    aria-label={`Speak quote aloud`}
+                    aria-label={`Speak quote "${quote.text.substring(0, 30)}..." aloud`}
+                    title="Speak quote"
                   >
-                    <Volume2 className="w-3 h-3" />
+                    <Volume2 className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-6 h-6"
+                    className="min-w-[44px] min-h-[44px] w-11 h-11"
                     onClick={() => saveQuoteAsImage(quote)}
-                    aria-label={`Save quote as image`}
+                    aria-label={`Save quote "${quote.text.substring(0, 30)}..." as image`}
+                    title="Save as image"
                   >
-                    <Image className="w-3 h-3" />
+                    <Image className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-6 h-6"
+                    className="min-w-[44px] min-h-[44px] w-11 h-11"
                     onClick={() => shareQuote(quote)}
-                    aria-label={`Share quote`}
+                    aria-label={`Share quote "${quote.text.substring(0, 30)}..."`}
+                    title="Share quote"
                   >
-                    <Share2 className="w-3 h-3" />
+                    <Share2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

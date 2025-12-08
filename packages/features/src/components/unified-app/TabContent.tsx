@@ -81,10 +81,10 @@ export function TabContent({
       case "today":
         return (
           <Suspense fallback={<TabSkeleton />}>
-            <div className="space-y-4">
+            <section className="space-y-6 sm:space-y-8" aria-label="Today's quote">
               <div className="flex items-center justify-between">
                 <h2
-                  className={`${variant === "popup" ? "text-lg" : "text-2xl"} font-bold inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
+                  className={`${variant === "popup" ? "text-lg" : "text-xl sm:text-2xl md:text-3xl"} font-bold inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl backdrop-blur-md border`}
                   style={{
                     color: "hsl(var(--fg-hsl))",
                     backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
@@ -164,7 +164,7 @@ export function TabContent({
                   }}
                 />
               )}
-            </div>
+            </section>
           </Suspense>
         );
       case "search":

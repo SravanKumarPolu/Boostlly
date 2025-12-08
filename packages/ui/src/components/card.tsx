@@ -22,7 +22,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          "rounded-xl border border-border shadow-sm transition-all duration-200 ease-out hover:shadow-md group bg-card",
+          "rounded-xl border border-border shadow-sm transition-all duration-200 ease-out hover:shadow-md hover:scale-[1.01] group bg-card",
           // Adaptive cards use glassmorphism with theme-adaptive colors
           // Cards automatically adapt to daily background theme via --card and --card-foreground CSS variables
           isAdaptive
