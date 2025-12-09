@@ -2,7 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+ * EXTERNAL MONITOR OPTIMIZATIONS
+ * ============================================
+ * 
+ * Font Rendering Optimizations:
+ * - font-smoothing: Better text rendering on high-DPI displays
+ * - text-rendering: Optimize for legibility on external monitors
+ * - font-feature-settings: Enable OpenType features for better typography
+ * 
+ * DPI Scaling Support:
+ * - Uses relative units (rem, em) for proper scaling
+ * - Supports 100%, 125%, 150%, 200% DPI scaling
+ * - Handles overscan and color calibration issues
+ */
+
 @layer base {
+  /* Base font rendering optimizations for external monitors */
+  * {
+    /* Better font rendering on high-DPI displays */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    
+    /* Enable OpenType features for better typography */
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    font-kerning: normal;
+    font-variant-ligatures: common-ligatures;
+  }
+  
+  /* Prevent text size adjustment on iOS */
+  html {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
   :root {
     /* Base colors - WCAG AA+ compliant */
     --background: 0 0% 100%;
@@ -139,43 +175,281 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    
+    /* Enhanced font rendering for external monitors */
+    font-family: 
+      /* System font stack for better rendering consistency */
+      -apple-system, 
+      BlinkMacSystemFont, 
+      "Segoe UI", 
+      Roboto, 
+      "Helvetica Neue", 
+      Arial, 
+      "Noto Sans", 
+      sans-serif,
+      "Apple Color Emoji", 
+      "Segoe UI Emoji", 
+      "Segoe UI Symbol", 
+      "Noto Color Emoji";
+    
+    /* Use relative units for proper scaling */
+    font-size: 1rem; /* 16px base, scales with user preferences */
+    line-height: 1.5; /* 1.5 = 24px line-height for 16px font */
+    
+    /* Better text rendering on external monitors */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    
+    /* Prevent text clipping on high-DPI displays */
+    text-size-adjust: 100%;
+    
+    /* Support for external monitor color calibration */
+    color-rendering: optimizeQuality;
   }
 
-  /* Modern typographic scale - 2024-2025 standards */
-  /* Refined for better hierarchy and readability */
+  /* ============================================
+   * TYPOGRAPHIC HIERARCHY SYSTEM
+   * ============================================
+   * 
+   * Design Philosophy:
+   * - Clear visual hierarchy guides the reader's eye naturally
+   * - Intentional variations in font size, weight, color, spacing, and typeface
+   * - Balanced spacing and alignment enhance clarity and structure
+   * - Responsive scaling ensures readability across all devices
+   * - WCAG AA+ compliant contrast ratios
+   * 
+   * Hierarchy Levels:
+   * 1. Display/Headline (H1) - Largest, boldest, most prominent
+   * 2. Page Title (H2) - Major section headers  
+   * 3. Section Title (H3) - Subsection headers
+   * 4. Subsection (H4-H6) - Nested content headers
+   * 5. Body Text - Primary reading content
+   * 6. Supporting Text - Labels, metadata, captions
+   * 
+   * Typographic Scale (Major Third - 1.25 ratio):
+   * Mobile: 12px → 15px → 19px → 24px → 30px → 38px → 48px
+   * Desktop: 14px → 18px → 22px → 28px → 35px → 44px → 55px
+   */
+  
+  /* H1: Display/Headline - Hero sections, main page titles
+   * Size: 1.875rem → 2.25rem → 3rem → 3.5rem (mobile → tablet → desktop → xl)
+   * Uses rem units for proper DPI scaling on external monitors
+   * Weight: Bold (700) for maximum impact
+   * Tracking: Tight (-0.02em) for modern, compact feel
+   * Line-height: Tight (1.1) for single-line headlines
+   * Spacing: Generous bottom margin (1.5rem) for separation
+   * Enhanced for external monitors: Strong text shadows for readability over background images
+   */
   h1 { 
-    @apply text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight;
-    @apply leading-tight;
+    @apply font-bold tracking-tight;
+    font-size: clamp(1.875rem, 4vw + 1rem, 3.5rem); /* Responsive with clamp for external monitors */
+    line-height: 1.1;
     letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    color: hsl(var(--foreground));
+    
+    /* Enhanced readability for external monitors and background images */
+    text-shadow: 
+      0 0.125rem 0.25rem rgba(0, 0, 0, 0.1),
+      0 0.0625rem 0.125rem rgba(0, 0, 0, 0.06);
+    
+    /* Better rendering on high-DPI displays */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
+  
+  /* H2: Page Title - Major section headers
+   * Size: 1.5rem → 1.875rem → 2.25rem → 2.75rem
+   * Uses rem units for proper DPI scaling on external monitors
+   * Weight: Bold (700) for strong hierarchy
+   * Tracking: Tight (-0.01em) for readability
+   * Line-height: Tight (1.2) for clear distinction
+   * Spacing: Moderate bottom margin (1.25rem)
+   * Enhanced for external monitors: Subtle text shadows for readability
+   */
   h2 { 
-    @apply text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight;
-    @apply leading-tight;
+    @apply font-bold tracking-tight;
+    font-size: clamp(1.5rem, 3vw + 0.75rem, 2.75rem); /* Responsive with clamp */
+    line-height: 1.2;
     letter-spacing: -0.01em;
+    margin-bottom: 1.25rem;
+    color: hsl(var(--foreground));
+    
+    /* Enhanced readability for external monitors */
+    text-shadow: 
+      0 0.0625rem 0.125rem rgba(0, 0, 0, 0.08),
+      0 0.03125rem 0.0625rem rgba(0, 0, 0, 0.04);
+    
+    /* Better rendering on high-DPI displays */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
+  
+  /* H3: Section Title - Subsection headers
+   * Size: 1.25rem → 1.5rem → 1.875rem → 2.1875rem
+   * Uses rem units for proper DPI scaling on external monitors
+   * Weight: Semibold (600) for clear hierarchy without overwhelming
+   * Tracking: Normal for readability
+   * Line-height: Snug (1.3) for comfortable reading
+   * Spacing: Standard bottom margin (1rem)
+   */
   h3 { 
-    @apply text-xl md:text-2xl lg:text-3xl font-semibold;
-    @apply leading-snug;
+    @apply font-semibold;
+    font-size: clamp(1.25rem, 2.5vw + 0.5rem, 2.1875rem); /* Responsive with clamp */
+    line-height: 1.3;
+    margin-bottom: 1rem;
+    color: hsl(var(--foreground));
+    
+    /* Better rendering on high-DPI displays */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
+  
+  /* H4: Subsection - Nested content headers
+   * Size: 18px → 20px → 24px → 28px
+   * Weight: Semibold (600) for distinction
+   * Line-height: Snug (1.35) for readability
+   * Spacing: Standard bottom margin (0.875rem)
+   */
   h4 { 
     @apply text-lg md:text-xl lg:text-2xl font-semibold;
     @apply leading-snug;
+    margin-bottom: 0.875rem;
+    color: hsl(var(--foreground));
   }
+  
+  /* H5: Minor Heading - Small section headers
+   * Size: 16px → 18px → 20px → 22px
+   * Weight: Medium (500) for subtle emphasis
+   * Line-height: Normal (1.5) for readability
+   * Spacing: Compact bottom margin (0.75rem)
+   */
   h5 { 
     @apply text-base md:text-lg lg:text-xl font-medium;
     @apply leading-normal;
+    margin-bottom: 0.75rem;
+    color: hsl(var(--foreground));
   }
+  
+  /* H6: Smallest Heading - Fine-grained hierarchy
+   * Size: 14px → 16px → 18px → 20px
+   * Weight: Medium (500) for subtle distinction
+   * Line-height: Normal (1.5) for readability
+   * Spacing: Compact bottom margin (0.625rem)
+   */
   h6 { 
     @apply text-sm md:text-base lg:text-lg font-medium;
     @apply leading-normal;
+    margin-bottom: 0.625rem;
+    color: hsl(var(--foreground));
   }
+  
+  /* Body Text - Primary reading content
+   * Size: 1rem (16px base) - optimal for reading, scales with user preferences
+   * Weight: Normal (400) for comfortable reading
+   * Line-height: Relaxed (1.6) for optimal readability on external monitors
+   * Spacing: Generous bottom margin (1rem) for paragraph separation
+   * Color: Foreground for maximum contrast
+   * Enhanced for external monitors: Proper line-height and spacing for comfortable reading
+   */
   p { 
-    @apply leading-relaxed;
     @apply text-foreground;
+    font-size: 1rem; /* Base size, scales with user preferences */
+    line-height: 1.6; /* Optimal for reading on external monitors */
+    margin-bottom: 1rem;
+    
+    /* Better rendering on high-DPI displays */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    
+    /* Support for external monitor readability */
+    word-spacing: 0.05em; /* Slight word spacing for better readability */
   }
+  
+  /* Small Text - Supporting information, captions, metadata
+   * Size: 12px → 14px (responsive)
+   * Weight: Normal (400) for readability
+   * Line-height: Normal (1.5) for compact text
+   * Color: Muted foreground for secondary information
+   */
   small { 
     @apply text-xs md:text-sm text-muted-foreground;
     @apply leading-normal;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Strong/Bold - Emphasized text within paragraphs
+   * Weight: Semibold (600) for clear emphasis
+   * Color: Foreground for visibility
+   */
+  strong, b {
+    @apply font-semibold;
+    color: hsl(var(--foreground));
+  }
+  
+  /* Emphasis/Italic - Stressed text
+   * Style: Italic for emphasis
+   * Color: Foreground with slight opacity for subtle emphasis
+   */
+  em, i {
+    font-style: italic;
+    color: hsl(var(--foreground));
+  }
+  
+  /* Blockquote - Quoted content
+   * Size: Slightly larger than body (18px)
+   * Style: Italic for distinction
+   * Line-height: Relaxed for readability
+   * Spacing: Generous margins for visual separation
+   * Border: Left border for visual hierarchy
+   */
+  blockquote {
+    @apply text-lg md:text-xl italic leading-relaxed;
+    @apply text-foreground;
+    margin: 1.5rem 0;
+    padding-left: 1.5rem;
+    border-left: 3px solid hsl(var(--primary) / 0.3);
+  }
+  
+  /* Code - Inline code snippets
+   * Font: Monospace for technical content
+   * Size: Slightly smaller (14px)
+   * Background: Muted background for distinction
+   * Padding: Small padding for readability
+   */
+  code {
+    @apply text-sm font-mono;
+    background-color: hsl(var(--muted));
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    color: hsl(var(--foreground));
+  }
+  
+  /* Pre - Code blocks
+   * Font: Monospace
+   * Background: Muted background
+   * Padding: Generous padding for readability
+   * Overflow: Scroll for long code
+   */
+  pre {
+    @apply text-sm font-mono leading-relaxed;
+    background-color: hsl(var(--muted));
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+    color: hsl(var(--foreground));
+  }
+  
+  pre code {
+    background-color: transparent;
+    padding: 0;
   }
   a { 
     @apply text-primary hover:text-primary/90 underline-offset-4;
@@ -573,20 +847,152 @@
     }
   }
   
+  /* ============================================
+   * TYPOGRAPHY UTILITY CLASSES
+   * ============================================
+   * 
+   * Purpose: Provide consistent typography classes
+   * for common text patterns across the application
+   */
+  
+  /* Typography Spacing Utilities */
+  .typography-spacing-tight {
+    margin-bottom: 0.5rem;
+  }
+  
+  .typography-spacing-normal {
+    margin-bottom: 1rem;
+  }
+  
+  .typography-spacing-loose {
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Text Color Hierarchy */
+  .text-primary-hierarchy {
+    color: hsl(var(--foreground));
+    font-weight: 600;
+  }
+  
+  .text-secondary-hierarchy {
+    color: hsl(var(--foreground) / 0.9);
+    font-weight: 500;
+  }
+  
+  .text-tertiary-hierarchy {
+    color: hsl(var(--muted-foreground));
+    font-weight: 400;
+  }
+  
+  /* ============================================
+   * EXTERNAL MONITOR & HIGH-DPI OPTIMIZATIONS
+   * ============================================
+   */
+  
+  /* Media queries for different DPI scaling */
+  @media (-webkit-min-device-pixel-ratio: 1.25), (min-resolution: 120dpi) {
+    /* 125% DPI scaling */
+    body {
+      font-size: 1rem; /* Maintains proper scaling */
+    }
+  }
+  
+  @media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 144dpi) {
+    /* 150% DPI scaling */
+    body {
+      font-size: 1rem; /* Maintains proper scaling */
+    }
+    
+    /* Enhanced text shadows for better readability */
+    h1, h2, h3 {
+      text-shadow: 
+        0 0.125rem 0.25rem rgba(0, 0, 0, 0.15),
+        0 0.0625rem 0.125rem rgba(0, 0, 0, 0.1);
+    }
+  }
+  
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    /* 200% DPI scaling (Retina, 4K displays) */
+    body {
+      font-size: 1rem; /* Maintains proper scaling */
+    }
+    
+    /* Stronger text shadows for high-DPI displays */
+    h1, h2, h3 {
+      text-shadow: 
+        0 0.1875rem 0.375rem rgba(0, 0, 0, 0.2),
+        0 0.125rem 0.25rem rgba(0, 0, 0, 0.15),
+        0 0.0625rem 0.125rem rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Enhanced font rendering for high-DPI */
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+  }
+  
+  /* Support for external monitors with different color spaces */
+  @media (color-gamut: p3) {
+    /* Wide color gamut displays (P3) */
+    body {
+      color-rendering: optimizeQuality;
+    }
+  }
+  
+  /* Support for overscan on external monitors */
+  @media (min-width: 1920px) {
+    /* Large external monitors */
+    body {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+    
+    /* Prevent text clipping on large displays */
+    h1, h2, h3, h4, h5, h6, p {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+  }
+  
   /* Professional Quote Card Typography Enhancements */
   /* Refined typography for better readability and professional appearance */
+  /* Enhanced for external monitors with proper contrast and rendering */
   
   /* Quote text - Enhanced for professional presentation */
   .quote-text-professional {
-    font-family: 'Georgia', 'Playfair Display', 'Times New Roman', serif;
+    font-family: 
+      'Georgia', 
+      'Playfair Display', 
+      'Times New Roman', 
+      'Times', 
+      serif,
+      /* Fallback system fonts */
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      serif;
     font-weight: 300;
     font-style: italic;
     letter-spacing: -0.02em;
     line-height: 1.35;
-    text-rendering: optimizeLegibility;
+    
+    /* Enhanced font rendering for external monitors */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    
+    /* Use relative units for proper scaling */
+    font-size: clamp(1.5rem, 5vw + 0.5rem, 3.75rem); /* Responsive with clamp */
+    
     transition: opacity 0.5s ease-in-out;
+    
+    /* Enhanced text shadows for readability over background images */
+    text-shadow: 
+      0 0.25rem 0.5rem rgba(0, 0, 0, 0.4),
+      0 0.125rem 0.25rem rgba(0, 0, 0, 0.3),
+      0 0.0625rem 0.125rem rgba(0, 0, 0, 0.2);
   }
   
   /* Smooth quote transition animation */
@@ -601,17 +1007,30 @@
     }
   }
   
+  /* Merge animation with quote-text-professional */
   .quote-text-professional {
     animation: quoteFadeIn 0.5s ease-out;
   }
   
   /* Author text - Refined styling */
+  /* Enhanced for external monitors with proper contrast */
   .quote-author-professional {
     font-weight: 500;
     letter-spacing: 0.02em;
+    
+    /* Enhanced font rendering for external monitors */
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    
+    /* Use relative units for proper scaling */
+    font-size: clamp(0.875rem, 1.5vw + 0.25rem, 1.125rem); /* Responsive with clamp */
+    
+    /* Enhanced text shadows for readability over background images */
+    text-shadow: 
+      0 0.1875rem 0.375rem rgba(0, 0, 0, 0.35),
+      0 0.125rem 0.25rem rgba(0, 0, 0, 0.25),
+      0 0.0625rem 0.125rem rgba(0, 0, 0, 0.15);
   }
   
   /* Mobile-specific text contrast enhancements */
@@ -727,7 +1146,7 @@
       font-weight: 700 !important;
     }
     
-    /* Desktop - lighter colors */
+    /* Desktop and External Monitor Optimizations */
     @media (min-width: 768px) {
       .stats-icon-blue { color: #60a5fa !important; }
       .stats-icon-green { color: #34d399 !important; }
@@ -784,20 +1203,55 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6) !important;
     }
     
-    /* Global text contrast improvements on mobile when background images are present */
+    /* Global text contrast improvements when background images are present */
+    /* Enhanced for external monitors with stronger shadows */
     body[style*="background-image"] .text-foreground,
     body[style*="background-image"] h1,
     body[style*="background-image"] h2,
     body[style*="background-image"] h3,
     body[style*="background-image"] p {
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      text-shadow: 
+        0 0.125rem 0.25rem rgba(0, 0, 0, 0.5),
+        0 0.0625rem 0.125rem rgba(0, 0, 0, 0.4);
     }
     
-    /* Ensure header text has good contrast on mobile */
+    /* Ensure header text has good contrast */
     body[style*="background-image"] header h1,
     body[style*="background-image"] header h2 {
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7), 
-                   0 1px 3px rgba(0, 0, 0, 0.6);
+      text-shadow: 
+        0 0.1875rem 0.375rem rgba(0, 0, 0, 0.7), 
+        0 0.125rem 0.25rem rgba(0, 0, 0, 0.6),
+        0 0.0625rem 0.125rem rgba(0, 0, 0, 0.5);
+    }
+    
+    /* External Monitor Specific Enhancements */
+    @media (min-width: 1920px) {
+      /* Large external monitors - enhanced contrast */
+      body[style*="background-image"] .text-foreground,
+      body[style*="background-image"] h1,
+      body[style*="background-image"] h2,
+      body[style*="background-image"] h3,
+      body[style*="background-image"] p {
+        text-shadow: 
+          0 0.25rem 0.5rem rgba(0, 0, 0, 0.6),
+          0 0.1875rem 0.375rem rgba(0, 0, 0, 0.5),
+          0 0.125rem 0.25rem rgba(0, 0, 0, 0.4);
+      }
+    }
+    
+    /* High-DPI Display Enhancements */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      /* Enhanced shadows for Retina/4K displays */
+      body[style*="background-image"] .text-foreground,
+      body[style*="background-image"] h1,
+      body[style*="background-image"] h2,
+      body[style*="background-image"] h3,
+      body[style*="background-image"] p {
+        text-shadow: 
+          0 0.1875rem 0.375rem rgba(0, 0, 0, 0.55),
+          0 0.125rem 0.25rem rgba(0, 0, 0, 0.45),
+          0 0.0625rem 0.125rem rgba(0, 0, 0, 0.35);
+      }
     }
   }
 }

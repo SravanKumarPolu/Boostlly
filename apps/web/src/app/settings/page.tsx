@@ -26,9 +26,9 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 mb-6">
         <Settings className="w-5 h-5" />
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight leading-tight">Settings</h1>
       </div>
 
       <div className="grid gap-6">

@@ -30,7 +30,7 @@ export function TimeDateDisplay({ timeDate, variant, palette }: TimeDateDisplayP
     >
       <div className="flex items-center gap-1 sm:gap-2">
         <Clock className="w-3 h-3" />
-        <span className="text-[10px] sm:text-xs font-medium">
+        <span className="text-xs font-medium leading-normal">
           {timeDate.currentTime.toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -42,7 +42,7 @@ export function TimeDateDisplay({ timeDate, variant, palette }: TimeDateDisplayP
       <div className="w-px h-3 bg-current opacity-30"></div>
       <div className="flex items-center gap-1 sm:gap-2">
         <Calendar className="w-3 h-3" />
-        <span className="text-[10px] sm:text-xs font-medium">
+        <span className="text-xs font-medium leading-normal">
           {timeDate.dateFormat === "compact"
             ? timeDate.currentTime.toLocaleDateString([], {
                 month: "short",

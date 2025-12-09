@@ -57,7 +57,7 @@ const DashboardSection: React.FC<{
   isLazy?: boolean;
 }> = ({ title, children, isLazy = true }) => (
   <div className="bg-white rounded-lg shadow-lg border p-6">
-    <h3 className="text-xl font-semibold text-gray-800 mb-4">{title}</h3>
+    <h3 className="text-xl md:text-2xl lg:text-3xl font-semibold leading-snug tracking-tight text-gray-800 mb-4">{title}</h3>
     {isLazy ? (
       <ViewportLazyLoader fallback={<PageSkeleton />}>
         {children}
@@ -104,8 +104,10 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-gray-900 mb-2">
+            Dashboard
+          </h1>
+          <p className="text-base leading-relaxed text-gray-600">
             Multi-route code splitting demonstration with lazy-loaded sections
           </p>
         </div>
@@ -161,10 +163,10 @@ export default function DashboardPage() {
             <DashboardSection title="Advanced Analytics">
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📊</div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                <h3 className="text-xl md:text-2xl lg:text-3xl font-semibold leading-snug tracking-tight text-gray-800 mb-2">
                   Advanced Analytics
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-base leading-relaxed text-gray-600 mb-4">
                   This section would contain more complex analytics components
                 </p>
                 <div className="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-800 rounded-lg">
@@ -179,10 +181,10 @@ export default function DashboardPage() {
             <DashboardSection title="Settings & Configuration">
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">⚙️</div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                <h3 className="text-xl md:text-2xl lg:text-3xl font-semibold leading-snug tracking-tight text-gray-800 mb-2">
                   Settings Panel
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-base leading-relaxed text-gray-600 mb-4">
                   This section would contain configuration options
                 </p>
                 <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-lg">
@@ -196,21 +198,21 @@ export default function DashboardPage() {
 
         {/* Performance Info */}
         <div className="mt-8 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-purple-800 mb-3">
+          <h3 className="text-lg md:text-xl font-semibold leading-snug tracking-tight text-purple-800 mb-3">
             🎯 Code Splitting in Action
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-purple-700">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm md:text-base leading-relaxed text-purple-700">
             <div>
-              <h4 className="font-medium mb-2">Route-based Splitting:</h4>
-              <p>Each tab loads only its required components</p>
+              <h4 className="text-base font-medium leading-normal mb-2">Route-based Splitting:</h4>
+              <p className="leading-relaxed">Each tab loads only its required components</p>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Component-based Splitting:</h4>
-              <p>Charts load individually when needed</p>
+              <h4 className="text-base font-medium leading-normal mb-2">Component-based Splitting:</h4>
+              <p className="leading-relaxed">Charts load individually when needed</p>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Viewport-based Loading:</h4>
-              <p>Components load when they come into view</p>
+              <h4 className="text-base font-medium leading-normal mb-2">Viewport-based Loading:</h4>
+              <p className="leading-relaxed">Components load when they come into view</p>
             </div>
           </div>
         </div>

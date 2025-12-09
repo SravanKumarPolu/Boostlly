@@ -494,13 +494,13 @@ export function VoiceCommands({ onNavigate }: VoiceCommandsProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2
-            className="text-2xl font-bold flex items-center gap-2"
+            className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight leading-tight flex items-center gap-2"
             style={{ color: palette?.fg || "hsl(var(--foreground))" }}
           >
             <Mic className="w-6 h-6 text-primary" />
             Voice Commands
           </h2>
-          <p className="text-sm text-foreground/70 mt-1">
+          <p className="text-sm md:text-base text-muted-foreground leading-normal mt-1">
             Control the app using voice commands and text-to-speech
           </p>
         </div>

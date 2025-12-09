@@ -26,11 +26,11 @@ export function Section({
 }: SectionProps) {
   return (
     <div className={`${COMMON.SECTION} ${className}`}>
-      <h2 className={`${TYPOGRAPHY.SECTION_HEADER} ${headerClassName}`}>
+      <h2 className={`text-xl md:text-2xl font-semibold tracking-tight leading-snug mb-4 md:mb-6 ${headerClassName}`}>
         {title}
       </h2>
       {description && (
-        <p className={`${TYPOGRAPHY.MUTED} ${contentClassName}`}>
+        <p className={`text-sm md:text-base text-muted-foreground leading-relaxed mb-4 ${contentClassName}`}>
           {description}
         </p>
       )}

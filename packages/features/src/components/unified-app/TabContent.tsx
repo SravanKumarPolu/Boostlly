@@ -84,7 +84,7 @@ export function TabContent({
             <section className="space-y-6 sm:space-y-8" aria-label="Today's quote">
               <div className="flex items-center justify-between">
                 <h2
-                  className={`${variant === "popup" ? "text-lg" : "text-xl sm:text-2xl md:text-3xl"} font-bold inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl backdrop-blur-md border`}
+                  className={`${variant === "popup" ? "text-lg" : "text-xl sm:text-2xl md:text-3xl"} font-bold tracking-tight leading-tight inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl backdrop-blur-md border`}
                   style={{
                     color: "hsl(var(--fg-hsl))",
                     backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
@@ -210,8 +210,8 @@ export function TabContent({
                   <h2
                     className={
                       variant === "popup"
-                        ? "text-lg font-bold"
-                        : "text-2xl font-bold"
+                        ? "text-lg font-bold tracking-tight leading-tight mb-2"
+                        : "text-xl sm:text-2xl md:text-3xl font-bold tracking-tight leading-tight mb-2"
                     }
                     style={{
                       color: palette?.fg || "hsl(var(--fg-hsl, var(--foreground)))",
@@ -220,9 +220,11 @@ export function TabContent({
                     API Explorer
                   </h2>
                   <p 
-                    className="text-xs"
+                    className="text-xs md:text-sm text-muted-foreground leading-normal"
                     style={{
-                      color: palette?.fg || "hsl(var(--fg-hsl, var(--muted-foreground)))",
+                      color: variant === "popup" 
+                        ? (palette?.fg || "hsl(var(--fg-hsl, var(--muted-foreground)))")
+                        : undefined,
                     }}
                   >
                     Enhanced external sources
@@ -445,7 +447,7 @@ export function TabContent({
               <div className="flex items-center justify-between">
                 <div>
                   <h2
-                    className={`${variant === "popup" ? "text-lg" : "text-2xl"} font-bold inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
+                    className={`${variant === "popup" ? "text-lg" : "text-xl sm:text-2xl md:text-3xl"} font-bold tracking-tight leading-tight inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
                     style={{
                       color: "hsl(var(--fg-hsl))",
                       backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
@@ -609,7 +611,7 @@ export function TabContent({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2
-                  className={`${variant === "popup" ? "text-lg" : "text-2xl"} font-bold inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
+                  className={`${variant === "popup" ? "text-lg" : "text-xl sm:text-2xl md:text-3xl"} font-bold tracking-tight leading-tight inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
                   style={{
                     color: "hsl(var(--fg-hsl))",
                     backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
@@ -623,8 +625,8 @@ export function TabContent({
               </div>
               <div className="text-center py-8">
                 <BookOpen className="w-16 h-16 text-purple-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">Discover Inspiring Articles</h3>
-                <p className="text-gray-500 mb-6">Access our library of motivational articles on discipline, productivity, and personal growth.</p>
+                <h3 className="text-xl md:text-2xl lg:text-3xl font-semibold leading-snug tracking-tight text-gray-600 mb-2">Discover Inspiring Articles</h3>
+                <p className="text-base leading-relaxed text-gray-500 mb-6">Access our library of motivational articles on discipline, productivity, and personal growth.</p>
                 <Button asChild>
                   <a href="/articles" target="_blank" rel="noopener noreferrer">
                     Browse Articles
@@ -640,7 +642,7 @@ export function TabContent({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2
-                  className={`${variant === "popup" ? "text-lg" : "text-2xl"} font-bold inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
+                  className={`${variant === "popup" ? "text-lg" : "text-xl sm:text-2xl md:text-3xl"} font-bold tracking-tight leading-tight inline-flex items-center px-3 py-1 rounded-xl backdrop-blur-md border`}
                   style={{
                     color: "hsl(var(--fg-hsl))",
                     backgroundColor: "hsl(var(--bg-hsl) / 0.35)",
@@ -655,13 +657,13 @@ export function TabContent({
               <div className="text-center py-8">
                 <Mail className="w-16 h-16 mx-auto mb-4" style={{ color: palette?.fg || "hsl(var(--foreground))" }} />
                 <h3 
-                  className="text-xl font-semibold mb-2"
+                  className="text-xl md:text-2xl lg:text-3xl font-semibold leading-snug tracking-tight mb-2"
                   style={{ color: palette?.fg || "hsl(var(--foreground))" }}
                 >
                   Get Daily Motivation
                 </h3>
                 <p 
-                  className="mb-6"
+                  className="text-base leading-relaxed mb-6"
                   style={{ color: palette?.fg || "hsl(var(--muted-foreground))" }}
                 >
                   Subscribe to receive inspiring quotes and motivational articles delivered to your inbox daily.

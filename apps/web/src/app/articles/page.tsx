@@ -119,14 +119,14 @@ export default function ArticlesPage() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 px-4 py-2 rounded-full text-xs md:text-sm font-medium mb-6">
             <BookOpen className="w-4 h-4" />
             Motivational Articles
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-gray-900 mb-6">
             Inspiring Articles for Your Journey
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl leading-relaxed text-gray-600 max-w-3xl mx-auto">
             Discover science-backed strategies, motivational insights, and practical tips to help you achieve your goals and build lasting habits.
           </p>
         </div>
@@ -136,7 +136,7 @@ export default function ArticlesPage() {
           <div className="mb-16">
             <div className="flex items-center gap-3 mb-8">
               <Star className="w-6 h-6 text-yellow-500" />
-              <h2 className="text-3xl font-bold text-gray-900">Featured Articles</h2>
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight leading-tight text-gray-900">Featured Articles</h2>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {featuredArticles.slice(0, 2).map((article) => (
@@ -154,14 +154,14 @@ export default function ArticlesPage() {
                         {article.readingTime} min read
                       </div>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+                    <h3 className="text-lg md:text-xl font-semibold leading-snug text-gray-900 mb-3 line-clamp-2">
                       {article.title}
                     </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-3">
+                    <p className="text-base leading-relaxed text-gray-600 mb-4 line-clamp-3">
                       {article.excerpt}
                     </p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="flex items-center gap-2 text-xs md:text-sm leading-normal text-gray-500">
                         <User className="w-4 h-4" />
                         {article.author}
                       </div>
@@ -234,20 +234,20 @@ export default function ArticlesPage() {
                   </div>
                 </div>
                 
-                <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-purple-600 transition-colors">
+                <h3 className="text-base md:text-lg font-semibold leading-snug text-gray-900 mb-3 line-clamp-2 group-hover:text-purple-600 transition-colors">
                   {article.title}
                 </h3>
                 
-                <p className="text-gray-600 mb-4 line-clamp-3">
+                <p className="text-base leading-relaxed text-gray-600 mb-4 line-clamp-3">
                   {article.excerpt}
                 </p>
                 
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-2 text-xs md:text-sm leading-normal text-gray-500">
                     <User className="w-4 h-4" />
                     {article.author}
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                  <div className="flex items-center gap-1 text-xs md:text-sm leading-normal text-gray-500">
                     <Calendar className="w-4 h-4" />
                     {new Date(article.publishedAt).toLocaleDateString()}
                   </div>
@@ -277,8 +277,8 @@ export default function ArticlesPage() {
         {sortedArticles.length === 0 && (
           <div className="text-center py-12">
             <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">No articles found</h3>
-            <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+            <h3 className="text-lg md:text-xl font-semibold leading-snug text-gray-600 mb-2">No articles found</h3>
+            <p className="text-base leading-relaxed text-gray-500">Try adjusting your search or filter criteria.</p>
           </div>
         )}
       </div>

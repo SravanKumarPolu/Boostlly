@@ -26,10 +26,10 @@ const buttonVariants = cva(
           "bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0 shadow-md shadow-green-600/20 hover:shadow-lg hover:shadow-green-600/30 hover:text-white focus-visible:shadow-xl focus-visible:shadow-green-600/40 focus-visible:text-white active:shadow-md active:text-white active:from-green-700 active:to-emerald-700 disabled:from-green-600/40 disabled:to-emerald-600/40 disabled:text-white/80 disabled:opacity-100 disabled:shadow-none",
       },
       size: {
-        default: "h-11 min-h-[44px] px-6 py-2.5 text-sm", // WCAG AA: minimum 44x44px tap target
-        sm: "h-9 min-h-[36px] rounded-lg px-4 py-2 text-xs", // Smaller but still accessible
-        lg: "h-12 min-h-[44px] rounded-xl px-8 py-3 text-base",
-        xl: "h-14 min-h-[44px] rounded-2xl px-10 py-4 text-lg",
+        default: "h-11 min-h-[44px] px-6 py-2.5 text-sm font-medium tracking-normal", // WCAG AA: minimum 44x44px tap target
+        sm: "h-9 min-h-[36px] rounded-lg px-4 py-2 text-xs font-medium tracking-normal", // Smaller but still accessible
+        lg: "h-12 min-h-[44px] rounded-xl px-8 py-3 text-base font-medium tracking-normal",
+        xl: "h-14 min-h-[44px] rounded-2xl px-10 py-4 text-base md:text-lg font-medium tracking-normal",
         icon: "h-11 w-11 min-h-[44px] min-w-[44px] rounded-xl", // WCAG AA: 44x44px for icon buttons
       },
     },

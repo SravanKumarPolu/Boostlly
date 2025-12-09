@@ -65,8 +65,8 @@ export function AppHeader({
                 <h1
                   className={
                     variant === "popup"
-                      ? "text-lg font-bold"
-                      : "text-xl sm:text-2xl md:text-3xl font-bold"
+                      ? "text-lg font-bold tracking-tight leading-tight"
+                      : "text-xl sm:text-2xl md:text-3xl font-bold tracking-tight leading-tight"
                   }
                   style={{ color: palette?.fg || "hsl(var(--foreground))" }}
                 >
@@ -75,10 +75,14 @@ export function AppHeader({
                 <p
                   className={
                     variant === "popup"
-                      ? "text-xs font-medium"
-                      : "text-xs sm:text-sm md:text-base font-medium"
+                      ? "text-xs font-medium leading-normal mt-0.5"
+                      : "text-xs sm:text-sm leading-normal mt-1 text-muted-foreground"
                   }
-                  style={{ color: palette?.fg || "hsl(var(--foreground))" }}
+                  style={{ 
+                    color: variant === "popup" 
+                      ? (palette?.fg || "hsl(var(--foreground))")
+                      : undefined
+                  }}
                 >
                   Tiny words. Big impact.
                 </p>
@@ -125,7 +129,7 @@ export function AppHeader({
           {/* Mic toggle placed in the header top-right - Desktop only */}
           <div className="hidden sm:flex items-center gap-2">
             {voiceEnabled && (
-              <span className="text-[11px] text-muted-foreground max-w-[40vw] truncate">
+              <span className="text-xs md:text-sm text-muted-foreground leading-normal max-w-[40vw] truncate font-medium">
                 {voiceStatus === "listening"
                   ? "Listening..."
                   : voiceStatus === "ready"

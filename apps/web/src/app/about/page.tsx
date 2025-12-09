@@ -13,10 +13,10 @@ export default function AboutPage() {
             <Heart className="w-4 h-4" />
             Made with Love
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight mb-6 text-gray-900">
             About Boostlly
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl leading-relaxed text-gray-600 max-w-3xl mx-auto">
             We believe that small moments of inspiration can create big changes in your life. 
             Boostlly is designed to be your daily companion for motivation, growth, and positive thinking.
           </p>
@@ -26,13 +26,13 @@ export default function AboutPage() {
         <div className="grid lg:grid-cols-2 gap-8 mb-16">
           <Card className="border-0 shadow-xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-2xl">
+              <CardTitle className="flex items-center gap-2 text-xl md:text-2xl font-semibold leading-snug">
                 <Target className="w-6 h-6 text-indigo-600" />
                 Our Mission
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-base leading-relaxed text-gray-600">
                 To democratize access to daily motivation and inspiration through technology. 
                 We believe everyone deserves access to uplifting content that can transform their mindset and drive positive change.
               </p>
@@ -55,13 +55,13 @@ export default function AboutPage() {
 
           <Card className="border-0 shadow-xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-2xl">
+              <CardTitle className="flex items-center gap-2 text-xl md:text-2xl font-semibold leading-snug">
                 <Zap className="w-6 h-6 text-purple-600" />
                 Our Vision
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-base leading-relaxed text-gray-600">
                 A world where technology amplifies human potential rather than replacing human connection. 
                 We envision a future where daily inspiration is seamlessly integrated into people&apos;s lives.
               </p>
@@ -85,52 +85,52 @@ export default function AboutPage() {
 
         {/* Core Values */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Core Values</h2>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight leading-tight text-center text-gray-900 mb-12">Our Core Values</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="border-0 shadow-lg text-center p-6">
               <Shield className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Privacy First</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg md:text-xl font-semibold leading-snug text-gray-900 mb-3">Privacy First</h3>
+              <p className="text-base leading-relaxed text-gray-600">
                 Your data belongs to you. We design with privacy as the default, not an afterthought.
               </p>
             </Card>
 
             <Card className="border-0 shadow-lg text-center p-6">
               <Users className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">User-Centric</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg md:text-xl font-semibold leading-snug text-gray-900 mb-3">User-Centric</h3>
+              <p className="text-base leading-relaxed text-gray-600">
                 Every feature is designed with real user needs in mind, not corporate interests.
               </p>
             </Card>
 
             <Card className="border-0 shadow-lg text-center p-6">
               <Globe className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Accessibility</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg md:text-xl font-semibold leading-snug text-gray-900 mb-3">Accessibility</h3>
+              <p className="text-base leading-relaxed text-gray-600">
                 Motivation should be accessible to everyone, regardless of ability or background.
               </p>
             </Card>
 
             <Card className="border-0 shadow-lg text-center p-6">
               <Code className="w-12 h-12 text-indigo-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Open Source</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg md:text-xl font-semibold leading-snug text-gray-900 mb-3">Open Source</h3>
+              <p className="text-base leading-relaxed text-gray-600">
                 We believe in transparency and community-driven development.
               </p>
             </Card>
 
             <Card className="border-0 shadow-lg text-center p-6">
               <Heart className="w-12 h-12 text-red-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Human-Centered</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg md:text-xl font-semibold leading-snug text-gray-900 mb-3">Human-Centered</h3>
+              <p className="text-base leading-relaxed text-gray-600">
                 Technology should serve human well-being, not the other way around.
               </p>
             </Card>
 
             <Card className="border-0 shadow-lg text-center p-6">
               <Sparkles className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Innovation</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg md:text-xl font-semibold leading-snug text-gray-900 mb-3">Innovation</h3>
+              <p className="text-base leading-relaxed text-gray-600">
                 We continuously explore new ways to deliver meaningful inspiration.
               </p>
             </Card>
@@ -139,10 +139,10 @@ export default function AboutPage() {
 
         {/* Technology Stack */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Built With Modern Technology</h2>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight leading-tight text-center text-gray-900 mb-12">Built With Modern Technology</h2>
           <Card className="border-0 shadow-xl">
             <CardHeader>
-              <CardTitle className="text-2xl text-center">Technology Stack</CardTitle>
+              <CardTitle className="text-xl md:text-2xl font-semibold leading-snug text-center">Technology Stack</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -150,29 +150,29 @@ export default function AboutPage() {
                   <div className="w-12 h-12 bg-blue-600 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <span className="text-white font-bold text-lg">R</span>
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">React</h3>
-                  <p className="text-sm text-gray-600">Modern UI framework</p>
+                  <h3 className="text-base md:text-lg font-semibold leading-snug text-gray-900 mb-1">React</h3>
+                  <p className="text-xs md:text-sm leading-normal text-gray-600">Modern UI framework</p>
                 </div>
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <div className="w-12 h-12 bg-green-600 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <span className="text-white font-bold text-lg">N</span>
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Next.js</h3>
-                  <p className="text-sm text-gray-600">Full-stack framework</p>
+                  <h3 className="text-base md:text-lg font-semibold leading-snug text-gray-900 mb-1">Next.js</h3>
+                  <p className="text-xs md:text-sm leading-normal text-gray-600">Full-stack framework</p>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
                   <div className="w-12 h-12 bg-purple-600 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <span className="text-white font-bold text-lg">T</span>
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">TypeScript</h3>
-                  <p className="text-sm text-gray-600">Type-safe development</p>
+                  <h3 className="text-base md:text-lg font-semibold leading-snug text-gray-900 mb-1">TypeScript</h3>
+                  <p className="text-xs md:text-sm leading-normal text-gray-600">Type-safe development</p>
                 </div>
                 <div className="text-center p-4 bg-cyan-50 rounded-lg">
                   <div className="w-12 h-12 bg-cyan-600 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <span className="text-white font-bold text-lg">T</span>
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Tailwind</h3>
-                  <p className="text-sm text-gray-600">Utility-first CSS</p>
+                  <h3 className="text-base md:text-lg font-semibold leading-snug text-gray-900 mb-1">Tailwind</h3>
+                  <p className="text-xs md:text-sm leading-normal text-gray-600">Utility-first CSS</p>
                 </div>
               </div>
             </CardContent>
@@ -181,10 +181,10 @@ export default function AboutPage() {
 
         {/* Team */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Meet the Team</h2>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight leading-tight text-center text-gray-900 mb-12">Meet the Team</h2>
           <Card className="border-0 shadow-xl">
             <CardHeader>
-              <CardTitle className="text-2xl text-center">The Boostlly Team</CardTitle>
+              <CardTitle className="text-xl md:text-2xl font-semibold leading-snug text-center">The Boostlly Team</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center space-y-6">
@@ -192,11 +192,11 @@ export default function AboutPage() {
                   <span className="text-white text-2xl font-bold">B</span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">The Boostlly Team</h3>
-                  <p className="text-gray-600 mb-4">
+                  <h3 className="text-lg md:text-xl font-semibold leading-snug text-gray-900 mb-2">The Boostlly Team</h3>
+                  <p className="text-base leading-relaxed text-gray-600 mb-4">
                     A passionate group of developers, designers, and product managers who believe in the power of daily inspiration.
                   </p>
-                  <div className="flex justify-center gap-4 text-sm text-gray-500">
+                  <div className="flex justify-center gap-4 text-xs md:text-sm leading-normal text-gray-500">
                     <span>• Developers</span>
                     <span>• Designers</span>
                     <span>• Product Managers</span>
@@ -211,10 +211,10 @@ export default function AboutPage() {
         {/* Contact */}
         <Card className="border-0 shadow-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
           <CardHeader>
-            <CardTitle className="text-2xl text-center text-white">Get in Touch</CardTitle>
+            <CardTitle className="text-xl md:text-2xl font-semibold leading-snug text-center text-white">Get in Touch</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <p className="text-indigo-100">
+            <p className="text-base leading-relaxed text-indigo-100">
               Have questions, feedback, or want to contribute? We&apos;d love to hear from you!
             </p>
             <div className="flex justify-center gap-6">

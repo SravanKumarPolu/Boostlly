@@ -50,7 +50,7 @@ export function SavedTab({
       <section className="space-y-4" aria-label="Saved quotes">
         <div className="flex items-center justify-between">
           <h2 
-            className="text-lg sm:text-xl font-bold"
+            className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight leading-tight"
             style={{
               color: "hsl(var(--fg-hsl, var(--foreground)))",
             }}
@@ -81,7 +81,7 @@ export function SavedTab({
               <Heart className="w-8 h-8 sm:w-10 sm:h-10 text-white" aria-hidden="true" />
             </div>
             <h3 
-              className="text-xl sm:text-2xl md:text-3xl font-semibold mb-3"
+              className="text-xl sm:text-2xl md:text-3xl font-semibold leading-snug mb-3"
               style={{
                 color: "hsl(var(--fg-hsl, var(--foreground)))",
               }}
@@ -89,7 +89,7 @@ export function SavedTab({
               No saved quotes yet
             </h3>
             <p 
-              className="text-sm sm:text-base md:text-lg mb-6 max-w-md mx-auto leading-relaxed"
+              className="text-sm sm:text-base leading-relaxed mb-6 max-w-md mx-auto"
               style={{
                 color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.9)",
               }}
@@ -97,7 +97,7 @@ export function SavedTab({
               Start building your collection by saving quotes that inspire you. Each quote you save will appear here.
             </p>
             <p 
-              className="text-xs sm:text-sm md:text-base opacity-75"
+              className="text-xs sm:text-sm leading-normal opacity-75"
               style={{
                 color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.8)",
               }}
@@ -117,7 +117,7 @@ export function SavedTab({
                 }}
               >
                 <p 
-                  className="text-sm sm:text-base italic mb-3 leading-relaxed"
+                  className="text-sm sm:text-base italic mb-3 leading-relaxed font-light"
                   style={{
                     color: "hsl(var(--fg-hsl, var(--foreground)))",
                   }}
@@ -161,7 +161,7 @@ export function SavedTab({
     <section className="space-y-6 sm:space-y-8" aria-label="Saved quotes">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
         <h2
-          className="text-2xl sm:text-3xl font-bold"
+          className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight"
           style={{
             color: palette?.fg || "hsl(var(--foreground))",
           }}
@@ -309,7 +309,7 @@ export function SavedTab({
               <Heart className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
             </div>
             <h3 
-              className="text-xl sm:text-2xl font-semibold mb-3"
+              className="text-xl sm:text-2xl font-semibold leading-snug mb-3"
               style={{
                 color: "hsl(var(--fg-hsl, var(--foreground)))",
               }}
@@ -317,7 +317,7 @@ export function SavedTab({
               No saved quotes yet
             </h3>
             <p 
-              className="text-sm sm:text-base mb-6 max-w-md mx-auto"
+              className="text-sm sm:text-base leading-relaxed mb-6 max-w-md mx-auto"
               style={{
                 color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.9)",
               }}
@@ -325,7 +325,7 @@ export function SavedTab({
               Start building your collection by saving quotes that inspire you. Each quote you save will appear here.
             </p>
             <p 
-              className="text-xs sm:text-sm"
+              className="text-xs sm:text-sm leading-normal"
               style={{
                 color: "hsl(var(--fg-hsl, var(--muted-foreground)) / 0.7)",
               }}
@@ -357,7 +357,7 @@ export function SavedTab({
               <div className="mb-3 space-y-2">
                 {quote.author && (
                   <p 
-                    className="text-xs sm:text-sm font-medium opacity-80"
+                    className="text-xs sm:text-sm font-medium leading-normal opacity-80"
                     style={{
                       color: "hsl(var(--fg-hsl, var(--foreground)) / 0.9)",
                     }}

@@ -1070,7 +1070,7 @@ export const TodayTab = forwardRef<
                   style={{ backgroundColor: `hsl(var(--fg-hsl) / 0.5)` }}
                 />
                 <p
-                  className="quote-author-professional text-sm sm:text-base md:text-lg font-medium px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 rounded-full backdrop-blur-xl border shadow-md transition-opacity duration-500 ease-in-out"
+                  className="quote-author-professional text-sm sm:text-base md:text-lg font-medium leading-normal tracking-wide px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3 rounded-full backdrop-blur-xl border shadow-md transition-opacity duration-500 ease-in-out"
                   style={{
                     color: "#ffffff", // Always white for glassmorphism cards
                     backgroundColor: "hsl(var(--bg-hsl) / 0.6)",
