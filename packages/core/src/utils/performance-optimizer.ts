@@ -190,14 +190,33 @@ export const bundleOptimizer = {
 
   /**
    * Preload critical resources
+   * Platform-aware: Only loads react-dom on web platforms
    */
   preloadCritical: async (): Promise<void> => {
-    const criticalModules = [
+    const criticalModules: Array<() => Promise<any>> = [
       () => import('react'),
-      () => import('react-dom'),
     ];
 
-    await Promise.all(criticalModules.map(module => module()));
+    // Only load react-dom on web platforms (not React Native)
+    // Use dynamic string-based import to avoid Metro static analysis
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      try {
+        // Use Function constructor to prevent Metro from statically analyzing this import
+        const reactDomImport = new Function('return import("react-dom")');
+        criticalModules.push(reactDomImport);
+      } catch (e) {
+        // react-dom not available (e.g., React Native), skip it
+      }
+    }
+
+    await Promise.all(criticalModules.map(module => {
+      try {
+        return module();
+      } catch (e) {
+        // Silently fail for optional modules (e.g., react-dom in React Native)
+        return Promise.resolve();
+      }
+    }));
   },
 
   /**

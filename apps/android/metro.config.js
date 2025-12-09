@@ -16,8 +16,14 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-// 3. Force Metro to resolve (sub)dependencies only from the `nodeModulesPaths`
-config.resolver.disableHierarchicalLookup = true;
+// 3. Enable hierarchical lookup for React Native internal modules
+// This allows Metro to find @react-native/* modules correctly
+config.resolver.disableHierarchicalLookup = false;
+
+// 4. Add extra node modules paths for better resolution
+config.resolver.extraNodeModules = {
+  '@react-native': path.resolve(workspaceRoot, 'node_modules', 'react-native'),
+};
 
 module.exports = config;
 
