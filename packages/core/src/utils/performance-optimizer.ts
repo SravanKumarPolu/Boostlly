@@ -198,23 +198,29 @@ export const bundleOptimizer = {
     ];
 
     // Only load react-dom on web platforms (not React Native)
-    // Use dynamic string-based import to avoid Metro static analysis
-    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-      try {
-        // Use Function constructor to prevent Metro from statically analyzing this import
-        const reactDomImport = new Function('return import("react-dom")');
-        criticalModules.push(reactDomImport);
-      } catch (e) {
-        // react-dom not available (e.g., React Native), skip it
-      }
+    // Check for web environment before attempting to load react-dom
+    const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+    
+    if (isWeb) {
+      // Dynamically import react-dom only on web
+      // Use a function that returns the import to avoid Metro static analysis
+      criticalModules.push(async () => {
+        try {
+          // @ts-ignore - react-dom may not be available in React Native
+          return await import('react-dom');
+        } catch (e) {
+          // react-dom not available (e.g., React Native), return empty module
+          return {};
+        }
+      });
     }
 
     await Promise.all(criticalModules.map(module => {
       try {
         return module();
       } catch (e) {
-        // Silently fail for optional modules (e.g., react-dom in React Native)
-        return Promise.resolve();
+        // Silently fail for optional modules
+        return Promise.resolve({});
       }
     }));
   },
