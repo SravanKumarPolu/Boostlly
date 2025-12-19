@@ -3,7 +3,8 @@
 # This script builds the web app from the repository root
 # Use this if building from root instead of apps/web directory
 
-set -e  # Exit on any error
+# Don't use set -e, we'll handle errors explicitly
+# set -e  # Exit on any error
 
 echo "🚀 Starting Netlify build from repository root..."
 echo "📁 Current directory: $(pwd)"
@@ -57,36 +58,44 @@ pnpm install --frozen-lockfile || {
 }
 
 echo "🔨 Building shared packages..."
+BUILD_FAILED=0
+
 echo "  → Building @boostlly/core..."
-pnpm --filter @boostlly/core run build || {
+if ! pnpm --filter @boostlly/core run build; then
   echo "❌ Failed to build @boostlly/core"
-  exit 2
-}
+  BUILD_FAILED=1
+fi
 
 echo "  → Building @boostlly/features..."
-pnpm --filter @boostlly/features run build || {
+if ! pnpm --filter @boostlly/features run build; then
   echo "❌ Failed to build @boostlly/features"
-  exit 2
-}
+  BUILD_FAILED=1
+fi
 
 echo "  → Building @boostlly/ui..."
-pnpm --filter @boostlly/ui run build || {
+if ! pnpm --filter @boostlly/ui run build; then
   echo "❌ Failed to build @boostlly/ui"
-  exit 2
-}
+  BUILD_FAILED=1
+fi
 
 echo "  → Building @boostlly/platform-web..."
-pnpm --filter @boostlly/platform-web run build || {
+if ! pnpm --filter @boostlly/platform-web run build; then
   echo "❌ Failed to build @boostlly/platform-web"
+  BUILD_FAILED=1
+fi
+
+if [ $BUILD_FAILED -eq 1 ]; then
+  echo "❌ One or more shared packages failed to build"
   exit 2
-}
+fi
 
 echo "🌐 Building web application..."
 cd "$WEB_DIR"
-NODE_ENV=production pnpm run build || {
+if ! NODE_ENV=production pnpm run build; then
   echo "❌ Failed to build web application"
+  echo "   Check the build logs above for details"
   exit 2
-}
+fi
 
 # Verify build output exists
 if [ ! -d "$WEB_DIR/out" ] || [ -z "$(ls -A "$WEB_DIR/out")" ]; then
