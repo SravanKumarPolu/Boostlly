@@ -60,27 +60,39 @@ pnpm install --frozen-lockfile || {
 echo "🔨 Building shared packages..."
 BUILD_FAILED=0
 
+# CRITICAL: Build order matters! Build dependencies first
+# 1. @boostlly/platform - Base platform interfaces (no dependencies)
+echo "  → Building @boostlly/platform..."
+if ! pnpm --filter @boostlly/platform run build; then
+  echo "❌ Failed to build @boostlly/platform"
+  BUILD_FAILED=1
+fi
+
+# 2. @boostlly/core - Depends on platform
 echo "  → Building @boostlly/core..."
 if ! pnpm --filter @boostlly/core run build; then
   echo "❌ Failed to build @boostlly/core"
   BUILD_FAILED=1
 fi
 
+# 3. @boostlly/platform-web - Depends on platform
+echo "  → Building @boostlly/platform-web..."
+if ! pnpm --filter @boostlly/platform-web run build; then
+  echo "❌ Failed to build @boostlly/platform-web"
+  BUILD_FAILED=1
+fi
+
+# 4. @boostlly/features - Depends on core
 echo "  → Building @boostlly/features..."
 if ! pnpm --filter @boostlly/features run build; then
   echo "❌ Failed to build @boostlly/features"
   BUILD_FAILED=1
 fi
 
+# 5. @boostlly/ui - May depend on core/features
 echo "  → Building @boostlly/ui..."
 if ! pnpm --filter @boostlly/ui run build; then
   echo "❌ Failed to build @boostlly/ui"
-  BUILD_FAILED=1
-fi
-
-echo "  → Building @boostlly/platform-web..."
-if ! pnpm --filter @boostlly/platform-web run build; then
-  echo "❌ Failed to build @boostlly/platform-web"
   BUILD_FAILED=1
 fi
 
