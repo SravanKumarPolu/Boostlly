@@ -10,6 +10,12 @@
   # The script handles pnpm workspace and builds all dependencies
   command = "bash netlify-build.sh"
   # Output directory - relative to base (root)
+  # This is the web app output, NOT the Android app
+  publish = "apps/web/out"
+  
+# Explicitly specify this is the web app, not Android
+[context.production]
+  command = "bash netlify-build.sh"
   publish = "apps/web/out"
 
 [build.environment]
