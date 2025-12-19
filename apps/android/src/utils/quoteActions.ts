@@ -51,10 +51,8 @@ export async function copyQuote(quote: Quote): Promise<boolean> {
 export async function shareQuote(quote: Quote): Promise<boolean> {
   try {
     if (await Sharing.isAvailableAsync()) {
-      const text = `"${quote.text}" — ${quote.author}`;
-      await Sharing.shareAsync({
-        message: text,
-      });
+      const text = `"${quote.text}" — ${quote.author || 'Unknown'}`;
+      await Sharing.shareAsync(text);
       return true;
     }
     return false;

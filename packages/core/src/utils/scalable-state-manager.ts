@@ -166,7 +166,7 @@ export class PaginatedStateSlice<T> {
 export class ScalableStateManager {
   private static instance: ScalableStateManager;
   private slices: Map<string, PaginatedStateSlice<any>> = new Map();
-  private cleanupInterval?: NodeJS.Timeout;
+  private cleanupInterval?: ReturnType<typeof setInterval>;
 
   static getInstance(): ScalableStateManager {
     if (!ScalableStateManager.instance) {

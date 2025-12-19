@@ -115,7 +115,7 @@ export function CollectionsTab({ storageService }: CollectionsTabProps) {
     const query = searchQuery.toLowerCase();
     return (
       quote.text.toLowerCase().includes(query) ||
-      quote.author.toLowerCase().includes(query) ||
+      (quote.author && quote.author.toLowerCase().includes(query)) ||
       (quote.category && quote.category.toLowerCase().includes(query))
     );
   });

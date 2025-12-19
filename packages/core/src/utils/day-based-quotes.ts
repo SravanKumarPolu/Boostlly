@@ -53,8 +53,8 @@ export const WEEKLY_PROVIDER_SCHEDULE: readonly DayProviderMapping[] = [
   {
     day: 5, // Friday
     dayName: "Friday",
-    provider: "QuoteGarden",
-    description: "End the week with Quote Garden's curated collection",
+    provider: "Type.fit",
+    description: "End the week with Type.fit's curated collection",
   },
   {
     day: 6, // Saturday
@@ -73,7 +73,7 @@ export const FALLBACK_CHAIN: readonly Source[] = [
   "ZenQuotes", // Most reliable
   "Quotable", // Large database, no API key
   "FavQs", // Good quality
-  "QuoteGarden", // Curated collection
+  "Type.fit", // Curated collection
   "Stoic Quotes", // Stoic philosophy
   "Programming Quotes", // Programming wisdom
   "They Said So", // Additional option
@@ -124,7 +124,7 @@ export function getProviderDisplayName(source: Source): string {
     Quotable: "Quotable",
     FavQs: "FavQs",
     "They Said So": "They Said So",
-    QuoteGarden: "Quote Garden",
+    "Type.fit": "Type.fit",
     "Stoic Quotes": "Stoic Quotes",
     "Programming Quotes": "Programming Quotes",
     DummyJSON: "DummyJSON",

@@ -219,7 +219,14 @@ export class TypeFitProvider implements QuoteProvider {
     }
 
     const randomIndex = Math.floor(Math.random() * this.cachedQuotes.length);
-    return this.cachedQuotes[randomIndex];
+    const quote = this.cachedQuotes[randomIndex];
+    
+    // Ensure source is always "Type.fit" for quotes from this provider
+    if (quote.source !== "Type.fit") {
+      quote.source = "Type.fit";
+    }
+    
+    return quote;
   }
 
   /**

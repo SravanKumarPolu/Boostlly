@@ -39,7 +39,7 @@ export function TodayTab({ storageService, quoteService }: TodayTabProps) {
   useEffect(() => {
     const dateKey = getDateKey();
     const seed = dateKey.split('-').join('');
-    const imageUrl = buildPicsumUrl(800, 1200, parseInt(seed) % 1000);
+    const imageUrl = buildPicsumUrl(seed, 800, 1200);
     setBackgroundImageUrl(imageUrl);
   }, []);
 
@@ -53,7 +53,7 @@ export function TodayTab({ storageService, quoteService }: TodayTabProps) {
       setQuote(todayQuote);
       
       // Log API status for debugging
-      const apiSources = ['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'QuoteGarden', 'StoicQuotes', 'ProgrammingQuotes'];
+      const apiSources = ['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'Type.fit', 'StoicQuotes', 'ProgrammingQuotes'];
       const isFromAPI = apiSources.includes(todayQuote.source || '');
       console.log(`[TodayTab] Quote loaded - Source: ${todayQuote.source || 'unknown'}, From API: ${isFromAPI ? '✅' : '⚠️ (fallback)'}`);
       
@@ -200,12 +200,12 @@ export function TodayTab({ storageService, quoteService }: TodayTabProps) {
                   {quote.source && (
                     <View style={[
                       styles.sourceBadge,
-                      ['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'QuoteGarden', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
+                      ['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'Type.fit', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
                         ? styles.sourceBadgeAPI
                         : styles.sourceBadgeFallback
                     ]}>
                       <Text style={styles.sourceText}>
-                        {['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'QuoteGarden', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
+                        {['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'Type.fit', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
                           ? '🌐 API'
                           : '📦 Local'}
                       </Text>
@@ -232,12 +232,12 @@ export function TodayTab({ storageService, quoteService }: TodayTabProps) {
                 {quote.source && (
                   <View style={[
                     styles.sourceBadge,
-                    ['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'QuoteGarden', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
+                    ['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'Type.fit', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
                       ? styles.sourceBadgeAPI
                       : styles.sourceBadgeFallback
                   ]}>
                     <Text style={styles.sourceText}>
-                      {['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'QuoteGarden', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
+                      {['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'Type.fit', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
                         ? '🌐 API'
                         : '📦 Local'}
                     </Text>

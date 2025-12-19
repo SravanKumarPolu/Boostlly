@@ -22,7 +22,7 @@ import { QuotableProvider } from "./providers/quotable";
 import { ZenQuotesProvider } from "./providers/zenquotes";
 import { TheySaidSoProvider } from "./providers/theysaidso";
 import { FavQsProvider } from "./providers/favqs";
-import { QuoteGardenProvider } from "./providers/quotegarden";
+import { TypeFitProvider } from "./providers/typefit";
 import { StoicQuotesProvider } from "./providers/stoic-quotes";
 import { ProgrammingQuotesProvider } from "./providers/programming-quotes";
 import { DummyJSONProvider } from "./providers/dummyjson";
@@ -102,7 +102,7 @@ export class QuoteServiceRefactored extends BaseService {
       new ZenQuotesProvider(),
       new QuotableProvider(),
       new FavQsProvider(),
-      new QuoteGardenProvider(),
+      new TypeFitProvider(),
       new StoicQuotesProvider(),
       new ProgrammingQuotesProvider(),
       new DummyJSONProvider(),
@@ -548,7 +548,7 @@ export class QuoteServiceRefactored extends BaseService {
       "ZenQuotes",
       "Quotable",
       "FavQs",
-      "QuoteGarden",
+      "Type.fit",
       "Stoic Quotes",
       "Programming Quotes",
     ];
@@ -572,7 +572,7 @@ export class QuoteServiceRefactored extends BaseService {
       "ZenQuotes",
       "Quotable",
       "FavQs",
-      "QuoteGarden",
+      "Type.fit",
       "Stoic Quotes",
       "Programming Quotes",
       "They Said So",
@@ -769,7 +769,7 @@ export class QuoteServiceRefactored extends BaseService {
       "Quotable",
       "FavQs",
       "They Said So",
-      "QuoteGarden",
+      "Type.fit",
       "Stoic Quotes",
       "Programming Quotes",
       "DummyJSON",

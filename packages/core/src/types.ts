@@ -18,7 +18,7 @@ export type Source =
   | "Quotable"
   | "FavQs"
   | "They Said So"
-  | "QuoteGarden"
+  | "Type.fit"
   | "Stoic Quotes"
   | "Programming Quotes"
   | "DummyJSON";
@@ -28,7 +28,7 @@ export interface SourceWeights {
   Quotable: number;
   FavQs: number;
   "They Said So": number;
-  QuoteGarden: number;
+  "Type.fit": number;
   "Stoic Quotes": number;
   "Programming Quotes": number;
   DummyJSON: number;

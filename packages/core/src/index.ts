@@ -11,7 +11,7 @@ export * from "./services/providers/quotable";
 export * from "./services/providers/zenquotes";
 export * from "./services/providers/theysaidso";
 export * from "./services/providers/favqs";
-export * from "./services/providers/quotegarden";
+export * from "./services/providers/typefit";
 export * from "./services/providers/stoic-quotes";
 export * from "./services/providers/programming-quotes";
 export * from "./services/providers/dummyjson";
@@ -32,6 +32,7 @@ export * from "./utils/validate";
 export * from "./utils/validation";
 export * from "./utils/cryptoStore";
 export * from "./utils/image-generator";
+export * from "./utils/quote-source-utils";
 // Removed color-analysis exports
 
 // Store

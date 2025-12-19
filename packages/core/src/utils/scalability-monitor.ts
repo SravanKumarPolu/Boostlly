@@ -75,7 +75,7 @@ export class ScalabilityMonitor {
   private alerts: Alert[] = [];
   private alertConfig: AlertConfig;
   private isMonitoring = false;
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ReturnType<typeof setInterval>;
   private alertCallbacks: Array<(alert: Alert) => void> = [];
 
   static getInstance(): ScalabilityMonitor {

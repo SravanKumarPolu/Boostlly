@@ -204,7 +204,7 @@ export class QuoteFetcher {
       "Quotable",
       "FavQs",
       "They Said So",
-      "QuoteGarden",
+      "Type.fit",
       "Stoic Quotes",
       "Programming Quotes",
     ];

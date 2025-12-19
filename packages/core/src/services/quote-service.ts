@@ -15,7 +15,7 @@ import { QuotableProvider } from "./providers/quotable";
 import { ZenQuotesProvider } from "./providers/zenquotes";
 import { TheySaidSoProvider } from "./providers/theysaidso";
 import { FavQsProvider } from "./providers/favqs";
-import { QuoteGardenProvider } from "./providers/quotegarden";
+import { TypeFitProvider } from "./providers/typefit";
 import { StoicQuotesProvider } from "./providers/stoic-quotes";
 import { ProgrammingQuotesProvider } from "./providers/programming-quotes";
 import { DummyJSONProvider } from "./providers/dummyjson";
@@ -27,7 +27,7 @@ import {
   getFallbackChain as getDayBasedFallbackChain,
   getProviderDisplayName,
 } from "../utils/day-based-quotes";
-import { getRandomFallbackQuote } from "../utils/Boostlly";
+import { getRandomFallbackQuote, setGlobalStorageRef } from "../utils/Boostlly";
 import { getDateKey, type TimezoneMode } from "../utils/date-utils";
 import { SOURCE_WEIGHTS, TIME_CONSTANTS } from "../constants";
 import { BaseService, ServiceResponse } from "./base-service";
@@ -94,7 +94,7 @@ export class QuoteService extends BaseService {
     "Quotable": { capacity: 5, refillPerMin: 10 },
     "FavQs": { capacity: 3, refillPerMin: 6 },
     "They Said So": { capacity: 2, refillPerMin: 4 },
-    "QuoteGarden": { capacity: 3, refillPerMin: 6 },
+    "Type.fit": { capacity: 3, refillPerMin: 6 },
     "Stoic Quotes": { capacity: 4, refillPerMin: 8 },
     "Programming Quotes": { capacity: 4, refillPerMin: 8 },
     "DummyJSON": { capacity: 10, refillPerMin: 20 }, // Local fallback, more lenient
@@ -147,13 +147,18 @@ export class QuoteService extends BaseService {
       categories: ["motivation", "productivity", "success", "leadership"],
       ...config,
     };
+    
+    // Set global storage reference for Boostlly.ts fallback quotes
+    // This allows providers (which don't have storage) to track quote history
+    setGlobalStorageRef(storage);
+    
     // Setup providers (order matters for fallback)
     this.providers = [
       new ZenQuotesProvider(), // Monday - Zen wisdom
       new QuotableProvider(), // Tuesday - Inspiring collection
       new FavQsProvider(), // Wednesday - Quote of the day
-      new QuoteGardenProvider(), // Thursday - Curated collection
-      new StoicQuotesProvider(), // Friday - Stoic philosophy
+      new StoicQuotesProvider(), // Thursday - Stoic philosophy
+      new TypeFitProvider(), // Friday - Type.fit curated collection
       new ProgrammingQuotesProvider(), // Saturday - Programming quotes
       new DummyJSONProvider(), // FALLBACK for all Mon-Sat API failures
       new TheySaidSoProvider(), // Additional fallback option
@@ -188,7 +193,7 @@ export class QuoteService extends BaseService {
       "Quotable",
       "FavQs",
       "They Said So",
-      "QuoteGarden",
+      "Type.fit",
       "Stoic Quotes",
       "Programming Quotes",
       "DummyJSON",
@@ -278,7 +283,7 @@ export class QuoteService extends BaseService {
           Quotable: stored.Quotable || 0,
           FavQs: stored.FavQs || 0,
           "They Said So": stored["They Said So"] || 0,
-          QuoteGarden: (stored as any).QuoteGarden || 0,
+          "Type.fit": (stored as any)["Type.fit"] || (stored as any).QuoteGarden || 0,
           "Stoic Quotes": (stored as any)["Stoic Quotes"] || 0,
           "Programming Quotes": (stored as any)["Programming Quotes"] || 0,
           DummyJSON: 0, // DummyJSON always stays fallback-only
@@ -290,7 +295,7 @@ export class QuoteService extends BaseService {
           cleaned.Quotable +
           cleaned.FavQs +
           cleaned["They Said So"] +
-          cleaned.QuoteGarden +
+          cleaned["Type.fit"] +
           cleaned["Stoic Quotes"] +
           cleaned["Programming Quotes"];
         if (totalWeight > 0) {
@@ -299,7 +304,7 @@ export class QuoteService extends BaseService {
               this.defaultSourceWeights.Quotable +
               this.defaultSourceWeights.FavQs +
               this.defaultSourceWeights["They Said So"] +
-              this.defaultSourceWeights.QuoteGarden +
+              this.defaultSourceWeights["Type.fit"] +
               this.defaultSourceWeights["Stoic Quotes"] +
               this.defaultSourceWeights["Programming Quotes"]) /
             totalWeight;
@@ -307,7 +312,7 @@ export class QuoteService extends BaseService {
           cleaned.Quotable *= scale;
           cleaned.FavQs *= scale;
           cleaned["They Said So"] *= scale;
-          cleaned.QuoteGarden *= scale;
+          cleaned["Type.fit"] *= scale;
           cleaned["Stoic Quotes"] *= scale;
           cleaned["Programming Quotes"] *= scale;
         } else {
@@ -343,23 +348,23 @@ export class QuoteService extends BaseService {
       // Ensure we have a minimum set of fallback quotes even if loading fails
       if (this.quotes.length === 0) {
         const fallbackQuotes = [
-          getRandomFallbackQuote("motivation"),
-          getRandomFallbackQuote("success"),
-          getRandomFallbackQuote("wisdom"),
-          getRandomFallbackQuote("inspiration"),
+          getRandomFallbackQuote("motivation", this.storage),
+          getRandomFallbackQuote("success", this.storage),
+          getRandomFallbackQuote("wisdom", this.storage),
+          getRandomFallbackQuote("inspiration", this.storage),
         ].filter((q, i, arr) => arr.findIndex(q2 => q2.id === q.id) === i);
-        this.quotes = fallbackQuotes.length > 0 ? fallbackQuotes : [getRandomFallbackQuote()];
+        this.quotes = fallbackQuotes.length > 0 ? fallbackQuotes : [getRandomFallbackQuote(undefined, this.storage)];
       }
     } catch (error) {
       // If loading fails, ensure we have fallback quotes
       if (this.quotes.length === 0) {
         const fallbackQuotes = [
-          getRandomFallbackQuote("motivation"),
-          getRandomFallbackQuote("success"),
-          getRandomFallbackQuote("wisdom"),
-          getRandomFallbackQuote("inspiration"),
+          getRandomFallbackQuote("motivation", this.storage),
+          getRandomFallbackQuote("success", this.storage),
+          getRandomFallbackQuote("wisdom", this.storage),
+          getRandomFallbackQuote("inspiration", this.storage),
         ].filter((q, i, arr) => arr.findIndex(q2 => q2.id === q.id) === i);
-        this.quotes = fallbackQuotes.length > 0 ? fallbackQuotes : [getRandomFallbackQuote()];
+        this.quotes = fallbackQuotes.length > 0 ? fallbackQuotes : [getRandomFallbackQuote(undefined, this.storage)];
       }
       logDebug("Error loading quotes, using fallback", { error });
     }
@@ -371,12 +376,12 @@ export class QuoteService extends BaseService {
     if (this.quotes.length === 0) {
       // Initialize with multiple fallback quotes for better variety
       const fallbackQuotes = [
-        getRandomFallbackQuote("motivation"),
-        getRandomFallbackQuote("success"),
-        getRandomFallbackQuote("wisdom"),
-        getRandomFallbackQuote("inspiration"),
+        getRandomFallbackQuote("motivation", this.storage),
+        getRandomFallbackQuote("success", this.storage),
+        getRandomFallbackQuote("wisdom", this.storage),
+        getRandomFallbackQuote("inspiration", this.storage),
       ].filter((q, i, arr) => arr.findIndex(q2 => q2.id === q.id) === i); // Remove duplicates
-      this.quotes = fallbackQuotes.length > 0 ? fallbackQuotes : [getRandomFallbackQuote()];
+      this.quotes = fallbackQuotes.length > 0 ? fallbackQuotes : [getRandomFallbackQuote(undefined, this.storage)];
     }
 
     // Include custom saved quotes from storage
@@ -451,9 +456,21 @@ export class QuoteService extends BaseService {
         this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
         this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
       } else {
-        // Valid cached quote from today - return it
-        console.log(`[QuoteService] Using cached quote from ${today} (timezone: ${timezone})`);
-        return storedDailyQuote;
+        // AUTO-FIX: Check if cached quote has incorrect source (e.g., old QuoteGarden)
+        const needsRefresh = 
+          storedDailyQuote.source === "QuoteGarden" || // Old provider name
+          (storedDailyQuote.source === "Boostlly" && typeof window !== "undefined"); // Local quote when API should be available
+        
+        if (needsRefresh) {
+          console.log(`[QuoteService] 🔄 AUTO-REFRESH: Cached quote has incorrect source "${storedDailyQuote.source}". Clearing cache to fetch fresh quote...`);
+          this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
+          this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
+          // Continue to generate fresh quote below
+        } else {
+          // Valid cached quote from today - return it
+          console.log(`[QuoteService] Using cached quote from ${today} (timezone: ${timezone}, source: ${storedDailyQuote.source})`);
+          return storedDailyQuote;
+        }
       }
     } else if (!storedDate) {
       console.log(`[QuoteService] No cached quote found. Will generate new quote for ${today} (timezone: ${timezone})`);
@@ -462,17 +479,46 @@ export class QuoteService extends BaseService {
     // Get recent quote history to avoid repetition
     const recentQuotes = this.getRecentQuoteHistory(7); // Last 7 days
     
-    // Filter out recently shown quotes if we have enough quotes
-    let availableQuotes = allQuotes;
-    if (allQuotes.length > recentQuotes.length + 5) {
-      availableQuotes = allQuotes.filter(quote => 
-        !recentQuotes.some(recent => recent.id === quote.id)
-      );
-    }
+    // ALWAYS filter out recently shown quotes (improved comparison)
+    // Use text+author comparison in addition to ID for better duplicate detection
+    let availableQuotes = allQuotes.filter(quote => {
+      const isRecent = recentQuotes.some(recent => this.quotesAreEqual(recent, quote));
+      if (isRecent) {
+        logDebug(`Filtering out recent quote: "${quote.text?.substring(0, 50)}..." (shown in last 7 days)`);
+      }
+      return !isRecent;
+    });
     
-    // If filtering left us with too few quotes, use all quotes
+    // Enhanced logging for debugging
+    logDebug(`Quote filtering results`, {
+      totalQuotes: allQuotes.length,
+      recentQuotesCount: recentQuotes.length,
+      availableAfterFilter: availableQuotes.length,
+      filteredOut: allQuotes.length - availableQuotes.length,
+    });
+    
+    // If filtering left us with too few quotes, try extended history (14 days)
     if (availableQuotes.length < 3) {
-      availableQuotes = allQuotes;
+      logDebug(`Only ${availableQuotes.length} quotes available after 7-day filter, trying 14-day filter`);
+      const extendedRecentQuotes = this.getRecentQuoteHistory(14);
+      availableQuotes = allQuotes.filter(quote => 
+        !extendedRecentQuotes.some(recent => this.quotesAreEqual(recent, quote))
+      );
+      
+      logDebug(`After 14-day filter`, {
+        availableQuotes: availableQuotes.length,
+        extendedRecentCount: extendedRecentQuotes.length,
+      });
+      
+      // If still too few, log warning but use what we have
+      if (availableQuotes.length < 1) {
+        logWarning(`Very small quote pool after filtering (${availableQuotes.length} quotes). Using all quotes but this may cause repetition.`, {
+          totalQuotes: allQuotes.length,
+          recent7Days: recentQuotes.length,
+          recent14Days: extendedRecentQuotes.length,
+        });
+        availableQuotes = allQuotes; // Last resort
+      }
     }
 
     // IMPROVED: Better handling for small quote pools
@@ -481,7 +527,7 @@ export class QuoteService extends BaseService {
       // For small pools, prioritize quotes not shown in last 14 days (instead of 7)
       const extendedRecentQuotes = this.getRecentQuoteHistory(14);
       const trulyAvailable = availableQuotes.filter(quote => 
-        !extendedRecentQuotes.some(recent => recent.id === quote.id)
+        !extendedRecentQuotes.some(recent => this.quotesAreEqual(recent, quote))
       );
       
       // If we still have options after extended filtering, use those
@@ -501,6 +547,7 @@ export class QuoteService extends BaseService {
           poolSize: allQuotes.length,
           cachedApiQuotes: this.cacheManager.getCachedApiQuotes().length,
           localQuotes: this.quotes.length,
+          availableAfterFilter: availableQuotes.length,
         });
       }
       
@@ -624,7 +671,7 @@ export class QuoteService extends BaseService {
    * - Tuesday: Quotable
    * - Wednesday: FavQs
    * - Thursday: They Said So
-   * - Friday: QuoteGarden
+   * - Friday: Type.fit
    * - Saturday: Type.fit
    *
    * If the day's provider fails, the method automatically falls back to
@@ -663,13 +710,31 @@ export class QuoteService extends BaseService {
           this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
           this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
         } else if (cachedQuote && cachedDate === today) {
-          // Valid cached quote from today
-          logDebug("Day-based quote: Using cached quote", {
-            source: cachedQuote.source,
-            date: today,
-            timezone,
-          });
-          return cachedQuote;
+          // Valid cached quote from today - check if source is correct
+          const todaysMapping = getTodaysProvider();
+          const expectedSource = todaysMapping.provider;
+          
+          // AUTO-FIX: Detect and fix incorrect sources automatically
+          const needsRefresh = 
+            cachedQuote.source === "QuoteGarden" || // Old provider name
+            (expectedSource === "Type.fit" && cachedQuote.source !== "Type.fit") || // Wrong source for today
+            (cachedQuote.source === "Boostlly" && expectedSource !== "DummyJSON"); // Local quote when API should work
+          
+          if (needsRefresh) {
+            console.log(`[QuoteService.getQuoteByDay] 🔄 AUTO-REFRESH: Cached quote has incorrect source "${cachedQuote.source}", expected "${expectedSource}". Refreshing...`);
+            // Clear cache and fetch fresh quote
+            this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, null);
+            this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, null);
+            // Continue to fetch fresh quote below
+          } else {
+            // Source is correct - use cached quote
+            logDebug("Day-based quote: Using cached quote", {
+              source: cachedQuote.source,
+              date: today,
+              timezone,
+            });
+            return cachedQuote;
+          }
         }
       } else {
         // Force refresh - clear cache
@@ -717,10 +782,21 @@ export class QuoteService extends BaseService {
           );
 
           // Ensure the quote has proper source attribution
+          // Fix: Always use providerSource to ensure correct source (especially for Type.fit)
           const attributedQuote: Quote = {
             ...quote,
-            source: providerSource,
+            source: providerSource, // This ensures Type.fit quotes always have source: "Type.fit"
           };
+          
+          // Debug: Log source to verify it's correct
+          if (providerSource === "Type.fit" && attributedQuote.source !== "Type.fit") {
+            logWarning("Source mismatch detected for Type.fit", {
+              providerSource,
+              quoteSource: attributedQuote.source,
+              fixing: true,
+            });
+            attributedQuote.source = "Type.fit";
+          }
 
           // Cache the quote using unified cache keys
           this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, attributedQuote);
@@ -823,7 +899,7 @@ export class QuoteService extends BaseService {
   getRandomQuote(): Quote {
     // Always ensure we have at least one quote
     if (this.quotes.length === 0) {
-      this.quotes = [getRandomFallbackQuote()];
+      this.quotes = [getRandomFallbackQuote(undefined, this.storage)];
     }
 
     // Include custom saved quotes from storage
@@ -1508,41 +1584,101 @@ export class QuoteService extends BaseService {
   }
 
   /**
+   * Get a unique signature for a quote (ID or text+author)
+   * Used for comparing quotes even when IDs differ
+   */
+  private getQuoteSignature(quote: Quote): string {
+    if (quote.id) {
+      return `id:${quote.id}`;
+    }
+    // Use text + author as signature if no ID
+    const text = (quote.text || "").trim().toLowerCase();
+    const author = (quote.author || "").trim().toLowerCase();
+    return `text:${text}|author:${author}`;
+  }
+
+  /**
+   * Check if two quotes are the same (by ID or text+author)
+   */
+  private quotesAreEqual(quote1: Quote, quote2: Quote): boolean {
+    if (!quote1 || !quote2) return false;
+    
+    // Compare by ID first (fastest)
+    if (quote1.id && quote2.id && quote1.id === quote2.id) {
+      return true;
+    }
+    
+    // Compare by text + author (handles quotes without IDs or with different IDs)
+    const text1 = (quote1.text || "").trim().toLowerCase();
+    const text2 = (quote2.text || "").trim().toLowerCase();
+    const author1 = (quote1.author || "").trim().toLowerCase();
+    const author2 = (quote2.author || "").trim().toLowerCase();
+    
+    return text1 === text2 && author1 === author2;
+  }
+
+  /**
    * Get recent quote history to avoid repetition
    * Improved to handle edge cases and ensure accurate filtering
+   * Now uses both ID and text+author comparison for better duplicate detection
+   * FIXED: Uses date string comparison for better reliability
    */
   private getRecentQuoteHistory(days: number): Quote[] {
     try {
       const history = this.storage.getSync("quoteHistory") || [];
       if (!Array.isArray(history) || history.length === 0) {
+        logDebug(`No quote history found (empty or not an array)`);
         return [];
       }
       
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - days);
+      // Get today's date key for comparison
+      const timezone = this.quoteFetcher.getTimezonePreference();
+      const today = getDateKey(new Date(), timezone);
       
+      // Calculate cutoff date as string (YYYY-MM-DD format)
+      const cutoffDateObj = new Date();
+      cutoffDateObj.setDate(cutoffDateObj.getDate() - days);
+      const cutoffDate = getDateKey(cutoffDateObj, timezone);
+      
+      // Filter entries within the date range using string comparison (more reliable)
       const recentEntries = history.filter((entry: any) => {
         if (!entry || !entry.date || !entry.quote) {
           return false;
         }
-        try {
-          const entryDate = new Date(entry.date);
-          return entryDate >= cutoffDate && !isNaN(entryDate.getTime());
-        } catch {
-          return false;
-        }
+        
+        // Use string comparison for dates (YYYY-MM-DD format)
+        // This is more reliable than Date object comparison
+        const entryDate = String(entry.date).trim();
+        return entryDate >= cutoffDate && entryDate <= today;
       });
       
-      // Extract unique quotes (by ID) to avoid duplicates
+      // Extract unique quotes (by signature: ID or text+author) to avoid duplicates
       const quoteMap = new Map<string, Quote>();
+      const seenSignatures = new Set<string>();
+      
       recentEntries.forEach((entry: any) => {
-        if (entry.quote && entry.quote.id) {
-          quoteMap.set(entry.quote.id, entry.quote);
+        if (entry.quote) {
+          const signature = this.getQuoteSignature(entry.quote);
+          // Only add if we haven't seen this quote signature before
+          // This ensures we get unique quotes even if same quote appears multiple times
+          if (!seenSignatures.has(signature)) {
+            seenSignatures.add(signature);
+            quoteMap.set(signature, entry.quote);
+          }
         }
       });
       
       const uniqueQuotes = Array.from(quoteMap.values());
-      logDebug(`Retrieved ${uniqueQuotes.length} unique quotes from last ${days} days`);
+      
+      // Enhanced logging for debugging repetition issues
+      logDebug(`Retrieved ${uniqueQuotes.length} unique quotes from last ${days} days`, {
+        totalHistoryEntries: history.length,
+        recentEntries: recentEntries.length,
+        uniqueQuotes: uniqueQuotes.length,
+        cutoffDate,
+        today,
+        quoteSignatures: Array.from(seenSignatures).slice(0, 5), // Show first 5 for debugging
+      });
       
       return uniqueQuotes;
     } catch (error) {
@@ -1554,37 +1690,85 @@ export class QuoteService extends BaseService {
   /**
    * Update quote history to track shown quotes
    * Improved to prevent duplicates and better track repetition
+   * Now uses quote signature (ID or text+author) for better duplicate detection
    */
   private updateQuoteHistory(quote: Quote, date: string): void {
     try {
       const history = this.storage.getSync("quoteHistory") || [];
+      const quoteSignature = this.getQuoteSignature(quote);
       
-      // Remove any existing entry for this quote on this date (prevent duplicates)
+      // Remove any existing entry for this quote (by signature) on this date (prevent duplicates)
       const filteredHistory = history.filter((entry: any) => {
-        return !(entry.quote?.id === quote.id && entry.date === date);
+        if (!entry || !entry.quote) return true;
+        // Check if it's the same quote (by signature) on the same date
+        const entrySignature = this.getQuoteSignature(entry.quote);
+        return !(entrySignature === quoteSignature && entry.date === date);
+      });
+      
+      // Also remove any duplicate entries for this quote on different dates (keep only most recent)
+      // This prevents the same quote from appearing multiple times in history
+      const seenSignatures = new Set<string>();
+      const deduplicatedHistory = filteredHistory.filter((entry: any) => {
+        if (!entry || !entry.quote) return true;
+        const entrySignature = this.getQuoteSignature(entry.quote);
+        // Keep the entry if we haven't seen this signature, or if it's more recent
+        if (!seenSignatures.has(entrySignature)) {
+          seenSignatures.add(entrySignature);
+          return true;
+        }
+        // For duplicates, keep the most recent one
+        const existingIndex = filteredHistory.findIndex((e: any) => {
+          if (!e || !e.quote) return false;
+          return this.getQuoteSignature(e.quote) === entrySignature;
+        });
+        if (existingIndex >= 0) {
+          const existing = filteredHistory[existingIndex];
+          return entry.timestamp > (existing.timestamp || 0);
+        }
+        return true;
       });
       
       // Add new entry
-      filteredHistory.push({
+      deduplicatedHistory.push({
         quote: quote,
         date: date,
         timestamp: Date.now()
       });
       
-      // Keep only last 30 days of history
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 30);
+      // Keep only last 30 days of history (using date string comparison)
+      const timezone = this.quoteFetcher.getTimezonePreference();
+      const today = getDateKey(new Date(), timezone);
+      const cutoffDateObj = new Date();
+      cutoffDateObj.setDate(cutoffDateObj.getDate() - 30);
+      const cutoffDate = getDateKey(cutoffDateObj, timezone);
       
-      const finalHistory = filteredHistory.filter((entry: any) => {
-        const entryDate = new Date(entry.date);
-        return entryDate >= cutoffDate;
+      const finalHistory = deduplicatedHistory.filter((entry: any) => {
+        if (!entry || !entry.date) return false;
+        try {
+          // Use string comparison for dates (more reliable)
+          const entryDate = String(entry.date).trim();
+          return entryDate >= cutoffDate && entryDate <= today;
+        } catch {
+          return false;
+        }
       });
       
-      this.storage.setSync("quoteHistory", finalHistory);
+      // Ensure we don't exceed reasonable history size (prevent storage bloat)
+      const maxHistorySize = 100;
+      const trimmedHistory = finalHistory.length > maxHistorySize 
+        ? finalHistory.slice(-maxHistorySize) // Keep most recent entries
+        : finalHistory;
       
-      logDebug(`Updated quote history: ${finalHistory.length} entries`, {
+      this.storage.setSync("quoteHistory", trimmedHistory);
+      
+      // Enhanced logging for debugging
+      logDebug(`Updated quote history: ${trimmedHistory.length} entries (max: ${maxHistorySize})`, {
         quoteId: quote.id,
+        quoteSignature,
         date,
+        quoteText: quote.text?.substring(0, 50) + "...",
+        totalBeforeTrim: finalHistory.length,
+        trimmed: finalHistory.length > maxHistorySize,
       });
     } catch (error) {
       logDebug("Could not update quote history", { error });

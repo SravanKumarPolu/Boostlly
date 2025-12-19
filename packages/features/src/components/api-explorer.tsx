@@ -41,7 +41,7 @@ export function APIExplorer({ storage }: APIExplorerProps) {
     "Quotable",
     "FavQs",
     "They Said So",
-    "QuoteGarden",
+    "Type.fit",
     "DummyJSON",
   ];
   const categories = [

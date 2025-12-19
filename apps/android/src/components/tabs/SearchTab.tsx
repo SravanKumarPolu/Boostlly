@@ -37,10 +37,12 @@ export function SearchTab({ storageService, quoteService }: SearchTabProps) {
 
     try {
       setIsSearching(true);
-      const searchResults = await quoteService.searchQuotes({
-        query: searchQuery,
-        limit: 20,
-      });
+      const searchResults = await quoteService.advancedSearch(
+        searchQuery,
+        undefined,
+        1,
+        20
+      );
       setResults(searchResults.quotes || []);
     } catch (error) {
       console.error('Search failed:', error);

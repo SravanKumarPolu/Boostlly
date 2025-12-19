@@ -57,7 +57,7 @@ export function QuoteCollections({ storage }: QuoteCollectionsProps) {
     "Quotable",
     "FavQs",
     "They Said So",
-    "QuoteGarden",
+    "Type.fit",
     "Stoic Quotes",
     "DummyJSON",
   ];

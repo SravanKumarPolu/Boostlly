@@ -16,7 +16,7 @@ export function isQuoteFromAPI(quote: Quote): boolean {
     'ZenQuotes',
     'FavQs',
     'TheySaidSo',
-    'QuoteGarden',
+    'Type.fit',
     'StoicQuotes',
     'ProgrammingQuotes',
   ];

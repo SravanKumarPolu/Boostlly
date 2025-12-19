@@ -15,6 +15,7 @@ import {
 } from "@boostlly/core";
 import { getDateKey } from "@boostlly/core/utils/date-utils";
 import { getCategoryDisplay } from "@boostlly/core/utils/category-display";
+import { isQuoteFromAPI, getQuoteSourceLabel, getQuoteSourceIcon } from "@boostlly/core/utils/quote-source-utils";
 import { Card, CardContent, Button, Badge } from "@boostlly/ui";
 import {
   ThumbsUp,
@@ -1091,32 +1092,40 @@ export const TodayTab = forwardRef<
                 />
               </div>
             )}
-            {/* Source section hidden per user request */}
-            {/* {quote.source && (
+            {/* Quote Source Indicator - Shows API or Local */}
+            {quote && (
               <div className="flex flex-col items-center justify-center mt-3 gap-2">
                 <Badge
                   variant="outline"
-                  className="text-sm px-4 py-2 rounded-full backdrop-blur-md font-semibold shadow-lg"
+                  className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-md font-medium shadow-lg"
                   style={{
-                    color: "hsl(var(--fg-hsl))",
-                    backgroundColor: "hsl(var(--bg-hsl) / 0.45)",
-                    borderColor: "hsl(var(--fg-hsl) / 0.4)",
+                    color: isQuoteFromAPI(quote) 
+                      ? "hsl(142, 71%, 45%)" // Green for API
+                      : "hsl(38, 92%, 50%)", // Orange for Local
+                    backgroundColor: isQuoteFromAPI(quote)
+                      ? "hsl(142, 71%, 45% / 0.15)"
+                      : "hsl(38, 92%, 50% / 0.15)",
+                    borderColor: isQuoteFromAPI(quote)
+                      ? "hsl(142, 71%, 45% / 0.4)"
+                      : "hsl(38, 92%, 50% / 0.4)",
                     textShadow: "0 1px 2px rgba(0,0,0,0.3)",
                   }}
                 >
-                  🌐 {quote.source}
+                  {getQuoteSourceIcon(quote)} {getQuoteSourceLabel(quote)}
                 </Badge>
                 <p
-                  className="text-xs opacity-80"
+                  className="text-xs opacity-70"
                   style={{
                     color: "hsl(var(--fg-hsl))",
                     textShadow: "0 1px 2px rgba(0,0,0,0.4)",
                   }}
                 >
-                  {new Date().toLocaleDateString("en-US", { weekday: "long" })}'s Provider
+                  {isQuoteFromAPI(quote) 
+                    ? `✓ Connected to ${quote.source} API`
+                    : "📦 Using local quotes (offline mode)"}
                 </p>
               </div>
-            )} */}
+            )}
           </div>
 
           {/* Action Buttons - Professional organization and styling */}

@@ -68,7 +68,7 @@ export function CreateQuoteTab({ storageService }: CreateQuoteTabProps) {
         author: quoteAuthor.trim(),
         category: quoteCategory || 'Custom',
         source: 'custom',
-        createdAt: Date.now(),
+        createdAt: new Date(),
       };
 
       const saved = await storageService.get('savedQuotes');

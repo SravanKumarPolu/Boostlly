@@ -31,7 +31,7 @@ export const API_CONFIG = {
   QUOTABLE_BASE_URL: 'https://api.quotable.io',
   ZENQUOTES_BASE_URL: 'https://zenquotes.io/api',
   PROGRAMMING_QUOTES_BASE_URL: 'https://programming-quotesapi.vercel.app/api',
-  QUOTEGARDEN_BASE_URL: 'https://quotegarden.herokuapp.com',
+  QUOTEGARDEN_BASE_URL: 'https://type.fit/api',
   FAVQS_BASE_URL: 'https://favqs.com/api',
   THEYSAIDSO_BASE_URL: 'https://quotes.rest',
   
@@ -129,7 +129,7 @@ export const SOURCE_WEIGHTS = {
   ZenQuotes: 0.25,
   Quotable: 0.2,
   FavQs: 0.15,
-  QuoteGarden: 0.15,
+  'Type.fit': 0.15,
   'Stoic Quotes': 0.15,
   'Programming Quotes': 0.1,
   'They Said So': 0.0,
