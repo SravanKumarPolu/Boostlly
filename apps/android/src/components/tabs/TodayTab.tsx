@@ -46,8 +46,16 @@ export function TodayTab({ storageService, quoteService }: TodayTabProps) {
   const loadTodayQuote = useCallback(async () => {
     try {
       setIsLoading(true);
-      const todayQuote = await quoteService.getTodayQuote();
+      // Try getQuoteByDay first (API-based), fallback to getDailyQuote (local)
+      const todayQuote = await (quoteService as any).getQuoteByDay?.() || 
+                         await (quoteService as any).getDailyQuoteAsync?.() ||
+                         quoteService.getDailyQuote();
       setQuote(todayQuote);
+      
+      // Log API status for debugging
+      const apiSources = ['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'QuoteGarden', 'StoicQuotes', 'ProgrammingQuotes'];
+      const isFromAPI = apiSources.includes(todayQuote.source || '');
+      console.log(`[TodayTab] Quote loaded - Source: ${todayQuote.source || 'unknown'}, From API: ${isFromAPI ? '✅' : '⚠️ (fallback)'}`);
       
       // Check if saved/liked
       const saved = await storageService.get('savedQuotes');
@@ -58,7 +66,14 @@ export function TodayTab({ storageService, quoteService }: TodayTabProps) {
       setIsSaved(savedQuotes.some((q: Quote) => q.id === todayQuote.id));
       setIsLiked(likedQuotes.some((q: Quote) => q.id === todayQuote.id));
     } catch (error) {
-      console.error('Failed to load quote:', error);
+      console.error('[TodayTab] Failed to load quote:', error);
+      // Check API health status
+      try {
+        const healthStatus = quoteService.getHealthStatus();
+        console.log('[TodayTab] API Health Status:', healthStatus);
+      } catch (healthError) {
+        console.error('[TodayTab] Could not get health status:', healthError);
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -176,11 +191,27 @@ export function TodayTab({ storageService, quoteService }: TodayTabProps) {
               <View style={styles.quoteContainer}>
                 <Text style={styles.quoteText}>"{quote.text}"</Text>
                 <Text style={styles.authorText}>— {quote.author}</Text>
-                {quote.category && (
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryText}>{quote.category}</Text>
-                  </View>
-                )}
+                <View style={styles.badgesContainer}>
+                  {quote.category && (
+                    <View style={styles.categoryBadge}>
+                      <Text style={styles.categoryText}>{quote.category}</Text>
+                    </View>
+                  )}
+                  {quote.source && (
+                    <View style={[
+                      styles.sourceBadge,
+                      ['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'QuoteGarden', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
+                        ? styles.sourceBadgeAPI
+                        : styles.sourceBadgeFallback
+                    ]}>
+                      <Text style={styles.sourceText}>
+                        {['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'QuoteGarden', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
+                          ? '🌐 API'
+                          : '📦 Local'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
             </LinearGradient>
           </ImageBackground>
@@ -192,11 +223,27 @@ export function TodayTab({ storageService, quoteService }: TodayTabProps) {
             <View style={styles.quoteContainer}>
               <Text style={styles.quoteText}>"{quote.text}"</Text>
               <Text style={styles.authorText}>— {quote.author}</Text>
-              {quote.category && (
-                <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryText}>{quote.category}</Text>
-                </View>
-              )}
+              <View style={styles.badgesContainer}>
+                {quote.category && (
+                  <View style={styles.categoryBadge}>
+                    <Text style={styles.categoryText}>{quote.category}</Text>
+                  </View>
+                )}
+                {quote.source && (
+                  <View style={[
+                    styles.sourceBadge,
+                    ['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'QuoteGarden', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
+                      ? styles.sourceBadgeAPI
+                      : styles.sourceBadgeFallback
+                  ]}>
+                    <Text style={styles.sourceText}>
+                      {['Quotable', 'ZenQuotes', 'FavQs', 'TheySaidSo', 'QuoteGarden', 'StoicQuotes', 'ProgrammingQuotes'].includes(quote.source)
+                        ? '🌐 API'
+                        : '📦 Local'}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
           </LinearGradient>
         )}
@@ -344,18 +391,44 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
+  badgesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 8,
+  },
   categoryBadge: {
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    marginTop: 8,
   },
   categoryText: {
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
+  },
+  sourceBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  sourceBadgeAPI: {
+    backgroundColor: 'rgba(16, 185, 129, 0.3)',
+    borderColor: 'rgba(16, 185, 129, 0.5)',
+  },
+  sourceBadgeFallback: {
+    backgroundColor: 'rgba(245, 158, 11, 0.3)',
+    borderColor: 'rgba(245, 158, 11, 0.5)',
+  },
+  sourceText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
   },
   actionsContainer: {
     flexDirection: 'row',

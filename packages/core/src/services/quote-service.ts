@@ -103,6 +103,7 @@ export class QuoteService extends BaseService {
   // Quote prefetching
   private prefetchQueue: Quote[] = [];
   private prefetchInProgress: boolean = false;
+  private enrichmentInProgress: boolean = false;
   
   // Modular components
   private circuitBreaker: QuoteCircuitBreaker;
@@ -337,13 +338,45 @@ export class QuoteService extends BaseService {
    * Loads quotes from storage and initializes the service
    */
   async loadQuotes(): Promise<void> {
-    this.quotes = await this.quoteFetcher.loadQuotes();
+    try {
+      this.quotes = await this.quoteFetcher.loadQuotes();
+      // Ensure we have a minimum set of fallback quotes even if loading fails
+      if (this.quotes.length === 0) {
+        const fallbackQuotes = [
+          getRandomFallbackQuote("motivation"),
+          getRandomFallbackQuote("success"),
+          getRandomFallbackQuote("wisdom"),
+          getRandomFallbackQuote("inspiration"),
+        ].filter((q, i, arr) => arr.findIndex(q2 => q2.id === q.id) === i);
+        this.quotes = fallbackQuotes.length > 0 ? fallbackQuotes : [getRandomFallbackQuote()];
+      }
+    } catch (error) {
+      // If loading fails, ensure we have fallback quotes
+      if (this.quotes.length === 0) {
+        const fallbackQuotes = [
+          getRandomFallbackQuote("motivation"),
+          getRandomFallbackQuote("success"),
+          getRandomFallbackQuote("wisdom"),
+          getRandomFallbackQuote("inspiration"),
+        ].filter((q, i, arr) => arr.findIndex(q2 => q2.id === q.id) === i);
+        this.quotes = fallbackQuotes.length > 0 ? fallbackQuotes : [getRandomFallbackQuote()];
+      }
+      logDebug("Error loading quotes, using fallback", { error });
+    }
   }
 
   getDailyQuote(): Quote {
     // Always ensure we have at least one quote
+    // Use multiple fallback quotes to ensure better variety
     if (this.quotes.length === 0) {
-      this.quotes = [getRandomFallbackQuote()];
+      // Initialize with multiple fallback quotes for better variety
+      const fallbackQuotes = [
+        getRandomFallbackQuote("motivation"),
+        getRandomFallbackQuote("success"),
+        getRandomFallbackQuote("wisdom"),
+        getRandomFallbackQuote("inspiration"),
+      ].filter((q, i, arr) => arr.findIndex(q2 => q2.id === q.id) === i); // Remove duplicates
+      this.quotes = fallbackQuotes.length > 0 ? fallbackQuotes : [getRandomFallbackQuote()];
     }
 
     // Include custom saved quotes from storage
@@ -358,6 +391,21 @@ export class QuoteService extends BaseService {
     } catch (error) {
       // If we can't get saved quotes, just use default quotes
       logDebug("Could not load saved quotes for daily quote", { error });
+    }
+    
+    // IMPROVED: If pool is very small, try to enrich it asynchronously
+    if (allQuotes.length <= 5) {
+      logWarning(`Small quote pool detected: ${allQuotes.length} quotes available`, {
+        localQuotes: this.quotes.length,
+        cachedApiQuotes: this.cacheManager.getCachedApiQuotes().length,
+        savedQuotes: (this.storage.getSync("savedQuotes") || []).length,
+        suggestion: "Attempting to enrich pool in background...",
+      });
+      
+      // Try to enrich pool in background (non-blocking)
+      this.enrichQuotePoolInBackground().catch((error) => {
+        logDebug("Background quote enrichment failed", { error });
+      });
     }
 
     // Get timezone preference and today's date key
@@ -427,7 +475,44 @@ export class QuoteService extends BaseService {
       availableQuotes = allQuotes;
     }
 
-    // Otherwise, select a new daily quote based on today's date
+    // IMPROVED: Better handling for small quote pools
+    // If we have a very small pool (2-3 quotes), use a smarter selection
+    if (availableQuotes.length <= 3) {
+      // For small pools, prioritize quotes not shown in last 14 days (instead of 7)
+      const extendedRecentQuotes = this.getRecentQuoteHistory(14);
+      const trulyAvailable = availableQuotes.filter(quote => 
+        !extendedRecentQuotes.some(recent => recent.id === quote.id)
+      );
+      
+      // If we still have options after extended filtering, use those
+      if (trulyAvailable.length > 0) {
+        availableQuotes = trulyAvailable;
+      }
+      
+      // Use a more varied index calculation for small pools
+      // Combine date with a time-based component to add more variety
+      const timeComponent = Math.floor(Date.now() / (1000 * 60 * 60 * 24)); // Days since epoch
+      const quoteIndex = (this.getQuoteIndexForDate(today) + timeComponent * 17) % availableQuotes.length;
+      const dailyQuote = availableQuotes[quoteIndex];
+      
+      // Log warning if pool is very small
+      if (allQuotes.length <= 3) {
+        logWarning(`Very small quote pool detected (${allQuotes.length} quotes). Consider checking API status or adding more quotes.`, {
+          poolSize: allQuotes.length,
+          cachedApiQuotes: this.cacheManager.getCachedApiQuotes().length,
+          localQuotes: this.quotes.length,
+        });
+      }
+      
+      // Store the new daily quote and update history using unified cache keys
+      this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, dailyQuote);
+      this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, today);
+      this.updateQuoteHistory(dailyQuote, today);
+
+      return dailyQuote;
+    }
+
+    // For larger pools, use standard date-based selection
     const quoteIndex = this.getQuoteIndexForDate(today);
     const dailyQuote = availableQuotes[quoteIndex % availableQuotes.length];
 
@@ -641,6 +726,9 @@ export class QuoteService extends BaseService {
           this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, attributedQuote);
           this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, today);
           
+          // Enrich the quote pool by caching this API quote
+          this.cacheManager.addCachedApiQuote(attributedQuote).catch(() => {});
+          
           // Track analytics
           this.updateAnalytics(attributedQuote, "view");
           
@@ -680,6 +768,9 @@ export class QuoteService extends BaseService {
       // Cache the fallback using unified cache keys
       this.storage.setSync(CACHE_KEYS.DAILY_QUOTE, fallbackQuote);
       this.storage.setSync(CACHE_KEYS.DAILY_QUOTE_DATE, today);
+      
+      // Try to enrich pool in background for future use
+      this.enrichQuotePoolInBackground().catch(() => {});
 
       return fallbackQuote;
     } catch (error) {
@@ -1418,17 +1509,42 @@ export class QuoteService extends BaseService {
 
   /**
    * Get recent quote history to avoid repetition
+   * Improved to handle edge cases and ensure accurate filtering
    */
   private getRecentQuoteHistory(days: number): Quote[] {
     try {
       const history = this.storage.getSync("quoteHistory") || [];
+      if (!Array.isArray(history) || history.length === 0) {
+        return [];
+      }
+      
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
       
-      return history.filter((entry: any) => {
-        const entryDate = new Date(entry.date);
-        return entryDate >= cutoffDate;
-      }).map((entry: any) => entry.quote);
+      const recentEntries = history.filter((entry: any) => {
+        if (!entry || !entry.date || !entry.quote) {
+          return false;
+        }
+        try {
+          const entryDate = new Date(entry.date);
+          return entryDate >= cutoffDate && !isNaN(entryDate.getTime());
+        } catch {
+          return false;
+        }
+      });
+      
+      // Extract unique quotes (by ID) to avoid duplicates
+      const quoteMap = new Map<string, Quote>();
+      recentEntries.forEach((entry: any) => {
+        if (entry.quote && entry.quote.id) {
+          quoteMap.set(entry.quote.id, entry.quote);
+        }
+      });
+      
+      const uniqueQuotes = Array.from(quoteMap.values());
+      logDebug(`Retrieved ${uniqueQuotes.length} unique quotes from last ${days} days`);
+      
+      return uniqueQuotes;
     } catch (error) {
       logDebug("Could not load quote history", { error });
       return [];
@@ -1437,13 +1553,19 @@ export class QuoteService extends BaseService {
 
   /**
    * Update quote history to track shown quotes
+   * Improved to prevent duplicates and better track repetition
    */
   private updateQuoteHistory(quote: Quote, date: string): void {
     try {
       const history = this.storage.getSync("quoteHistory") || [];
       
+      // Remove any existing entry for this quote on this date (prevent duplicates)
+      const filteredHistory = history.filter((entry: any) => {
+        return !(entry.quote?.id === quote.id && entry.date === date);
+      });
+      
       // Add new entry
-      history.push({
+      filteredHistory.push({
         quote: quote,
         date: date,
         timestamp: Date.now()
@@ -1453,12 +1575,17 @@ export class QuoteService extends BaseService {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - 30);
       
-      const filteredHistory = history.filter((entry: any) => {
+      const finalHistory = filteredHistory.filter((entry: any) => {
         const entryDate = new Date(entry.date);
         return entryDate >= cutoffDate;
       });
       
-      this.storage.setSync("quoteHistory", filteredHistory);
+      this.storage.setSync("quoteHistory", finalHistory);
+      
+      logDebug(`Updated quote history: ${finalHistory.length} entries`, {
+        quoteId: quote.id,
+        date,
+      });
     } catch (error) {
       logDebug("Could not update quote history", { error });
     }
@@ -1629,7 +1756,64 @@ export class QuoteService extends BaseService {
     this.cacheManager.stopCleanup();
     this.prefetchQueue = [];
     this.prefetchInProgress = false;
+    this.enrichmentInProgress = false;
     logDebug("QuoteService resources cleaned up");
+  }
+
+  /**
+   * Enrich quote pool in background when pool is small
+   * Tries to fetch quotes from APIs and cache them to expand the pool
+   */
+  private async enrichQuotePoolInBackground(): Promise<void> {
+    // Don't enrich if already in progress
+    if (this.enrichmentInProgress || this.prefetchInProgress) {
+      return;
+    }
+
+    this.enrichmentInProgress = true;
+
+    try {
+      // Try to fetch quotes from multiple providers to enrich cache
+      const providersToTry = this.providers.slice(0, 3); // Try first 3 providers
+      const enrichmentPromises: Promise<Quote | null>[] = [];
+
+      for (const provider of providersToTry) {
+        const source = provider.name as Source;
+        
+        // Skip if not available
+        if (!this.isProviderAvailable(source)) {
+          continue;
+        }
+
+        const enrichmentPromise = provider.random()
+          .then(async (quote) => {
+            // Cache the quote to enrich the pool
+            await this.cacheManager.addCachedApiQuote(quote);
+            this.analyticsManager.updatePerformanceMetrics(source, true, 0);
+            logDebug(`Enriched pool with quote from ${source}`);
+            return quote;
+          })
+          .catch((error) => {
+            this.analyticsManager.updatePerformanceMetrics(source, false, 0);
+            logDebug(`Failed to enrich from ${source}`, { error });
+            return null;
+          });
+
+        enrichmentPromises.push(enrichmentPromise);
+      }
+
+      // Wait for enrichment (with timeout)
+      await Promise.race([
+        Promise.allSettled(enrichmentPromises),
+        new Promise((resolve) => setTimeout(resolve, 5000)) // 5 second timeout
+      ]);
+
+      logDebug("Quote pool enrichment completed");
+    } catch (error) {
+      logDebug("Error during quote pool enrichment", { error });
+    } finally {
+      this.enrichmentInProgress = false;
+    }
   }
 
   /**
