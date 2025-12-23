@@ -381,10 +381,10 @@ export function SavedTab({
                   </div>
                 )}
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <Badge 
                   variant="glass" 
-                  className="text-xs border-2"
+                  className="text-xs border-2 self-start"
                   style={{
                     color: "hsl(var(--fg-hsl, var(--foreground)))",
                     backgroundColor: "hsl(var(--bg-hsl, var(--card)) / 0.7)",
@@ -393,56 +393,56 @@ export function SavedTab({
                 >
                   {quote.category || "Custom"}
                 </Badge>
-                <div className="flex gap-1">
+                <div className="flex flex-wrap gap-1.5 sm:gap-1 justify-end">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="min-w-[44px] min-h-[44px] w-11 h-11"
+                    className="min-w-[36px] min-h-[36px] w-9 h-9 sm:min-w-[40px] sm:min-h-[40px] sm:w-10 sm:h-10 flex-shrink-0"
                     onClick={() => onAddToCollection(quote)}
                     aria-label={`Add quote "${quote.text.substring(0, 30)}..." to collection`}
                     title="Add to collection"
                   >
-                    <FolderOpen className="w-4 h-4" />
+                    <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="min-w-[44px] min-h-[44px] w-11 h-11"
+                    className="min-w-[36px] min-h-[36px] w-9 h-9 sm:min-w-[40px] sm:min-h-[40px] sm:w-10 sm:h-10 flex-shrink-0"
                     onClick={() => onRemoveQuote(quote.id)}
                     aria-label={`Remove quote "${quote.text.substring(0, 30)}..."`}
                     title="Remove quote"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="min-w-[44px] min-h-[44px] w-11 h-11"
+                    className="min-w-[36px] min-h-[36px] w-9 h-9 sm:min-w-[40px] sm:min-h-[40px] sm:w-10 sm:h-10 flex-shrink-0"
                     onClick={() => speakQuote(quote, storage)}
                     aria-label={`Speak quote "${quote.text.substring(0, 30)}..." aloud`}
                     title="Speak quote"
                   >
-                    <Volume2 className="w-4 h-4" />
+                    <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="min-w-[44px] min-h-[44px] w-11 h-11"
+                    className="min-w-[36px] min-h-[36px] w-9 h-9 sm:min-w-[40px] sm:min-h-[40px] sm:w-10 sm:h-10 flex-shrink-0"
                     onClick={() => saveQuoteAsImage(quote)}
                     aria-label={`Save quote "${quote.text.substring(0, 30)}..." as image`}
                     title="Save as image"
                   >
-                    <Image className="w-4 h-4" />
+                    <Image className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="min-w-[44px] min-h-[44px] w-11 h-11"
+                    className="min-w-[36px] min-h-[36px] w-9 h-9 sm:min-w-[40px] sm:min-h-[40px] sm:w-10 sm:h-10 flex-shrink-0"
                     onClick={() => shareQuote(quote)}
                     aria-label={`Share quote "${quote.text.substring(0, 30)}..."`}
                     title="Share quote"
                   >
-                    <Share2 className="w-4 h-4" />
+                    <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
               </div>
