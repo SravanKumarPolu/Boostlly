@@ -1,0 +1,2 @@
+export { QuoteImageCustomizer } from './QuoteImageCustomizer';
+

@@ -206,6 +206,56 @@ export default function PrivacyPage() {
             </CardContent>
           </Card>
 
+          {/* How to Delete All Data */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Database className="w-6 h-6 text-red-600" />
+                How to Delete All Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-600">
+                You have complete control over your data. Here&apos;s how to delete everything:
+              </p>
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h3 className="font-semibold text-gray-900 mb-2">Option 1: Delete from Settings</h3>
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-2">
+                    <li>Go to Settings in the app</li>
+                    <li>Scroll to &quot;Privacy &amp; Data&quot; section</li>
+                    <li>Click &quot;Delete All Data&quot;</li>
+                    <li>Confirm the deletion</li>
+                  </ol>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h3 className="font-semibold text-gray-900 mb-2">Option 2: Browser Storage</h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Since all data is stored locally in your browser, you can clear it:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 ml-2">
+                    <li><strong>Chrome/Edge:</strong> Settings → Privacy → Clear browsing data → Select &quot;Local storage&quot; → Clear</li>
+                    <li><strong>Firefox:</strong> Settings → Privacy → Clear Data → Select &quot;Site Data&quot; → Clear</li>
+                    <li><strong>Safari:</strong> Preferences → Privacy → Manage Website Data → Remove Boostlly</li>
+                  </ul>
+                </div>
+                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <h3 className="font-semibold text-gray-900 mb-2">Option 3: Uninstall Extension</h3>
+                  <p className="text-sm text-gray-600">
+                    If using the browser extension, uninstalling it will remove all extension data. 
+                    Note: This doesn&apos;t affect web app data stored in your browser.
+                  </p>
+                </div>
+              </div>
+              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-sm text-yellow-800">
+                  <strong>Important:</strong> Once deleted, your data cannot be recovered. 
+                  Make sure to export any quotes or collections you want to keep before deleting.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Legal Information */}
           <Card className="border-0 shadow-lg bg-gray-50">
             <CardHeader>

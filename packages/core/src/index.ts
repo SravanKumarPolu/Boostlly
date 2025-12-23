@@ -32,6 +32,8 @@ export * from "./utils/validate";
 export * from "./utils/validation";
 export * from "./utils/cryptoStore";
 export * from "./utils/image-generator";
+export * from "./utils/enhanced-image-generator";
+export * from "./utils/gentle-streaks";
 export * from "./utils/quote-source-utils";
 // Removed color-analysis exports
 

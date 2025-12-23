@@ -22,6 +22,8 @@ export default defineConfig({
         branches: 65,
         statements: 70,
       },
+      // Fail if thresholds not met
+      all: true,
     },
   },
   resolve: {

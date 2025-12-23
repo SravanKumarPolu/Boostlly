@@ -4,7 +4,15 @@
  * Utility functions for quote-related actions like speaking, saving as image, etc.
  */
 
-import { downloadImage, generateQuoteImage, logError, UserAnalyticsService, accessibleTTS } from '@boostlly/core';
+import { 
+  downloadImage, 
+  generateQuoteImage, 
+  generateEnhancedQuoteImage,
+  logError, 
+  UserAnalyticsService, 
+  accessibleTTS,
+  type EnhancedQuoteImageOptions,
+} from '@boostlly/core';
 import { SavedQuote, StorageLike } from '../types';
 
 /**
@@ -51,7 +59,7 @@ export async function speakQuote(
 }
 
 /**
- * Save a quote as an image
+ * Save a quote as an image (basic)
  */
 export async function saveQuoteAsImage(q: SavedQuote): Promise<void> {
   try {
@@ -60,6 +68,41 @@ export async function saveQuoteAsImage(q: SavedQuote): Promise<void> {
     downloadImage(dataUrl, filename);
   } catch (error) {
     logError("Failed to generate image:", { error: error });
+  }
+}
+
+/**
+ * Save a quote as an enhanced image with customization options
+ */
+export async function saveQuoteAsEnhancedImage(
+  q: SavedQuote,
+  options?: EnhancedQuoteImageOptions
+): Promise<void> {
+  try {
+    const defaultOptions: EnhancedQuoteImageOptions = {
+      width: 1200,
+      height: 800,
+      backgroundType: "gradient",
+      gradientPreset: "purple-blue",
+      textColor: "#ffffff",
+      fontSize: 32,
+      fontFamily: "sans-serif",
+      fontWeight: "600",
+      showLogo: true,
+      watermark: {
+        enabled: true,
+        text: "Boostlly",
+        position: "bottom-right",
+        opacity: 0.3,
+      },
+      ...options,
+    };
+
+    const dataUrl = await generateEnhancedQuoteImage(q.text, q.author, defaultOptions);
+    const filename = `boostlly-quote-${q.id}-${Date.now()}.png`;
+    downloadImage(dataUrl, filename);
+  } catch (error) {
+    logError("Failed to generate enhanced image:", { error: error });
   }
 }
 

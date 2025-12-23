@@ -1043,6 +1043,22 @@ export function EnhancedSettings({ storage, palette: propPalette }: EnhancedSett
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="p-4 rounded-lg border" style={{ backgroundColor: textColors.cardBg, borderColor: textColors.border }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Privacy Policy</span>
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline"
+              >
+                View Policy →
+              </a>
+            </div>
+            <p className="text-xs" style={{ color: textColors.secondary }}>
+              Learn how we protect your data, what's stored locally, and how to delete everything.
+            </p>
+          </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium" style={{ color: textColors.cardText }}>Data Sharing</span>
             <Switch

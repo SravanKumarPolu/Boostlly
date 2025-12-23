@@ -1,0 +1,2 @@
+export { WeeklyRecap } from './WeeklyRecap';
+

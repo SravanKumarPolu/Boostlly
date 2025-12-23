@@ -116,6 +116,8 @@ export interface UserPreferences {
   cacheEnabled?: boolean;
   notifications: boolean;
   dailyReminder: boolean;
+  reminderTime?: string; // HH:MM format
+  reminderTone?: "gentle" | "energetic" | "calm" | "motivational" | "peaceful";
   categories: string[];
   language: string;
 }

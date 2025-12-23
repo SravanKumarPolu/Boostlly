@@ -18,6 +18,7 @@ import {
   Smartphone,
   Monitor,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function SettingsPage() {
   const [notifications, setNotifications] = useState(true);
@@ -81,7 +82,20 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <Link
+              href="/privacy"
+              className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                <span>Privacy Policy & Data Transparency</span>
+              </div>
+              <span className="text-muted-foreground">→</span>
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              Learn how we protect your data and what information is stored locally.
+            </p>
+            <div className="flex items-center justify-between pt-2 border-t">
               <span>Auto-save Quotes</span>
               <Switch checked={autoSave} onCheckedChange={setAutoSave} />
             </div>

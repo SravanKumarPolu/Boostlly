@@ -8,11 +8,13 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { ErrorBoundary } from '@boostlly/ui';
 import { useAppState } from '../../hooks/useAppState';
+import { useOnboarding } from '../../hooks/useOnboarding';
 import { Navigation } from '../navigation/Navigation';
 import { TabContent } from './TabContent';
 import { AppHeader } from './AppHeader';
 import { AppFooter } from './AppFooter';
 import { UnifiedAppProps } from './types';
+import { QuickOnboarding } from '../onboarding';
 import { Home, Search, FolderOpen, Settings } from 'lucide-react';
 import { createPlatformStorage } from './utils/storage-utils';
 import { useAutoTheme } from '@boostlly/core';
@@ -28,6 +30,8 @@ export function UnifiedApp({
 }: UnifiedAppProps) {
   const [platformStorage, setPlatformStorage] = useState<any>(null);
   const { appState, setActiveTab } = useAppState(platformStorage);
+  const { isCompleted: onboardingCompleted, isLoading: onboardingLoading, markAsCompleted } = useOnboarding(platformStorage);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   // Auto-theme for daily background images - adapts colors based on background
   const { palette } = useAutoTheme();
@@ -40,6 +44,41 @@ export function UnifiedApp({
         .catch(console.error);
     }
   }, [platformStorage]);
+
+  // Show onboarding for first-time users
+  useEffect(() => {
+    if (!onboardingLoading && platformStorage && !onboardingCompleted) {
+      setShowOnboarding(true);
+    }
+  }, [onboardingLoading, platformStorage, onboardingCompleted]);
+
+  const handleOnboardingComplete = async (data: any) => {
+    await markAsCompleted(data);
+    setShowOnboarding(false);
+  };
+
+  const handleOnboardingSkip = async () => {
+    await markAsCompleted({
+      categories: [],
+      reminderEnabled: false,
+      reminderTime: '09:00',
+      reminderTone: 'gentle',
+    });
+    setShowOnboarding(false);
+  };
+
+  // Show onboarding overlay if needed
+  if (showOnboarding && platformStorage) {
+    return (
+      <ErrorBoundary>
+        <QuickOnboarding
+          storage={platformStorage}
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <ErrorBoundary>

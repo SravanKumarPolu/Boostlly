@@ -43,6 +43,9 @@ export { UnifiedApp } from "./components/unified-app";
 // Export unified app components
 export * from "./components/unified-app";
 
+// Onboarding components
+export * from "./components/onboarding";
+
 // Export utilities
 export * from "./utils/code-splitting";
 
@@ -53,3 +56,9 @@ export * from "./components/unified-search";
 
 // Statistics and Analytics
 export { Statistics } from "./components/statistics/Statistics";
+
+// Quote Image Customizer
+export * from "./components/quote-image-customizer";
+
+// Weekly Recap
+export * from "./components/weekly-recap";

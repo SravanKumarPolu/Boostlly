@@ -45,23 +45,26 @@ jobs:
         run: pnpm --filter @boostlly/core run test:run
         
       - name: Run features tests
-        run: pnpm --filter @boostlly/features run test:run || echo "Features tests failed - continuing"
-        continue-on-error: true
+        run: pnpm --filter @boostlly/features run test:run
         
       - name: Run UI tests
-        run: pnpm --filter @boostlly/ui run test:run || echo "UI tests failed - continuing"
-        continue-on-error: true
+        run: pnpm --filter @boostlly/ui run test:run
         
       - name: Generate test coverage for core
         run: pnpm --filter @boostlly/core run test:coverage
         
       - name: Generate test coverage for features
-        run: pnpm --filter @boostlly/features run test:coverage || echo "Features coverage failed - continuing"
-        continue-on-error: true
+        run: pnpm --filter @boostlly/features run test:coverage
         
       - name: Generate test coverage for UI
-        run: pnpm --filter @boostlly/ui run test:coverage || echo "UI coverage failed - continuing"
-        continue-on-error: true
+        run: pnpm --filter @boostlly/ui run test:coverage
+        
+      - name: Check coverage thresholds
+        run: |
+          echo "Coverage thresholds enforced by vitest config"
+          echo "Core: 70% lines, 65% branches"
+          echo "Features: 60% lines, 55% branches"
+          echo "UI: 60% lines, 55% branches"
         
       - name: Upload core coverage reports
         uses: codecov/codecov-action@v3
@@ -78,7 +81,6 @@ jobs:
           files: ./packages/features/coverage/coverage-final.json
           flags: features
           name: features-coverage
-          fail_ci_if_error: false
           
       - name: Upload UI coverage reports
         uses: codecov/codecov-action@v3
@@ -87,7 +89,22 @@ jobs:
           files: ./packages/ui/coverage/coverage-final.json
           flags: ui
           name: ui-coverage
-          fail_ci_if_error: false
+          
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          if [ -f "./packages/core/coverage/coverage-summary.json" ]; then
+            echo "| Core | ✅ |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "./packages/features/coverage/coverage-summary.json" ]; then
+            echo "| Features | ✅ |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "./packages/ui/coverage/coverage-summary.json" ]; then
+            echo "| UI | ✅ |" >> $GITHUB_STEP_SUMMARY
+          fi
 
   type-check:
     name: Type Check
@@ -259,6 +276,7 @@ jobs:
       - name: Run E2E tests
         run: pnpm test:e2e
         env:
+          CI: true
           PLAYWRIGHT_TEST_BASE_URL: http://localhost:3000
           
       - name: Upload E2E test results

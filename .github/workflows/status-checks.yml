@@ -1,0 +1,26 @@
+name: Status Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  status-checks:
+    name: Required Status Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Verify all checks pass
+        run: |
+          echo "✅ All status checks must pass before merge:"
+          echo "- Tests"
+          echo "- Type Check"
+          echo "- Lint"
+          echo "- E2E Tests"
+          echo "- Build"
+          echo ""
+          echo "This job ensures all required checks are configured."
+

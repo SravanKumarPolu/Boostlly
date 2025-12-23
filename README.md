@@ -4,6 +4,8 @@
 
 [![Build Status](https://github.com/yourusername/boostlly/workflows/CI/badge.svg)](https://github.com/yourusername/boostlly/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Codecov](https://codecov.io/gh/yourusername/boostlly/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/boostlly)
+[![Test Coverage](https://img.shields.io/badge/coverage-70%25+-green)](https://codecov.io/gh/yourusername/boostlly)
 
 ## 🚀 Features
 

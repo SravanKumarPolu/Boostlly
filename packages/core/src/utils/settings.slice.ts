@@ -7,11 +7,13 @@ import { StateCreator } from "zustand";
 import { Theme, DynamicTheme } from "../types";
 
 export type NotificationType = "daily" | "weekly" | "never";
+export type ReminderTone = "gentle" | "energetic" | "calm" | "motivational" | "peaceful";
 
 export interface NotificationSettings {
   enabled: boolean;
   type: NotificationType;
   time: string; // HH:MM format
+  tone?: ReminderTone; // Reminder tone/vibe
   sound: boolean;
   vibration: boolean;
 }
@@ -59,6 +61,7 @@ const DEFAULT_NOTIFICATIONS: NotificationSettings = {
   enabled: false,
   type: "daily",
   time: "09:00",
+  tone: "gentle",
   sound: true,
   vibration: false,
 };
@@ -81,7 +84,10 @@ export const createSettingsSlice: StateCreator<SettingsSlice> = (set) => ({
       dominantColor: "#f0f0f0",
       isAnalyzing: false,
     },
-    notifications: DEFAULT_NOTIFICATIONS,
+        notifications: {
+          ...DEFAULT_NOTIFICATIONS,
+          tone: "gentle" as ReminderTone,
+        },
     sound: DEFAULT_SOUND,
     language: "en",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -209,7 +215,10 @@ export const createSettingsSlice: StateCreator<SettingsSlice> = (set) => ({
           dominantColor: "#f0f0f0",
           isAnalyzing: false,
         },
-        notifications: DEFAULT_NOTIFICATIONS,
+        notifications: {
+          ...DEFAULT_NOTIFICATIONS,
+          tone: "gentle" as ReminderTone,
+        },
         sound: DEFAULT_SOUND,
         language: "en",
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
