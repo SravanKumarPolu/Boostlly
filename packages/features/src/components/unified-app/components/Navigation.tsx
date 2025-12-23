@@ -84,7 +84,7 @@ export function Navigation({
         variant === "popup" ? "mb-4" : "w-full mb-6 sm:mb-8 md:mb-10"
       }
       role="navigation"
-      aria-label="Main navigation"
+      aria-label="Primary navigation"
     >
       <div
         className={
@@ -106,6 +106,7 @@ export function Navigation({
               onClick={() => handleTabClick(tab.id)}
               onKeyDown={(e) => e.key === "Enter" && handleTabClick(tab.id)}
               aria-label={`Navigate to ${tab.label} tab`}
+              aria-current={activeTab === tab.id ? "page" : undefined}
               aria-selected={activeTab === tab.id}
               role="tab"
               tabIndex={activeTab === tab.id ? 0 : -1}
@@ -145,10 +146,11 @@ export function Navigation({
                 }}
                 aria-hidden="true"
               />
-              {/* Show abbreviated text on mobile, full text on larger screens */}
+              {/* Desktop label: full text (visible on sm and up) */}
               <span className="font-medium hidden sm:inline truncate">
                 {tab.label}
               </span>
+              {/* Mobile label: abbreviated text (visible below sm breakpoint) */}
               <span className="font-medium sm:hidden">
                 {tab.label === "Today" ? "Today" :
                  tab.label === "Search" ? "Search" :

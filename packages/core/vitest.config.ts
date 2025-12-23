@@ -16,6 +16,12 @@ export default defineConfig({
         "**/*.config.*",
         "**/coverage/**",
       ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 65,
+        statements: 70,
+      },
     },
   },
   resolve: {
