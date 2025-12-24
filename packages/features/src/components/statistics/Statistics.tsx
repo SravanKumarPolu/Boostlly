@@ -1,7 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { QuoteService, getContrastRatio, ensureContrast, ContrastLevel, getLuminance, UserAnalyticsService } from "@boostlly/core";
+import { 
+  QuoteService, 
+  getContrastRatio, 
+  ensureContrast, 
+  ContrastLevel, 
+  getLuminance, 
+  UserAnalyticsService,
+  updateGentleStreak,
+  getWeeklyRecap,
+  getStreakMessage,
+  createGentleStreakData,
+  type GentleStreakData,
+  type WeeklyRecap as WeeklyRecapType,
+} from "@boostlly/core";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@boostlly/ui";
 import {
   BarChart3,
@@ -18,11 +31,14 @@ import {
   Tag,
   Home,
   Volume2,
+  Flame,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import type { StorageLike } from "../unified-app/types";
 import type { Quote, QuoteAnalytics, Source, APIHealthStatus } from "@boostlly/core";
 import { StatAreaChart, StatBarChart, StatPieChart } from "./ChartComponents";
+import { WeeklyRecap } from "../weekly-recap/WeeklyRecap";
 
 interface StatisticsProps {
   storage: StorageLike | null;
@@ -146,6 +162,9 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d" | "all">("30d");
   const [activeView, setActiveView] = useState<"overview" | "sources" | "performance" | "engagement" | "user">("overview");
+  const [gentleStreakData, setGentleStreakData] = useState<GentleStreakData | null>(null);
+  const [weeklyRecap, setWeeklyRecap] = useState<WeeklyRecapType | null>(null);
+  const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
 
   useEffect(() => {
     if (!storage) {
@@ -638,8 +657,16 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
     const mostLikedCount = statsData.analytics.mostLikedQuotes?.length || 0;
     const recentlyViewedCount = statsData.analytics.recentlyViewed?.length || 0;
 
-    // Calculate streak from quote history
+    // Use gentle streak data if available, otherwise calculate from quote history
     let streak = 0;
+    let longestStreak = 0;
+    
+    if (gentleStreakData) {
+      // Use gentle streak (with grace period)
+      streak = gentleStreakData.currentStreak;
+      longestStreak = gentleStreakData.longestStreak;
+    } else {
+      // Fallback: Calculate streak from quote history (harsh - no grace period)
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     
@@ -655,6 +682,8 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
       } else if (i > 0) {
         break;
       }
+      }
+      longestStreak = streak;
     }
 
     // Calculate average response time
@@ -672,9 +701,10 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
       mostLikedCount,
       recentlyViewedCount,
       streak,
+      longestStreak,
       avgResponseTime: Math.round(avgResponseTime),
     };
-  }, [statsData]);
+  }, [statsData, gentleStreakData]);
 
   // Calculate contrast-adjusted colors for tabs
   // IMPORTANT: This hook must be called before any conditional returns to follow Rules of Hooks
@@ -924,8 +954,14 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
                 <div className="flex-1">
                   <p className="text-xs font-medium text-foreground/70 mb-1.5 uppercase tracking-wide">Streak</p>
                   <p className="text-3xl font-bold text-foreground">{summaryStats.streak} days</p>
+                  {gentleStreakData && gentleStreakData.gracePeriodUsed && (
+                    <p className="text-xs text-foreground/60 mt-1">✨ Grace period used</p>
+                  )}
+                  {summaryStats.longestStreak > summaryStats.streak && (
+                    <p className="text-xs text-foreground/60 mt-1">Best: {summaryStats.longestStreak} days</p>
+                  )}
                 </div>
-                <Calendar 
+                <Flame 
                   className="w-10 h-10 flex-shrink-0" 
                   style={{ color: COLORS.secondary }}
                   strokeWidth={2}
@@ -1023,6 +1059,55 @@ export function Statistics({ storage, variant = "web", palette }: StatisticsProp
           );
         })}
       </div>
+
+      {/* Weekly Recap Card */}
+      {weeklyRecap && activeView === "overview" && (
+        <Card className="border-2 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Sparkles className="w-5 h-5" strokeWidth={2} style={{ color: COLORS.primary }} />
+                <span className="font-semibold">Weekly Recap</span>
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowWeeklyRecap(!showWeeklyRecap)}
+              >
+                {showWeeklyRecap ? "Hide" : "View Full Recap"}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {showWeeklyRecap ? (
+              <WeeklyRecap storage={storage} onClose={() => setShowWeeklyRecap(false)} />
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-3 rounded-lg bg-card/50 border border-border/50">
+                  <Calendar className="w-5 h-5 mx-auto mb-2 text-primary" />
+                  <div className="text-2xl font-bold">{weeklyRecap.daysActive}</div>
+                  <div className="text-xs text-muted-foreground">Days Active</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-card/50 border border-border/50">
+                  <Flame className="w-5 h-5 mx-auto mb-2 text-primary" />
+                  <div className="text-2xl font-bold">{weeklyRecap.currentStreak}</div>
+                  <div className="text-xs text-muted-foreground">Day Streak</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-card/50 border border-border/50">
+                  <Heart className="w-5 h-5 mx-auto mb-2 text-primary" />
+                  <div className="text-2xl font-bold">{weeklyRecap.quotesSaved}</div>
+                  <div className="text-xs text-muted-foreground">Quotes Saved</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-card/50 border border-border/50">
+                  <Eye className="w-5 h-5 mx-auto mb-2 text-primary" />
+                  <div className="text-2xl font-bold">{weeklyRecap.quotesViewed}</div>
+                  <div className="text-xs text-muted-foreground">Quotes Viewed</div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Content */}
       <div className="space-y-6">

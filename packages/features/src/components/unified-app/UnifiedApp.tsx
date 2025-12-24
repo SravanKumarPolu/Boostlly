@@ -17,7 +17,7 @@ import { UnifiedAppProps } from './types';
 import { QuickOnboarding } from '../onboarding';
 import { Home, Search, FolderOpen, Settings } from 'lucide-react';
 import { createPlatformStorage } from './utils/storage-utils';
-import { useAutoTheme } from '@boostlly/core';
+import { useAutoTheme, QuoteService, DailyNotificationScheduler } from '@boostlly/core';
 
 /**
  * Main Unified App Component
@@ -32,6 +32,7 @@ export function UnifiedApp({
   const { appState, setActiveTab } = useAppState(platformStorage);
   const { isCompleted: onboardingCompleted, isLoading: onboardingLoading, markAsCompleted } = useOnboarding(platformStorage);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [notificationScheduler, setNotificationScheduler] = useState<DailyNotificationScheduler | null>(null);
   
   // Auto-theme for daily background images - adapts colors based on background
   const { palette } = useAutoTheme();
@@ -45,6 +46,23 @@ export function UnifiedApp({
     }
   }, [platformStorage]);
 
+  // Initialize notification scheduler when storage is available
+  useEffect(() => {
+    if (platformStorage && !notificationScheduler) {
+      const quoteService = new QuoteService(platformStorage);
+      const scheduler = new DailyNotificationScheduler({
+        storage: platformStorage,
+        quoteService,
+        onNotificationClick: () => {
+          window.focus();
+        },
+      });
+      
+      scheduler.initialize().catch(console.error);
+      setNotificationScheduler(scheduler);
+    }
+  }, [platformStorage, notificationScheduler]);
+
   // Show onboarding for first-time users
   useEffect(() => {
     if (!onboardingLoading && platformStorage && !onboardingCompleted) {
@@ -52,8 +70,48 @@ export function UnifiedApp({
     }
   }, [onboardingLoading, platformStorage, onboardingCompleted]);
 
+  // Handle URL parameters for PWA shortcuts
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    const actionParam = urlParams.get('action');
+    const randomParam = urlParams.get('random');
+    
+    if (tabParam) {
+      // Set the active tab from URL parameter
+      setActiveTab(tabParam);
+      
+      // Handle special actions
+      if (actionParam === 'share' && tabParam === 'today') {
+        // Trigger share action - this will be handled by the TodayTab component
+        window.dispatchEvent(new CustomEvent('boostlly:share-quote'));
+      }
+      
+      if (randomParam === 'true' && tabParam === 'today') {
+        // Trigger random quote - this will be handled by the TodayTab component
+        window.dispatchEvent(new CustomEvent('boostlly:random-quote'));
+      }
+      
+      // Clean up URL parameters after handling
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [setActiveTab]);
+
   const handleOnboardingComplete = async (data: any) => {
     await markAsCompleted(data);
+    
+    // Initialize notification scheduler if reminders are enabled
+    if (data.reminderEnabled && notificationScheduler) {
+      try {
+        await notificationScheduler.updateSchedule();
+      } catch (error) {
+        console.error('Failed to initialize notification scheduler after onboarding:', error);
+      }
+    }
+    
     setShowOnboarding(false);
   };
 
@@ -82,10 +140,20 @@ export function UnifiedApp({
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col h-full min-h-screen bg-background">
+      <div className={`flex flex-col h-full ${variant === 'popup' ? 'min-h-0' : 'min-h-screen'} bg-background`}>
+        {/* Skip to main content link for accessibility */}
+        {variant === 'web' && (
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            aria-label="Skip to main content"
+          >
+            Skip to main content
+          </a>
+        )}
         <AppHeader variant={variant} />
         
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main id="main-content" className="flex-1 flex flex-col overflow-hidden" role="main" aria-label="Main content">
           <Navigation
             tabs={getNavigationTabs(variant)}
             activeTab={appState.activeTab}

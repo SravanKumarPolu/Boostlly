@@ -762,6 +762,20 @@
 /* Accessibility utilities */
 @layer utilities {
   /* Screen reader only class for accessibility announcements */
+  /* Skip link - visible on focus for accessibility */
+  .focus\:not-sr-only:focus {
+    position: absolute;
+    width: auto;
+    height: auto;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    border: 0;
+    z-index: 9999;
+  }
+
   .sr-only {
     position: absolute;
     width: 1px;

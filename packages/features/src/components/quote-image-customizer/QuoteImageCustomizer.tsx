@@ -27,6 +27,7 @@ import {
   Droplet,
   Sparkles,
   Loader2,
+  X,
 } from 'lucide-react';
 
 interface QuoteImageCustomizerProps {
@@ -166,8 +167,8 @@ export function QuoteImageCustomizer({ quoteText, author, onClose }: QuoteImageC
               Customize Quote Image
             </CardTitle>
             {onClose && (
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                ×
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close customizer">
+                <X className="w-5 h-5" />
               </Button>
             )}
           </div>

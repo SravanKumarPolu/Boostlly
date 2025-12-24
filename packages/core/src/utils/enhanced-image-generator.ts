@@ -104,6 +104,58 @@ const FONT_FAMILIES: Record<FontFamily, string> = {
   opensans: "'Open Sans', system-ui, sans-serif",
 };
 
+/**
+ * Load Google Fonts dynamically for image generation
+ * This ensures custom fonts are available when html2canvas renders
+ */
+async function loadGoogleFonts(fontFamily: FontFamily): Promise<void> {
+  if (typeof document === "undefined") return;
+
+  const fontMap: Record<string, string> = {
+    playfair: "Playfair+Display:400,600,700",
+    montserrat: "Montserrat:400,500,600,700",
+    lora: "Lora:400,600,700",
+    merriweather: "Merriweather:400,600,700",
+    opensans: "Open+Sans:400,500,600,700",
+  };
+
+  const fontUrl = fontMap[fontFamily];
+  if (!fontUrl) return; // System fonts don't need loading
+
+  // Check if font is already loaded
+  const fontId = `google-font-${fontFamily}`;
+  if (document.getElementById(fontId)) return;
+
+  // Create and append link element
+  const link = document.createElement("link");
+  link.id = fontId;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${fontUrl}&display=swap`;
+  document.head.appendChild(link);
+
+  // Wait for font to load
+  await new Promise<void>((resolve) => {
+    if (document.fonts && document.fonts.check) {
+      const checkFont = () => {
+        const fontName = fontFamily === "playfair" ? "Playfair Display" :
+                        fontFamily === "montserrat" ? "Montserrat" :
+                        fontFamily === "lora" ? "Lora" :
+                        fontFamily === "merriweather" ? "Merriweather" :
+                        "Open Sans";
+        if (document.fonts.check(`16px "${fontName}"`)) {
+          resolve();
+        } else {
+          setTimeout(checkFont, 100);
+        }
+      };
+      checkFont();
+    } else {
+      // Fallback: wait a bit for font to load
+      setTimeout(resolve, 500);
+    }
+  });
+}
+
 export async function generateEnhancedQuoteImage(
   quoteText: string,
   author: string,
@@ -137,6 +189,11 @@ export async function generateEnhancedQuoteImage(
   // Check if we're in a browser environment
   if (typeof window === "undefined" || typeof document === "undefined") {
     throw new Error("Image generation requires browser environment");
+  }
+
+  // Load Google Fonts if needed for custom fonts
+  if (fontFamily && ["playfair", "montserrat", "lora", "merriweather", "opensans"].includes(fontFamily)) {
+    await loadGoogleFonts(fontFamily);
   }
 
   // Create a temporary container

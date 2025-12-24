@@ -28,7 +28,7 @@ export function AppHeader({
   onVoiceToggle,
 }: AppHeaderProps) {
   return (
-    <header className={variant === "popup" ? "mb-4" : "mb-6 sm:mb-8"}>
+    <header role="banner" className={variant === "popup" ? "mb-4" : "mb-6 sm:mb-8"}>
       <div
         className={
           variant === "popup" ? "mb-4" : "container mx-auto px-4 sm:px-6 lg:px-8 mb-4 sm:mb-6 max-w-7xl"
@@ -63,6 +63,7 @@ export function AppHeader({
               />
               <div>
                 <h1
+                  id="site-title"
                   className={
                     variant === "popup"
                       ? "text-lg font-bold tracking-tight leading-tight"

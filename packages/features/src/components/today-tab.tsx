@@ -26,6 +26,7 @@ import {
   Image,
   Volume2,
 } from "lucide-react";
+import { QuoteImageCustomizer } from "./quote-image-customizer";
 import {
   useTodayQuote,
   useIsLoading,
@@ -246,6 +247,7 @@ export const TodayTab = forwardRef<
     const [isSaved, setIsSaved] = useState(false);
     const [showAuthor, setShowAuthor] = useState(true);
     const [isHydrated, setIsHydrated] = useState(false);
+    const [showImageCustomizer, setShowImageCustomizer] = useState(false);
     
     // CRITICAL: Clear stale quote cache SYNCHRONOUSLY before creating QuoteService
     // This must happen before any quote loading to prevent showing yesterday's quote
@@ -908,21 +910,12 @@ export const TodayTab = forwardRef<
       }
     };
 
-    const handleSaveAsImage = async () => {
-      try {
+    const handleSaveAsImage = () => {
         if (!quote) {
           return;
         }
-
-        const dataUrl = await generateQuoteImage(
-          quote.text,
-          quote.author || "Unknown",
-        );
-        const filename = `boostlly-quote-${Date.now()}.png`;
-        downloadImage(dataUrl, filename);
-      } catch (error) {
-        console.error("Failed to generate image:", error);
-      }
+      // Open the image customizer instead of directly exporting
+      setShowImageCustomizer(true);
     };
 
     if (!quoteService) {
@@ -979,6 +972,7 @@ export const TodayTab = forwardRef<
       : {};
 
     return (
+      <>
       <article 
         className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto relative overflow-hidden rounded-3xl shadow-2xl border border-border/20 backdrop-blur-xl backdrop-saturate-150"
         aria-label="Today's motivational quote"
@@ -1305,6 +1299,16 @@ export const TodayTab = forwardRef<
           </div>
         </div>
       </article>
+
+      {/* Image Customizer Modal */}
+      {showImageCustomizer && quote && (
+        <QuoteImageCustomizer
+          quoteText={quote.text}
+          author={quote.author || "Unknown"}
+          onClose={() => setShowImageCustomizer(false)}
+        />
+      )}
+      </>
     );
   },
 );

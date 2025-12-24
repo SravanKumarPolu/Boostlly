@@ -77,29 +77,111 @@ export default function PrivacyPage() {
                 Data Storage & Security
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Local Storage Explanation */}
+              <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 className="font-semibold text-lg text-gray-900 mb-3 flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-blue-600" />
+                  Local Storage Explained
+                </h3>
+                <p className="text-gray-700 mb-4">
+                  Boostlly uses <strong>local storage</strong> (also called browser storage) to save all your data directly on your device. 
+                  This means your quotes, collections, settings, and preferences are stored in your browser&apos;s storage space, 
+                  not on our servers or in the cloud.
+                </p>
+                <div className="space-y-3">
+                  <div className="bg-white p-4 rounded-lg border border-blue-100">
+                    <h4 className="font-semibold text-gray-900 mb-2">What is Local Storage?</h4>
+                    <p className="text-sm text-gray-700 mb-2">
+                      Local storage is a browser feature that allows websites to store data on your device. 
+                      It&apos;s similar to saving a file on your computer, but it&apos;s managed by your browser.
+                    </p>
+                    <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                      <li>Data is stored in your browser&apos;s storage space (typically 5-10MB per website)</li>
+                      <li>Data persists even after you close the browser</li>
+                      <li>Data is specific to each browser and device</li>
+                      <li>Data is only accessible by the website that created it</li>
+                    </ul>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg border border-blue-100">
+                    <h4 className="font-semibold text-gray-900 mb-2">What Data is Stored Locally?</h4>
+                    <ul className="text-sm text-gray-700 space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-1">•</span>
+                        <span><strong>Saved Quotes:</strong> Quotes you&apos;ve saved for later reading</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-1">•</span>
+                        <span><strong>Collections:</strong> Your custom quote collections and categories</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-1">•</span>
+                        <span><strong>Settings:</strong> Theme preferences, notification settings, and app configuration</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-1">•</span>
+                        <span><strong>Reading History:</strong> Quotes you&apos;ve viewed (for statistics and recommendations)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-1">•</span>
+                        <span><strong>Streak Data:</strong> Your reading streaks and progress tracking</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-1">•</span>
+                        <span><strong>User Preferences:</strong> Language, font size, and accessibility settings</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg border border-blue-100">
+                    <h4 className="font-semibold text-gray-900 mb-2">Why Local Storage?</h4>
+                    <p className="text-sm text-gray-700 mb-2">
+                      We chose local storage for several important reasons:
+                    </p>
+                    <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                      <li><strong>Privacy:</strong> Your data never leaves your device, so we can&apos;t access it</li>
+                      <li><strong>Speed:</strong> Data loads instantly since it&apos;s stored on your device</li>
+                      <li><strong>Offline Access:</strong> You can use the app even without an internet connection</li>
+                      <li><strong>No Account Required:</strong> No need to create an account or share personal information</li>
+                      <li><strong>Full Control:</strong> You can delete your data anytime by clearing browser storage</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Storage Security */}
               <div className="grid md:grid-cols-3 gap-6">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <Lock className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                  <h3 className="font-semibold text-gray-900 mb-2">Local Storage</h3>
-                  <p className="text-sm text-gray-600">
-                    All your data is stored locally on your device. We don&apos;t have access to your personal information.
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
                   <Shield className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                  <h3 className="font-semibold text-gray-900 mb-2">Encryption</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">Browser Security</h3>
                   <p className="text-sm text-gray-600">
-                    Sensitive data is encrypted using industry-standard encryption methods.
+                    Your browser provides built-in security for local storage. Data is isolated per website and protected by browser security policies.
                   </p>
                 </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
                   <Users className="w-8 h-8 text-purple-600 mx-auto mb-2" />
                   <h3 className="font-semibold text-gray-900 mb-2">No Tracking</h3>
                   <p className="text-sm text-gray-600">
-                    We don&apos;t track you across websites or share data with third parties.
+                    We don&apos;t track you across websites, use cookies for tracking, or share data with third parties. 
+                    Your activity stays private.
                   </p>
                 </div>
+                <div className="text-center p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                  <Eye className="w-8 h-8 text-indigo-600 mx-auto mb-2" />
+                  <h3 className="font-semibold text-gray-900 mb-2">No Server Access</h3>
+                  <p className="text-sm text-gray-600">
+                    Since data is stored locally, we cannot access, read, or modify your data. 
+                    It&apos;s completely under your control.
+                  </p>
+                </div>
+              </div>
+
+              {/* Storage Limits */}
+              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <h3 className="font-semibold text-gray-900 mb-2">Storage Limits</h3>
+                <p className="text-sm text-gray-700">
+                  Most browsers allow 5-10MB of local storage per website. Boostlly typically uses less than 1MB for most users. 
+                  If you reach the limit, you can export and delete old data to free up space.
+                </p>
               </div>
             </CardContent>
           </Card>

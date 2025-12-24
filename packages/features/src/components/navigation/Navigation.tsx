@@ -48,7 +48,7 @@ export function Navigation({
   return (
     <nav 
       className={`${getNavigationClasses()} ${className}`} 
-      role="tablist"
+      role="navigation"
       aria-label="Main navigation"
     >
       {tabs.map((tab) => (

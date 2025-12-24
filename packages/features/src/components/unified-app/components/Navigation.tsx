@@ -85,8 +85,11 @@ export function Navigation({
       }
       role="navigation"
       aria-label="Primary navigation"
+      aria-orientation="horizontal"
     >
       <div
+        role="tablist"
+        aria-label="Navigation tabs"
         className={
           variant === "popup"
             ? "flex items-center gap-1 bg-card/60 backdrop-blur-sm rounded-lg p-1 border border-border overflow-x-auto elevation-1 hover-soft scrollbar-hide snap-x snap-mandatory"

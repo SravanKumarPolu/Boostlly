@@ -1,0 +1,2 @@
+export { NotificationSettingsComponent } from './NotificationSettings';
+

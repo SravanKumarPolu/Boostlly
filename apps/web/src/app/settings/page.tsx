@@ -19,11 +19,44 @@ import {
   Monitor,
 } from "lucide-react";
 import Link from "next/link";
+import { NotificationSettingsComponent } from "@boostlly/features";
+import { StorageService } from "@boostlly/platform-web";
+import { QuoteService, DailyNotificationScheduler } from "@boostlly/core";
 
 export default function SettingsPage() {
   const [notifications, setNotifications] = useState(true);
   const [autoSave, setAutoSave] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
+  const [storage, setStorage] = useState<any>(null);
+  const [quoteService, setQuoteService] = useState<any>(null);
+  const [scheduler, setScheduler] = useState<DailyNotificationScheduler | null>(null);
+
+  useEffect(() => {
+    // Initialize services
+    const initServices = async () => {
+      try {
+        const storageService = new StorageService();
+        const service = new QuoteService(storageService as any);
+        const notificationScheduler = new DailyNotificationScheduler({
+          storage: storageService,
+          quoteService: service,
+          onNotificationClick: () => {
+            window.focus();
+          },
+        });
+
+        await notificationScheduler.initialize();
+
+        setStorage(storageService);
+        setQuoteService(service);
+        setScheduler(notificationScheduler);
+      } catch (error) {
+        console.error("Failed to initialize services:", error);
+      }
+    };
+
+    initServices();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -54,24 +87,13 @@ export default function SettingsPage() {
         </Card>
 
         {/* Notifications */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Bell className="w-4 h-4" />
-              <span>Notifications</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span>Push Notifications</span>
-              <Switch
-                checked={notifications}
-                onCheckedChange={setNotifications}
-                className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {storage && quoteService && scheduler && (
+          <NotificationSettingsComponent
+            storage={storage}
+            quoteService={quoteService}
+            scheduler={scheduler}
+          />
+        )}
 
         {/* Data & Privacy */}
         <Card>

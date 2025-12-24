@@ -50,7 +50,7 @@ export function AppHeader({
   return (
     <header className="flex items-center justify-between p-4 md:p-6 border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
       <div className="flex items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Boostlly</h1>
+        <h1 id="site-title" className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Boostlly</h1>
         <span className="hidden sm:inline-flex text-sm text-muted-foreground font-medium">
           Daily Motivation
         </span>

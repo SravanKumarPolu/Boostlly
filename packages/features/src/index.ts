@@ -62,3 +62,6 @@ export * from "./components/quote-image-customizer";
 
 // Weekly Recap
 export * from "./components/weekly-recap";
+
+// Notification Settings
+export * from "./components/notification-settings";

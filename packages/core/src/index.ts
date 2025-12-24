@@ -6,6 +6,7 @@ export * from "./services/quote-service";
 export * from "./services/search-service";
 export * from "./services/article-service";
 export * from "./services/email-service";
+export * from "./services/daily-notification-scheduler";
 export * from "./services/providers/base";
 export * from "./services/providers/quotable";
 export * from "./services/providers/zenquotes";

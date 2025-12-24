@@ -37,7 +37,7 @@ export function AppFooter({
   }
 
   return (
-    <footer className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 md:p-6 border-t border-border/50 bg-background/95 backdrop-blur-sm">
+    <footer role="contentinfo" className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 md:p-6 border-t border-border/50 bg-background/95 backdrop-blur-sm">
       <div className="flex items-center gap-4 text-sm text-muted-foreground">
         <span className="flex items-center gap-1">
           Made with <Heart className="w-4 h-4 inline text-destructive" aria-label="love" /> by Boostlly Team

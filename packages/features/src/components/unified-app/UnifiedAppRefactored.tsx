@@ -43,6 +43,9 @@ import { useStorageSync } from "./hooks/useStorageSync";
 import { createPlatformStorage, openInOptionsPage } from "./utils/platform-utils";
 import { generateId } from "./utils/quote-actions";
 import { Variant, SavedQuote, StorageLike, NavigationTab } from "./types";
+import { QuickOnboarding } from "../onboarding";
+import { useOnboarding } from "../../hooks/useOnboarding";
+import { QuoteService, DailyNotificationScheduler } from "@boostlly/core";
 
 interface UnifiedAppProps {
   variant?: Variant;
@@ -55,6 +58,11 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
 
   const [storage, setStorage] = useState<StorageLike | null>(null);
   const [showBackground, setShowBackground] = useState<boolean>(true);
+  const [notificationScheduler, setNotificationScheduler] = useState<DailyNotificationScheduler | null>(null);
+
+  // Onboarding state
+  const { isCompleted: onboardingCompleted, isLoading: onboardingLoading, markAsCompleted } = useOnboarding(storage);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Auto-theme functionality for Picsum backgrounds
   const { loadTodayImage, imageUrl, isLoading, error, palette } =
@@ -78,6 +86,40 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
       mounted = false;
     };
   }, []);
+
+  // Initialize notification scheduler when storage is available
+  useEffect(() => {
+    if (storage && !notificationScheduler) {
+      // QuoteService requires StorageService, but we have StorageLike
+      // The storage adapter should work, but we need to ensure compatibility
+      try {
+        const quoteService = new QuoteService(storage as any);
+        const scheduler = new DailyNotificationScheduler({
+          storage: storage,
+          quoteService,
+          onNotificationClick: () => {
+            if (typeof window !== 'undefined') {
+              window.focus();
+            }
+          },
+        });
+        
+        scheduler.initialize().catch((error) => {
+          logDebug("Failed to initialize notification scheduler:", { error });
+        });
+        setNotificationScheduler(scheduler);
+      } catch (error) {
+        logDebug("Failed to create notification scheduler:", { error });
+      }
+    }
+  }, [storage, notificationScheduler]);
+
+  // Show onboarding for first-time users
+  useEffect(() => {
+    if (!onboardingLoading && storage && !onboardingCompleted) {
+      setShowOnboarding(true);
+    }
+  }, [onboardingLoading, storage, onboardingCompleted]);
 
   // Load today's Picsum background image
   useEffect(() => {
@@ -278,6 +320,32 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
     appState.setSelectedQuoteForCollection(null);
   }
 
+  // Handle onboarding completion
+  const handleOnboardingComplete = async (data: any) => {
+    await markAsCompleted(data);
+    
+    // Initialize notification scheduler if reminders are enabled
+    if (data.reminderEnabled && notificationScheduler) {
+      try {
+        await notificationScheduler.updateSchedule();
+      } catch (error) {
+        logDebug('Failed to initialize notification scheduler after onboarding:', { error });
+      }
+    }
+    
+    setShowOnboarding(false);
+  };
+
+  const handleOnboardingSkip = async () => {
+    await markAsCompleted({
+      categories: [],
+      reminderEnabled: false,
+      reminderTime: '09:00',
+      reminderTone: 'gentle',
+    });
+    setShowOnboarding(false);
+  };
+
   const containerClass =
     variant === "popup"
       ? "w-[600px] h-[600px] text-foreground p-4 overflow-y-auto relative"
@@ -292,6 +360,19 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
           backgroundAttachment: "fixed",
         }
       : {};
+
+  // Show onboarding overlay if needed
+  if (showOnboarding && storage) {
+    return (
+      <ErrorBoundary>
+        <QuickOnboarding
+          storage={storage}
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <div

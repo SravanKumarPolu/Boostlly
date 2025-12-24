@@ -74,13 +74,51 @@ export function updateGentleStreak(
     gracePeriodUsed = false;
   }
 
+  // Only increment totalDaysActive if this is a new day (first time or after a gap)
+  const isNewDay = !lastActive || (daysSinceLastActive !== null && daysSinceLastActive > 0);
+  
   return {
     ...currentData,
     currentStreak: newStreak,
     longestStreak: Math.max(newStreak, currentData.longestStreak),
     lastActiveDate: todayStr,
     gracePeriodUsed,
-    totalDaysActive: currentData.totalDaysActive + 1,
+    totalDaysActive: isNewDay ? currentData.totalDaysActive + 1 : currentData.totalDaysActive,
+    // Don't increment quotes viewed here - use updateGentleStreakOnQuoteView instead
+  };
+}
+
+/**
+ * Update gentle streak when a quote is viewed (increments quotes viewed counter)
+ */
+export function updateGentleStreakOnQuoteView(
+  currentData: GentleStreakData,
+  today: Date = new Date()
+): GentleStreakData {
+  // First update the streak (handles day tracking)
+  const updatedData = updateGentleStreak(currentData, today);
+  
+  // Then increment quotes viewed
+  return {
+    ...updatedData,
+    totalQuotesViewed: updatedData.totalQuotesViewed + 1,
+  };
+}
+
+/**
+ * Update gentle streak when a quote is saved (increments quotes saved counter)
+ */
+export function updateGentleStreakOnQuoteSave(
+  currentData: GentleStreakData,
+  today: Date = new Date()
+): GentleStreakData {
+  // First update the streak (handles day tracking)
+  const updatedData = updateGentleStreak(currentData, today);
+  
+  // Then increment quotes saved
+  return {
+    ...updatedData,
+    totalQuotesSaved: updatedData.totalQuotesSaved + 1,
   };
 }
 

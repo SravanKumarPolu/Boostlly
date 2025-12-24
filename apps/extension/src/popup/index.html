@@ -7,6 +7,32 @@
     <meta name="description" content="Get your daily motivational quote and boost your inspiration" />
     <link rel="icon" type="image/png" href="/icons/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/icons/favicon.png">
+    <style>
+      /* Extension popup sizing constraints */
+      body {
+        margin: 0;
+        padding: 0;
+        width: 380px;
+        min-width: 320px;
+        max-width: 420px;
+        height: 600px;
+        min-height: 500px;
+        max-height: 700px;
+        overflow: hidden;
+      }
+      
+      #root {
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      
+      /* Ensure popup content fits within constraints */
+      #root > * {
+        max-width: 100%;
+      }
+    </style>
   </head>
   <body>
     <div id="root" role="application" aria-label="Boostlly Daily Motivation Extension"></div>

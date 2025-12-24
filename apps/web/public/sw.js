@@ -3,8 +3,8 @@
 
 // UPDATE THIS VERSION NUMBER WITH EACH DEPLOYMENT TO FORCE CACHE REFRESH
 // This file is automatically updated by scripts/update-version.js during build
-const VERSION = "0.1.0"; // Updated: 2025-12-23T18:17:51.734Z
-const BUILD_TIME = "20251223181751"; // Format: YYYYMMDDHHmmss
+const VERSION = "0.1.0"; // Updated: 2025-12-24T05:17:13.688Z
+const BUILD_TIME = "20251224051713"; // Format: YYYYMMDDHHmmss
 
 const CACHE_NAME = `boostlly-v${VERSION}`;
 const STATIC_CACHE = `boostlly-static-v${VERSION}-${BUILD_TIME}`;
@@ -402,6 +402,37 @@ async function doBackgroundSync() {
   // Implement background sync logic here
 }
 
+// Notification scheduling and handling
+let scheduledNotifications = new Map();
+
+// Helper function to get today's quote
+async function getTodayQuote() {
+  try {
+    // Try to get from cache first
+    const cache = await caches.open("boostlly-quotes");
+    const cached = await cache.match("/api/quote/today");
+    
+    if (cached) {
+      const data = await cached.json();
+      return data;
+    }
+    
+    // Fallback quote
+    return {
+      id: "fallback",
+      text: "Start your day with motivation!",
+      author: "Boostlly",
+    };
+  } catch (error) {
+    console.error("[SW] Failed to get quote:", error);
+    return {
+      id: "fallback",
+      text: "Start your day with motivation!",
+      author: "Boostlly",
+    };
+  }
+}
+
 // Push notifications
 self.addEventListener("push", (event) => {
   if (event.data) {
@@ -442,6 +473,20 @@ self.addEventListener("notificationclick", (event) => {
 
   if (event.action === "explore") {
     event.waitUntil(clients.openWindow("/"));
+  } else {
+    // Default: open the app
+    event.waitUntil(
+      clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+        for (const client of clientList) {
+          if (client.focus) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow("/");
+        }
+      })
+    );
   }
 });
 
@@ -450,6 +495,60 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "CHECK_FOR_UPDATES") {
     console.log("[SW] 🔄 Checking for updates...");
     self.registration.update();
+  } else if (event.data && event.data.type === "SCHEDULE_NOTIFICATION") {
+    const { time, settings } = event.data;
+    const notificationId = `daily-quote-${time}`;
+    
+    // Clear existing notification if any
+    if (scheduledNotifications.has(notificationId)) {
+      clearTimeout(scheduledNotifications.get(notificationId));
+    }
+    
+    // Calculate delay
+    const delay = time - Date.now();
+    
+    if (delay > 0) {
+      const timer = setTimeout(async () => {
+        // Get quote from storage or fetch
+        const quote = await getTodayQuote();
+        
+        if (quote) {
+          const notificationOptions = {
+            body: `"${quote.text}" — ${quote.author}`,
+            icon: "/icon-192.png",
+            badge: "/icon-48.png",
+            tag: "daily-quote",
+            requireInteraction: false,
+            silent: !settings.sound,
+            data: {
+              quoteId: quote.id,
+              type: "daily-quote",
+            },
+          };
+          
+          await self.registration.showNotification("🌅 Daily Motivation", notificationOptions);
+          
+          // Schedule next day
+          const nextDay = new Date(time);
+          nextDay.setDate(nextDay.getDate() + 1);
+          event.ports && event.ports[0] && event.ports[0].postMessage({
+            type: "RESCHEDULE",
+            time: nextDay.getTime(),
+            settings,
+          });
+        }
+        
+        scheduledNotifications.delete(notificationId);
+      }, delay);
+      
+      scheduledNotifications.set(notificationId, timer);
+      console.log(`[SW] Scheduled notification for ${new Date(time).toLocaleString()}`);
+    }
+  } else if (event.data && event.data.type === "CLEAR_NOTIFICATION") {
+    // Clear all scheduled notifications
+    scheduledNotifications.forEach((timer) => clearTimeout(timer));
+    scheduledNotifications.clear();
+    console.log("[SW] Cleared all scheduled notifications");
   }
 });
 
