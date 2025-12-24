@@ -114,10 +114,32 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
     }
   }, [storage, notificationScheduler]);
 
-  // Show onboarding for first-time users
+  // Show onboarding ONLY for first-time users (when onboarding is not completed)
   useEffect(() => {
-    if (!onboardingLoading && storage && !onboardingCompleted) {
-      setShowOnboarding(true);
+    if (!onboardingLoading && storage) {
+      // Double-check storage to ensure onboardingCompleted is properly set
+      const checkOnboardingStatus = async () => {
+        try {
+          const completed = await storage.get('onboardingCompleted');
+          const completedAt = await storage.get('onboardingCompletedAt');
+          
+          // Only show if onboarding is NOT completed
+          if (completed !== true && !completedAt) {
+            setShowOnboarding(true);
+          } else {
+            setShowOnboarding(false);
+          }
+        } catch (error) {
+          logDebug('Error checking onboarding status:', { error });
+          // If there's an error, don't show onboarding to avoid annoying users
+          setShowOnboarding(false);
+        }
+      };
+      
+      checkOnboardingStatus();
+    } else if (onboardingCompleted) {
+      // Explicitly hide if already completed
+      setShowOnboarding(false);
     }
   }, [onboardingLoading, storage, onboardingCompleted]);
 
@@ -324,6 +346,21 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
   const handleOnboardingComplete = async (data: any) => {
     await markAsCompleted(data);
     
+    // Ensure it's saved to prevent showing again
+    if (storage) {
+      try {
+        await storage.set('onboardingCompleted', true);
+        await storage.set('onboardingCompletedAt', Date.now());
+        // Try sync version if available (for immediate persistence)
+        if ('setSync' in storage && typeof (storage as any).setSync === 'function') {
+          (storage as any).setSync('onboardingCompleted', true);
+          (storage as any).setSync('onboardingCompletedAt', Date.now());
+        }
+      } catch (error) {
+        logDebug('Error saving onboarding completion:', { error });
+      }
+    }
+    
     // Initialize notification scheduler if reminders are enabled
     if (data.reminderEnabled && notificationScheduler) {
       try {
@@ -337,13 +374,31 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
   };
 
   const handleOnboardingSkip = async () => {
-    await markAsCompleted({
+    const defaultData = {
+      theme: 'auto',
       categories: [],
       reminderEnabled: false,
       reminderTime: '09:00',
       reminderTone: 'gentle',
-    });
+    };
+    
+    await markAsCompleted(defaultData);
     setShowOnboarding(false);
+    
+    // Ensure it's saved to prevent showing again
+    if (storage) {
+      try {
+        await storage.set('onboardingCompleted', true);
+        await storage.set('onboardingCompletedAt', Date.now());
+        // Try sync version if available (for immediate persistence)
+        if ('setSync' in storage && typeof (storage as any).setSync === 'function') {
+          (storage as any).setSync('onboardingCompleted', true);
+          (storage as any).setSync('onboardingCompletedAt', Date.now());
+        }
+      } catch (error) {
+        logDebug('Error saving onboarding skip:', { error });
+      }
+    }
   };
 
   const containerClass =

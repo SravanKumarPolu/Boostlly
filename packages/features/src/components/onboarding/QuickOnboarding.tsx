@@ -57,6 +57,33 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
   const [reminderTime, setReminderTime] = useState('09:00');
   const [reminderTone, setReminderTone] = useState<ReminderTone>('gentle');
   const [startTime] = useState(Date.now());
+  const [projectTime, setProjectTime] = useState<string>('');
+
+  // Load project build time from version.json
+  useEffect(() => {
+    const loadProjectTime = async () => {
+      try {
+        const response = await fetch('/version.json');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.buildTime) {
+            const buildDate = new Date(data.buildTime);
+            const formattedDate = buildDate.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            setProjectTime(formattedDate);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load version info:', error);
+      }
+    };
+    loadProjectTime();
+  }, []);
 
   // Auto-advance welcome after 3 seconds if user doesn't interact
   useEffect(() => {
@@ -125,11 +152,19 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
       reminderTone,
     };
 
-    // Save onboarding completion
+    // Save onboarding completion - ensure it's saved properly
     try {
-      await storage?.set('onboardingCompleted', true);
-      await storage?.set('onboardingData', data);
-      await storage?.set('onboardingCompletedAt', Date.now());
+      if (storage) {
+        await storage.set('onboardingCompleted', true);
+        await storage.set('onboardingData', data);
+        await storage.set('onboardingCompletedAt', Date.now());
+        
+        // Also set sync version if available for immediate check
+        if (storage.setSync) {
+          storage.setSync('onboardingCompleted', true);
+          storage.setSync('onboardingCompletedAt', Date.now());
+        }
+      }
       
       // Save user preferences
       const existingPrefs = await storage?.get('userPreferences') || {};
@@ -171,13 +206,37 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
         <CardHeader className="text-center pb-4">
           {step === 'welcome' && (
             <>
-              <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-primary" />
+              {/* Logo */}
+              <div className="mx-auto mb-4 flex items-center justify-center relative">
+                <img 
+                  src="/boostlly-logo.png" 
+                  alt="Boostlly Logo" 
+                  className="w-24 h-24 object-contain"
+                  onError={(e) => {
+                    // Fallback to icon if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      const fallback = document.createElement('div');
+                      fallback.className = 'mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center';
+                      const icon = document.createElement('div');
+                      icon.innerHTML = '<svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>';
+                      fallback.appendChild(icon);
+                      parent.appendChild(fallback);
+                    }
+                  }}
+                />
               </div>
               <CardTitle className="text-2xl font-bold">Welcome to Boostlly!</CardTitle>
               <p className="text-muted-foreground mt-2">
                 Your daily dose of motivation in seconds
               </p>
+              {projectTime && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Updated: {projectTime}
+                </p>
+              )}
             </>
           )}
           {step === 'theme' && (
