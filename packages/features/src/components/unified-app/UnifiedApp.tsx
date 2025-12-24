@@ -6,7 +6,7 @@
  */
 
 import React, { Suspense, useEffect, useState } from 'react';
-import { ErrorBoundary } from '@boostlly/ui';
+import { ErrorBoundary, Card, CardHeader, CardTitle, CardContent, Button } from '@boostlly/ui';
 import { useAppState } from '../../hooks/useAppState';
 import { useOnboarding } from '../../hooks/useOnboarding';
 import { Navigation } from '../navigation/Navigation';
@@ -32,6 +32,7 @@ export function UnifiedApp({
   const { appState, setActiveTab } = useAppState(platformStorage);
   const { isCompleted: onboardingCompleted, isLoading: onboardingLoading, markAsCompleted } = useOnboarding(platformStorage);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPostOnboardingHint, setShowPostOnboardingHint] = useState(false);
   const [notificationScheduler, setNotificationScheduler] = useState<DailyNotificationScheduler | null>(null);
   
   // Auto-theme for daily background images - adapts colors based on background
@@ -69,6 +70,26 @@ export function UnifiedApp({
       setShowOnboarding(true);
     }
   }, [onboardingLoading, platformStorage, onboardingCompleted]);
+
+  // Show post-onboarding hint after completion
+  useEffect(() => {
+    const checkPostOnboardingHint = async () => {
+      if (onboardingCompleted && platformStorage && !showOnboarding) {
+        try {
+          const hasSeenHint = await platformStorage.get('hasSeenPostOnboardingHint');
+          if (!hasSeenHint) {
+            // Small delay to let app render first
+            setTimeout(() => {
+              setShowPostOnboardingHint(true);
+            }, 500);
+          }
+        } catch (error) {
+          console.error('Failed to check post-onboarding hint status:', error);
+        }
+      }
+    };
+    checkPostOnboardingHint();
+  }, [onboardingCompleted, platformStorage, showOnboarding]);
 
   // Handle URL parameters for PWA shortcuts
   useEffect(() => {
@@ -115,6 +136,17 @@ export function UnifiedApp({
     setShowOnboarding(false);
   };
 
+  const handleDismissPostOnboardingHint = async () => {
+    setShowPostOnboardingHint(false);
+    if (platformStorage) {
+      try {
+        await platformStorage.set('hasSeenPostOnboardingHint', true);
+      } catch (error) {
+        console.error('Failed to save post-onboarding hint status:', error);
+      }
+    }
+  };
+
   const handleOnboardingSkip = async () => {
     await markAsCompleted({
       categories: [],
@@ -141,6 +173,26 @@ export function UnifiedApp({
   return (
     <ErrorBoundary>
       <div className={`flex flex-col h-full ${variant === 'popup' ? 'min-h-0' : 'min-h-screen'} bg-background`}>
+        {/* Post-Onboarding Guidance Overlay */}
+        {showPostOnboardingHint && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+            <Card className="w-full max-w-md shadow-2xl border-2">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold">Here's your daily quote! 💫</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>• Tap the <span className="font-medium text-foreground">heart</span> to save quotes you love</p>
+                  <p>• Tap <span className="font-medium text-foreground">share</span> to spread inspiration</p>
+                  <p>• Explore other tabs to discover more features</p>
+                </div>
+                <Button onClick={handleDismissPostOnboardingHint} className="w-full" size="lg">
+                  Got it!
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
         {/* Skip to main content link for accessibility */}
         {variant === 'web' && (
           <a

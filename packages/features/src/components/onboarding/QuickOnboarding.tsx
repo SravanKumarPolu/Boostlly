@@ -12,6 +12,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@boostlly/ui';
 import { Sparkles, Check, Clock, Music, Palette, Sun, Moon, Monitor } from 'lucide-react';
+import { QuoteService, Quote } from '@boostlly/core';
 
 export type ReminderTone = 'gentle' | 'energetic' | 'calm' | 'motivational' | 'peaceful';
 
@@ -50,14 +51,46 @@ const POPULAR_CATEGORIES = [
 ] as const;
 
 export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboardingProps) {
-  const [step, setStep] = useState<'welcome' | 'theme' | 'categories' | 'reminder' | 'complete'>('welcome');
-  const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark' | 'auto'>('auto');
+  const [step, setStep] = useState<'welcome' | 'categories' | 'reminder' | 'complete'>('welcome');
+  const [selectedTheme] = useState<'light' | 'dark' | 'auto'>('auto'); // Default to auto, no selection needed
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderTime, setReminderTime] = useState('09:00');
-  const [reminderTone, setReminderTone] = useState<ReminderTone>('gentle');
+  const [reminderTime] = useState('09:00'); // Default time, can be changed in Settings
+  const [reminderTone] = useState<ReminderTone>('gentle'); // Default tone, can be changed in Settings
   const [startTime] = useState(Date.now());
   const [projectTime, setProjectTime] = useState<string>('');
+  const [previewQuote, setPreviewQuote] = useState<Quote | null>(null);
+
+  // Load preview quote to demonstrate value
+  useEffect(() => {
+    const loadPreviewQuote = () => {
+      try {
+        if (storage) {
+          const quoteService = new QuoteService(storage);
+          const quote = quoteService.getRandomQuote();
+          setPreviewQuote(quote);
+        } else {
+          // Fallback quote if storage not available
+          setPreviewQuote({
+            id: 'preview',
+            text: 'The only way to do great work is to love what you do.',
+            author: 'Steve Jobs',
+            source: 'Local',
+          } as Quote);
+        }
+      } catch (error) {
+        console.error('Failed to load preview quote:', error);
+        // Fallback quote if service fails
+        setPreviewQuote({
+          id: 'preview',
+          text: 'The only way to do great work is to love what you do.',
+          author: 'Steve Jobs',
+          source: 'Local',
+        } as Quote);
+      }
+    };
+    loadPreviewQuote();
+  }, [storage]);
 
   // Load project build time from version.json
   useEffect(() => {
@@ -85,35 +118,29 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
     loadProjectTime();
   }, []);
 
-  // Auto-advance welcome after 3 seconds if user doesn't interact
+  // Auto-advance welcome after 4 seconds if user doesn't interact (give time to see quote)
   useEffect(() => {
     if (step === 'welcome') {
       const timer = setTimeout(() => {
-        setStep('theme');
-      }, 3000);
+        setStep('categories');
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [step]);
 
-  // Apply theme immediately when selected
+  // Apply theme immediately (default to auto/system preference)
   useEffect(() => {
-    if (step === 'theme' && typeof document !== 'undefined') {
+    if (typeof document !== 'undefined') {
       const root = document.documentElement;
-      if (selectedTheme === 'dark') {
+      // Auto - follow system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
         root.classList.add('dark');
-      } else if (selectedTheme === 'light') {
-        root.classList.remove('dark');
       } else {
-        // Auto - follow system preference
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (prefersDark) {
-          root.classList.add('dark');
-        } else {
-          root.classList.remove('dark');
-        }
+        root.classList.remove('dark');
       }
     }
-  }, [selectedTheme, step]);
+  }, []);
 
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories(prev =>
@@ -125,8 +152,6 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
 
   const handleNext = () => {
     if (step === 'welcome') {
-      setStep('theme');
-    } else if (step === 'theme') {
       setStep('categories');
     } else if (step === 'categories') {
       setStep('reminder');
@@ -230,7 +255,7 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
               </div>
               <CardTitle className="text-2xl font-bold">Welcome to Boostlly!</CardTitle>
               <p className="text-muted-foreground mt-2">
-                Your daily dose of motivation in seconds
+                Get a fresh, inspiring quote every day to keep you motivated
               </p>
               {projectTime && (
                 <p className="text-xs text-muted-foreground mt-1">
@@ -239,19 +264,11 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
               )}
             </>
           )}
-          {step === 'theme' && (
-            <>
-              <CardTitle className="text-xl font-bold">Choose Your Theme</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Select your preferred appearance
-              </p>
-            </>
-          )}
           {step === 'categories' && (
             <>
               <CardTitle className="text-xl font-bold">Choose Your Categories</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Select your favorite quote categories (optional)
+                We'll show you quotes that match your interests. You can change this later in Settings.
               </p>
             </>
           )}
@@ -259,7 +276,7 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
             <>
               <CardTitle className="text-xl font-bold">Set Daily Reminder</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Get notified with your daily quote (optional)
+                Get your daily quote delivered to you. You can customize the time and tone in Settings.
               </p>
             </>
           )}
@@ -269,8 +286,19 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
           {/* Welcome Step */}
           {step === 'welcome' && (
             <div className="text-center space-y-4">
-              <p className="text-lg text-foreground">
-                Let's personalize your experience in just 20 seconds!
+              {/* Preview Quote */}
+              {previewQuote && (
+                <Card className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 mb-4">
+                  <p className="text-lg font-medium italic text-foreground mb-3">
+                    "{previewQuote.text}"
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    — {previewQuote.author}
+                  </p>
+                </Card>
+              )}
+              <p className="text-base text-foreground">
+                This is what you'll get every day. Want to personalize it?
               </p>
               <div className="flex justify-center gap-2 pt-4">
                 <Button onClick={handleNext} size="lg" className="min-w-[120px]">
@@ -279,66 +307,6 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
                 <Button onClick={handleSkip} variant="outline" size="lg" className="min-w-[120px]">
                   Skip
                 </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Theme Step */}
-          {step === 'theme' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  onClick={() => setSelectedTheme('light')}
-                  className={`
-                    p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2
-                    ${selectedTheme === 'light'
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:border-primary/50'
-                    }
-                  `}
-                >
-                  <Sun className={`w-6 h-6 ${selectedTheme === 'light' ? 'text-primary' : ''}`} />
-                  <span className="font-medium text-sm">Light</span>
-                </button>
-                <button
-                  onClick={() => setSelectedTheme('dark')}
-                  className={`
-                    p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2
-                    ${selectedTheme === 'dark'
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:border-primary/50'
-                    }
-                  `}
-                >
-                  <Moon className={`w-6 h-6 ${selectedTheme === 'dark' ? 'text-primary' : ''}`} />
-                  <span className="font-medium text-sm">Dark</span>
-                </button>
-                <button
-                  onClick={() => setSelectedTheme('auto')}
-                  className={`
-                    p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2
-                    ${selectedTheme === 'auto'
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:border-primary/50'
-                    }
-                  `}
-                >
-                  <Monitor className={`w-6 h-6 ${selectedTheme === 'auto' ? 'text-primary' : ''}`} />
-                  <span className="font-medium text-sm">System</span>
-                </button>
-              </div>
-              <div className="flex justify-between gap-2 pt-2">
-                <Button onClick={() => setStep('welcome')} variant="outline" size="sm">
-                  Back
-                </Button>
-                <div className="flex gap-2">
-                  <Button onClick={handleSkip} variant="ghost" size="sm">
-                    Skip
-                  </Button>
-                  <Button onClick={handleNext} size="sm">
-                    Next
-                  </Button>
-                </div>
               </div>
             </div>
           )}
@@ -376,7 +344,7 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
                 }
               </p>
               <div className="flex justify-between gap-2 pt-2">
-                <Button onClick={() => setStep('theme')} variant="outline" size="sm">
+                <Button onClick={() => setStep('welcome')} variant="outline" size="sm">
                   Back
                 </Button>
                 <div className="flex gap-2">
@@ -401,7 +369,7 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
                   <div>
                     <p className="font-medium">Daily Reminder</p>
                     <p className="text-xs text-muted-foreground">
-                      Get your daily quote at a time that works for you
+                      Get your daily quote delivered to you. You can customize the time and tone in Settings.
                     </p>
                   </div>
                 </div>
@@ -421,51 +389,10 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
                 </button>
               </div>
 
-              {/* Time Selection */}
               {reminderEnabled && (
-                <div className="space-y-3">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Reminder Time
-                  </label>
-                  <input
-                    type="time"
-                    value={reminderTime}
-                    onChange={(e) => setReminderTime(e.target.value)}
-                    className="w-full p-3 rounded-lg border bg-background text-foreground"
-                  />
-                </div>
-              )}
-
-              {/* Tone Selection */}
-              {reminderEnabled && (
-                <div className="space-y-3">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Music className="w-4 h-4" />
-                    Reminder Tone
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {TONE_OPTIONS.map(tone => (
-                      <button
-                        key={tone.value}
-                        onClick={() => setReminderTone(tone.value)}
-                        className={`
-                          p-3 rounded-lg border-2 transition-all text-left
-                          ${reminderTone === tone.value
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50'
-                          }
-                        `}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-lg">{tone.emoji}</span>
-                          <span className="font-medium text-sm">{tone.label}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{tone.description}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground text-center p-3 bg-muted/50 rounded-lg">
+                  💡 You can set the time and choose a tone in Settings after completing onboarding.
+                </p>
               )}
 
               <div className="flex justify-between gap-2 pt-2">
@@ -487,14 +414,14 @@ export function QuickOnboarding({ storage, onComplete, onSkip }: QuickOnboarding
           {/* Progress Indicator */}
           <div className="pt-4 border-t">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Step {step === 'welcome' ? 1 : step === 'theme' ? 2 : step === 'categories' ? 3 : 4} of 4</span>
+              <span>Step {step === 'welcome' ? 1 : step === 'categories' ? 2 : 3} of 3</span>
               <span>~{elapsedTime}s</span>
             </div>
             <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary transition-all duration-300"
                 style={{
-                  width: `${step === 'welcome' ? 25 : step === 'theme' ? 50 : step === 'categories' ? 75 : 100}%`,
+                  width: `${step === 'welcome' ? 33 : step === 'categories' ? 66 : 100}%`,
                 }}
               />
             </div>
