@@ -18,6 +18,7 @@
     "build:verify": "pnpm verify:build && pnpm build",
     "build:commit": "./scripts/build-and-commit.sh",
     "test": "pnpm --recursive run test",
+    "test:run": "pnpm --recursive run test:run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
