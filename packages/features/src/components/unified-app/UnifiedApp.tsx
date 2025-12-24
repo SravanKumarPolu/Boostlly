@@ -15,6 +15,7 @@ import { AppHeader } from './AppHeader';
 import { AppFooter } from './AppFooter';
 import { UnifiedAppProps } from './types';
 import { QuickOnboarding } from '../onboarding';
+import { useTheme } from '../../hooks/useTheme';
 import { Home, Search, FolderOpen, Settings } from 'lucide-react';
 import { createPlatformStorage } from './utils/storage-utils';
 import { useAutoTheme, QuoteService, DailyNotificationScheduler } from '@boostlly/core';
@@ -34,6 +35,9 @@ export function UnifiedApp({
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPostOnboardingHint, setShowPostOnboardingHint] = useState(false);
   const [notificationScheduler, setNotificationScheduler] = useState<DailyNotificationScheduler | null>(null);
+  
+  // Theme management - applies theme to document root
+  const { theme, setTheme } = useTheme(platformStorage);
   
   // Auto-theme for daily background images - adapts colors based on background
   const { palette } = useAutoTheme();
@@ -123,6 +127,11 @@ export function UnifiedApp({
 
   const handleOnboardingComplete = async (data: any) => {
     await markAsCompleted(data);
+    
+    // Apply theme from onboarding data
+    if (data.theme && setTheme) {
+      setTheme(data.theme);
+    }
     
     // Initialize notification scheduler if reminders are enabled
     if (data.reminderEnabled && notificationScheduler) {

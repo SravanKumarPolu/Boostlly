@@ -45,6 +45,7 @@ import { generateId } from "./utils/quote-actions";
 import { Variant, SavedQuote, StorageLike, NavigationTab } from "./types";
 import { QuickOnboarding } from "../onboarding";
 import { useOnboarding } from "../../hooks/useOnboarding";
+import { useTheme } from "../../hooks/useTheme";
 import { QuoteService, DailyNotificationScheduler } from "@boostlly/core";
 
 interface UnifiedAppProps {
@@ -63,6 +64,9 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
   // Onboarding state
   const { isCompleted: onboardingCompleted, isLoading: onboardingLoading, markAsCompleted } = useOnboarding(storage);
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Theme management - applies theme to document root
+  const { theme, setTheme } = useTheme(storage);
 
   // Auto-theme functionality for Picsum backgrounds
   const { loadTodayImage, imageUrl, isLoading, error, palette } =
@@ -345,6 +349,11 @@ export function UnifiedApp({ variant = "web" }: UnifiedAppProps) {
   // Handle onboarding completion
   const handleOnboardingComplete = async (data: any) => {
     await markAsCompleted(data);
+    
+    // Apply theme from onboarding data
+    if (data.theme && setTheme) {
+      setTheme(data.theme);
+    }
     
     // Ensure it's saved to prevent showing again
     if (storage) {

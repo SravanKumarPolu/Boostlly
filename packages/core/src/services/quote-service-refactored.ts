@@ -115,6 +115,7 @@ export class QuoteServiceRefactored extends BaseService {
 
   /**
    * Get today's quote with improved caching and error handling
+   * Ensures saved/liked quotes do not influence today's quote.
    */
   async getTodayQuote(): Promise<Quote> {
     await this.ensureInitialized();
@@ -139,7 +140,7 @@ export class QuoteServiceRefactored extends BaseService {
         try {
           const quote = await this.fetchQuoteFromProvider(todaysProvider);
           if (quote) {
-            return quote;
+            return this.filterSavedLikedQuotes(quote);
           }
         } catch (error) {
           logWarning(`Primary provider ${todaysProvider} failed`, {
@@ -155,7 +156,7 @@ export class QuoteServiceRefactored extends BaseService {
               logDebug(`Fallback provider ${provider} succeeded`, {
                 provider,
               });
-              return quote;
+              return this.filterSavedLikedQuotes(quote);
             }
           } catch (error) {
             logWarning(`Fallback provider ${provider} failed`, {
@@ -168,7 +169,7 @@ export class QuoteServiceRefactored extends BaseService {
         logWarning("All providers failed, returning fallback quote", {
           providers: [todaysProvider, ...fallbackChain],
         });
-        return getRandomFallbackQuote();
+        return this.filterSavedLikedQuotes(getRandomFallbackQuote());
       },
       {
         useCache: this.quoteConfig.cacheEnabled,
@@ -181,6 +182,21 @@ export class QuoteServiceRefactored extends BaseService {
       }
       throw new Error(response.error || 'Failed to fetch today quote');
     });
+  }
+
+  /**
+   * Filters out saved or liked quotes to ensure they do not influence today's quote.
+   */
+  private filterSavedLikedQuotes(quote: Quote): Quote {
+    const savedQuotes = this.storage.getSync<Quote[]>("savedQuotes") || [];
+    const isSaved = savedQuotes.some(savedQuote => savedQuote.id === quote.id);
+
+    if (isSaved) {
+      logDebug("Filtered out saved quote from today's quote", { quote });
+      return getRandomFallbackQuote();
+    }
+
+    return quote;
   }
 
   /**

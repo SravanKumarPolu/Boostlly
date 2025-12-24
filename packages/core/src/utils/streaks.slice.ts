@@ -20,6 +20,7 @@ export interface Streak {
   longest: number;
   lastSeen: number | null;
   startDate: number | null;
+  gracePeriodUsed?: boolean; // Track if grace period was used this cycle
 }
 
 export interface StreaksSlice {
@@ -99,7 +100,12 @@ const createStreak = (): Streak => ({
   longest: 0,
   lastSeen: null,
   startDate: null,
+  gracePeriodUsed: false,
 });
+
+// Grace period: Allow missing 1 day without breaking streak
+const GRACE_PERIOD_MS = 2 * 24 * 60 * 60 * 1000; // 2 days (gentle reset)
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export const createStreaksSlice: StateCreator<StreaksSlice> = (set, get) => ({
   streaks: {
@@ -120,15 +126,31 @@ export const createStreaksSlice: StateCreator<StreaksSlice> = (set, get) => ({
       let newStreak = { ...streak };
 
       if (!lastSeen || today > lastSeen) {
-        if (lastSeen && today - lastSeen === 86400000) {
-          // Consecutive day
-          newStreak.current += 1;
-          newStreak.longest = Math.max(newStreak.current, newStreak.longest);
-        } else if (!lastSeen || today - lastSeen > 86400000) {
-          // New streak or broken streak
+        const daysSinceLastSeen = lastSeen ? (today - lastSeen) : null;
+        
+        if (!lastSeen) {
+          // First time - start streak
           newStreak.current = 1;
           newStreak.startDate = today;
+          newStreak.gracePeriodUsed = false;
+        } else if (daysSinceLastSeen === ONE_DAY_MS) {
+          // Consecutive day - continue streak
+          newStreak.current += 1;
+          newStreak.longest = Math.max(newStreak.current, newStreak.longest);
+          newStreak.gracePeriodUsed = false; // Reset grace period on consecutive day
+        } else if (daysSinceLastSeen === 2 * ONE_DAY_MS && !streak.gracePeriodUsed) {
+          // Missed one day but grace period available - continue streak
+          newStreak.current += 1;
+          newStreak.longest = Math.max(newStreak.current, newStreak.longest);
+          newStreak.gracePeriodUsed = true; // Mark grace period as used
+        } else if (daysSinceLastSeen && daysSinceLastSeen > GRACE_PERIOD_MS) {
+          // Missed more than grace period allows - gentle reset (don't punish)
+          newStreak.current = 1;
+          newStreak.startDate = today;
+          newStreak.gracePeriodUsed = false;
         }
+        // If daysSinceLastSeen is exactly 2 days and grace period already used,
+        // or between 1-2 days but not exactly 2, continue without incrementing (gap day)
 
         newStreak.lastSeen = date;
       }
@@ -149,12 +171,24 @@ export const createStreaksSlice: StateCreator<StreaksSlice> = (set, get) => ({
       let newStreak = { ...streak };
 
       if (!lastSeen || today > lastSeen) {
-        if (lastSeen && today - lastSeen === 86400000) {
-          newStreak.current += 1;
-          newStreak.longest = Math.max(newStreak.current, newStreak.longest);
-        } else if (!lastSeen || today - lastSeen > 86400000) {
+        const daysSinceLastSeen = lastSeen ? (today - lastSeen) : null;
+        
+        if (!lastSeen) {
           newStreak.current = 1;
           newStreak.startDate = today;
+          newStreak.gracePeriodUsed = false;
+        } else if (daysSinceLastSeen === ONE_DAY_MS) {
+          newStreak.current += 1;
+          newStreak.longest = Math.max(newStreak.current, newStreak.longest);
+          newStreak.gracePeriodUsed = false;
+        } else if (daysSinceLastSeen === 2 * ONE_DAY_MS && !streak.gracePeriodUsed) {
+          newStreak.current += 1;
+          newStreak.longest = Math.max(newStreak.current, newStreak.longest);
+          newStreak.gracePeriodUsed = true;
+        } else if (daysSinceLastSeen && daysSinceLastSeen > GRACE_PERIOD_MS) {
+          newStreak.current = 1;
+          newStreak.startDate = today;
+          newStreak.gracePeriodUsed = false;
         }
 
         newStreak.lastSeen = date;
@@ -176,12 +210,24 @@ export const createStreaksSlice: StateCreator<StreaksSlice> = (set, get) => ({
       let newStreak = { ...streak };
 
       if (!lastSeen || today > lastSeen) {
-        if (lastSeen && today - lastSeen === 86400000) {
-          newStreak.current += 1;
-          newStreak.longest = Math.max(newStreak.current, newStreak.longest);
-        } else if (!lastSeen || today - lastSeen > 86400000) {
+        const daysSinceLastSeen = lastSeen ? (today - lastSeen) : null;
+        
+        if (!lastSeen) {
           newStreak.current = 1;
           newStreak.startDate = today;
+          newStreak.gracePeriodUsed = false;
+        } else if (daysSinceLastSeen === ONE_DAY_MS) {
+          newStreak.current += 1;
+          newStreak.longest = Math.max(newStreak.current, newStreak.longest);
+          newStreak.gracePeriodUsed = false;
+        } else if (daysSinceLastSeen === 2 * ONE_DAY_MS && !streak.gracePeriodUsed) {
+          newStreak.current += 1;
+          newStreak.longest = Math.max(newStreak.current, newStreak.longest);
+          newStreak.gracePeriodUsed = true;
+        } else if (daysSinceLastSeen && daysSinceLastSeen > GRACE_PERIOD_MS) {
+          newStreak.current = 1;
+          newStreak.startDate = today;
+          newStreak.gracePeriodUsed = false;
         }
 
         newStreak.lastSeen = date;

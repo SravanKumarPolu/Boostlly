@@ -379,12 +379,14 @@ export const ServiceWorkerManager: React.FC = () => {
         </div>
       )}
 
-      {/* Offline Indicator */}
+      {/* Offline Indicator - Subtle */}
       {!swState.isOnline && (
-        <div className="fixed top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 z-50">
-          <span className="text-sm">
-            📡 You&apos;re offline - Some features may be limited
-          </span>
+        <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+          <div className="bg-background/95 backdrop-blur-sm border-b border-border/50 text-center py-1.5 px-4 shadow-sm">
+            <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Offline • using local quotes
+            </span>
+          </div>
         </div>
       )}
     </>

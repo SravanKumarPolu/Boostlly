@@ -384,26 +384,16 @@ export class QuoteService extends BaseService {
       this.quotes = fallbackQuotes.length > 0 ? fallbackQuotes : [getRandomFallbackQuote(undefined, this.storage)];
     }
 
-    // Include custom saved quotes from storage
-    // Merge shipped/local quotes with cached API enrichment pool
+    // CRITICAL: Do NOT include saved quotes in daily quote pool
+    // Saved quotes should only appear in Saved/Collections tabs, not as Today's quote
+    // Merge shipped/local quotes with cached API enrichment pool only
     let allQuotes = [...this.quotes, ...this.cacheManager.getCachedApiQuotes()];
-    try {
-      const savedQuotes = this.storage.getSync("savedQuotes");
-      if (Array.isArray(savedQuotes) && savedQuotes.length > 0) {
-        // Add custom quotes to the pool
-        allQuotes = [...allQuotes, ...savedQuotes];
-      }
-    } catch (error) {
-      // If we can't get saved quotes, just use default quotes
-      logDebug("Could not load saved quotes for daily quote", { error });
-    }
     
     // IMPROVED: If pool is very small, try to enrich it asynchronously
     if (allQuotes.length <= 5) {
       logWarning(`Small quote pool detected: ${allQuotes.length} quotes available`, {
         localQuotes: this.quotes.length,
         cachedApiQuotes: this.cacheManager.getCachedApiQuotes().length,
-        savedQuotes: (this.storage.getSync("savedQuotes") || []).length,
         suggestion: "Attempting to enrich pool in background...",
       });
       

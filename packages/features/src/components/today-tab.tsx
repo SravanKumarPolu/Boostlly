@@ -25,6 +25,8 @@ import {
   Sparkles,
   Image,
   Volume2,
+  VolumeX,
+  Pause,
 } from "lucide-react";
 import { QuoteImageCustomizer } from "./quote-image-customizer";
 import {
@@ -88,6 +90,9 @@ export const TodayTab = forwardRef<
     // Account for the dark overlays applied over background images
     // Mobile has stronger overlays (black/60-70%), desktop has lighter (background/30-50%)
     const [isMobile, setIsMobile] = useState(false);
+    
+    // TTS speaking state tracking
+    const [isSpeaking, setIsSpeaking] = useState(false);
     
     // Detect mobile on mount and window resize
     useEffect(() => {
@@ -782,6 +787,13 @@ export const TodayTab = forwardRef<
     };
 
     const handleSpeak = async () => {
+      // If already speaking, stop speech
+      if (isSpeaking || accessibleTTS.isCurrentlySpeaking()) {
+        accessibleTTS.stop();
+        setIsSpeaking(false);
+        return;
+      }
+
       // Track read button click
       if (storage) {
         try {
@@ -825,6 +837,9 @@ export const TodayTab = forwardRef<
 
         if (enabled === false) return;
 
+        // Set speaking state to true
+        setIsSpeaking(true);
+
         // Use the accessible TTS utility with improved settings
         // Now async - waits for voices to be ready before speaking
         await accessibleTTS.speak(`"${quote.text}" by ${quote.author}`, {
@@ -834,8 +849,15 @@ export const TodayTab = forwardRef<
             Math.min(1, (typeof volumePct === "number" ? volumePct : 90) / 100),
           ),
           pitch: 1.0, // Neutral pitch for clarity
+          onStart: () => {
+            setIsSpeaking(true);
+          },
+          onEnd: () => {
+            setIsSpeaking(false);
+          },
           onError: (error) => {
             console.error("Failed to speak quote:", error);
+            setIsSpeaking(false);
             announceToScreenReader(
               "Failed to start speech synthesis",
               "assertive",
@@ -844,9 +866,22 @@ export const TodayTab = forwardRef<
         });
       } catch (e) {
         console.error("Failed to speak quote:", e);
+        setIsSpeaking(false);
         announceToScreenReader("Failed to start speech synthesis", "assertive");
       }
     };
+
+    // Check speaking state periodically to sync with TTS instance
+    useEffect(() => {
+      const interval = setInterval(() => {
+        const currentlySpeaking = accessibleTTS.isCurrentlySpeaking();
+        if (currentlySpeaking !== isSpeaking) {
+          setIsSpeaking(currentlySpeaking);
+        }
+      }, 100);
+
+      return () => clearInterval(interval);
+    }, [isSpeaking]);
 
     // Expose methods to parent component
     useImperativeHandle(ref, () => ({
@@ -1160,12 +1195,12 @@ export const TodayTab = forwardRef<
                   applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor);
                 }
               }}
-              aria-label={isLiked ? "Unlike this quote" : "Like this quote"}
+              aria-label={isLiked ? "Unlike this quote" : "Like this quote (quick reaction)"}
               aria-pressed={isLiked}
               title={
                 isLiked
                   ? "Remove like from this quote"
-                  : "Add like to this quote"
+                  : "Like this quote (quick reaction)"
               }
             >
               <Heart
@@ -1212,13 +1247,13 @@ export const TodayTab = forwardRef<
               aria-label={
                 isSaved
                   ? "Remove quote from saved quotes"
-                  : "Save quote to favorites"
+                  : "Save quote to collection"
               }
               aria-pressed={isSaved}
               title={
                 isSaved
                   ? "Remove this quote from your saved quotes"
-                  : "Save this quote to your favorites"
+                  : "Save this quote to collection"
               }
             >
               <ThumbsUp
@@ -1266,14 +1301,26 @@ export const TodayTab = forwardRef<
               onMouseLeave={(e) => applyButtonHover(e.currentTarget, adaptiveBgColor, adaptiveBorderColor)}
               onMouseDown={(e) => applyButtonHover(e.currentTarget, adaptiveActiveBgColor, adaptiveActiveBorderColor)}
               onMouseUp={(e) => applyButtonHover(e.currentTarget, adaptiveHoverBgColor, adaptiveHoverBorderColor)}
-              aria-label="Speak quote aloud using text-to-speech"
+              aria-label={isSpeaking ? "Stop speaking" : "Speak quote aloud using text-to-speech"}
               aria-describedby="tts-description"
-              title="Listen to this quote using text-to-speech"
+              aria-pressed={isSpeaking}
+              title={isSpeaking ? "Stop speaking" : "Listen to this quote using text-to-speech"}
             >
-              <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-              <span className="font-medium">Read</span>
+              {isSpeaking ? (
+                <>
+                  <Pause className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+                  <span className="font-medium">Pause</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+                  <span className="font-medium">Read</span>
+                </>
+              )}
               <span id="tts-description" className="sr-only">
-                Click to hear this quote read aloud using text-to-speech
+                {isSpeaking 
+                  ? "Click to stop speaking" 
+                  : "Click to hear this quote read aloud using text-to-speech"}
               </span>
             </button>
 

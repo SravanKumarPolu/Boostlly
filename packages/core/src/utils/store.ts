@@ -108,8 +108,9 @@ export const useLongestStreak = () =>
   useSafeStore((state) => state.streaks.reading.longest);
 export const useBadges = () => useSafeStore((state) => state.streaks.badges);
 
-export const useTheme = () => useSafeStore((state) => state.settings.theme);
+export const useThemeValue = () => useSafeStore((state) => state.settings.theme);
 // Dynamic theme removed
+// Note: For applying theme to document root, use useTheme from @boostlly/features
 export const useNotifications = () =>
   useSafeStore((state) => state.settings.notifications);
 export const useSoundSettings = () =>
