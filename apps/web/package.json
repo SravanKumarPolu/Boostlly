@@ -27,9 +27,9 @@
     "fuse.js": "^7.1.0",
     "howler": "^2.2.4",
     "html2canvas": "^1.4.1",
-    "lucide-react": "^0.294.0",
-    "next": "^14.0.0",
-    "react": "^18.2.0",
+    "lucide-react": "^0.562.0",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
     "react-dom": "^18.2.0",
     "recharts": "^2.8.0",
     "tailwind-merge": "^2.0.0"
