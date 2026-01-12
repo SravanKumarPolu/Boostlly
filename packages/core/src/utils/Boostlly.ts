@@ -5,7 +5,7 @@
  * When any API fails, providers will use quotes from this centralized source.
  * 
  * IMPROVED FEATURES:
- * ✅ 253+ high-quality quotes organized by category
+ * ✅ 220+ high-quality quotes organized by category (all duplicates removed)
  * ✅ 7-day repetition avoidance (when storage available)
  * ✅ Time-based variety (different quotes for different times of day)
  * ✅ Category filtering with smart fallback
@@ -27,24 +27,32 @@ import { Quote } from "../types";
 import { getDateKey } from "./date-utils";
 
 /**
+ * Storage interface for quote history tracking
+ */
+type StorageLike = {
+  getSync?: (key: string) => any;
+  setSync?: (key: string, value: any) => void;
+};
+
+/**
  * Global storage reference for quote history tracking
  * This allows providers (which don't have storage) to still track history
  * Set by QuoteService when it initializes
  */
-let globalStorageRef: any = null;
+let globalStorageRef: StorageLike | null = null;
 
 /**
  * Set global storage reference for quote history tracking
  * Called by QuoteService during initialization
  */
-export function setGlobalStorageRef(storage: any): void {
+export function setGlobalStorageRef(storage: StorageLike | null): void {
   globalStorageRef = storage;
 }
 
 /**
  * Get global storage reference
  */
-export function getGlobalStorageRef(): any {
+export function getGlobalStorageRef(): StorageLike | null {
   return globalStorageRef;
 }
 
@@ -879,14 +887,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     source: "Boostlly",
   },
   {
-    id: "boostlly-motivation-13",
-    text: "The way to get started is to quit talking and begin doing.",
-    author: "Walt Disney",
-    category: "💪 Motivation",
-    tags: ["motivation", "action", "doing", "start"],
-    source: "Boostlly",
-  },
-  {
     id: "boostlly-motivation-14",
     text: "Innovation distinguishes between a leader and a follower.",
     author: "Steve Jobs",
@@ -919,27 +919,11 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     source: "Boostlly",
   },
   {
-    id: "boostlly-success-3",
-    text: "Success is walking from failure to failure with no loss of enthusiasm.",
-    author: "Winston Churchill",
-    category: "🏆 Success",
-    tags: ["success", "failure", "enthusiasm", "perseverance"],
-    source: "Boostlly",
-  },
-  {
     id: "boostlly-success-4",
     text: "The secret to success is to know something nobody else knows.",
     author: "Aristotle Onassis",
     category: "🏆 Success",
     tags: ["success", "secret", "knowledge", "unique"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-success-5",
-    text: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-    author: "Winston Churchill",
-    category: "🏆 Success",
-    tags: ["success", "failure", "courage", "continue"],
     source: "Boostlly",
   },
 
@@ -958,14 +942,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     author: "Leo Buscaglia",
     category: "🌱 Growth",
     tags: ["growth", "change", "learning", "transformation"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-growth-11",
-    text: "Live as if you were to die tomorrow. Learn as if you were to live forever.",
-    author: "Mahatma Gandhi",
-    category: "🌱 Growth",
-    tags: ["growth", "living", "learning", "present"],
     source: "Boostlly",
   },
   {
@@ -1173,14 +1149,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     source: "Boostlly",
   },
   {
-    id: "boostlly-confidence-12",
-    text: "Believe you can and you're halfway there.",
-    author: "Theodore Roosevelt",
-    category: "💪 Confidence",
-    tags: ["confidence", "believe", "halfway", "there"],
-    source: "Boostlly",
-  },
-  {
     id: "boostlly-confidence-13",
     text: "No one can make you feel inferior without your consent.",
     author: "Eleanor Roosevelt",
@@ -1334,14 +1302,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     author: "Earl Nightingale",
     category: "🎯 Focus",
     tags: ["focus", "success", "progressive", "realization"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-focus-15",
-    text: "The only impossible journey is the one you never begin.",
-    author: "Tony Robbins",
-    category: "🎯 Focus",
-    tags: ["focus", "impossible", "journey", "begin"],
     source: "Boostlly",
   },
   {
@@ -1519,14 +1479,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
 
   // Additional 🔥 Inspiration & Resilience
   {
-    id: "boostlly-inspiration-2",
-    text: "The future belongs to those who believe in the beauty of their dreams.",
-    author: "Eleanor Roosevelt",
-    category: "🔥 Inspiration",
-    tags: ["inspiration", "future", "believe", "dreams"],
-    source: "Boostlly",
-  },
-  {
     id: "boostlly-inspiration-3",
     text: "You are never too old to set another goal or to dream a new dream.",
     author: "C.S. Lewis",
@@ -1535,27 +1487,11 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     source: "Boostlly",
   },
   {
-    id: "boostlly-inspiration-4",
-    text: "The only impossible journey is the one you never begin.",
-    author: "Tony Robbins",
-    category: "🔥 Inspiration",
-    tags: ["inspiration", "impossible", "journey", "begin"],
-    source: "Boostlly",
-  },
-  {
     id: "boostlly-inspiration-5",
     text: "Don't be pushed around by the fears in your mind. Be led by the dreams in your heart.",
     author: "Roy T. Bennett",
     category: "🔥 Inspiration",
     tags: ["inspiration", "fears", "mind", "dreams"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-inspiration-6",
-    text: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-    author: "Winston Churchill",
-    category: "🔥 Inspiration",
-    tags: ["inspiration", "success", "failure", "courage"],
     source: "Boostlly",
   },
   {
@@ -1617,14 +1553,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     source: "Boostlly",
   },
   {
-    id: "boostlly-motivation-18",
-    text: "Great things never come from comfort zones.",
-    author: "Anonymous",
-    category: "💪 Motivation",
-    tags: ["motivation", "comfort-zone", "greatness", "challenge"],
-    source: "Boostlly",
-  },
-  {
     id: "boostlly-motivation-19",
     text: "Dream it. Wish it. Do it.",
     author: "Anonymous",
@@ -1641,27 +1569,11 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     source: "Boostlly",
   },
   {
-    id: "boostlly-motivation-21",
-    text: "The harder you work for something, the greater you'll feel when you achieve it.",
-    author: "Anonymous",
-    category: "💪 Motivation",
-    tags: ["motivation", "work", "achievement", "satisfaction"],
-    source: "Boostlly",
-  },
-  {
     id: "boostlly-motivation-22",
     text: "Dream bigger. Do bigger.",
     author: "Anonymous",
     category: "💪 Motivation",
     tags: ["motivation", "dreams", "action", "ambition"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-motivation-23",
-    text: "Don't stop when you're tired. Stop when you're done.",
-    author: "Anonymous",
-    category: "💪 Motivation",
-    tags: ["motivation", "perseverance", "completion", "effort"],
     source: "Boostlly",
   },
   {
@@ -1739,27 +1651,11 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     source: "Boostlly",
   },
   {
-    id: "boostlly-wisdom-17",
-    text: "The future belongs to those who believe in the beauty of their dreams.",
-    author: "Eleanor Roosevelt",
-    category: "🧠 Wisdom",
-    tags: ["wisdom", "future", "dreams", "belief"],
-    source: "Boostlly",
-  },
-  {
     id: "boostlly-wisdom-18",
     text: "It is during our darkest moments that we must focus to see the light.",
     author: "Aristotle",
     category: "🧠 Wisdom",
     tags: ["wisdom", "darkness", "light", "focus"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-wisdom-19",
-    text: "The way to get started is to quit talking and begin doing.",
-    author: "Walt Disney",
-    category: "🧠 Wisdom",
-    tags: ["wisdom", "action", "doing", "start"],
     source: "Boostlly",
   },
   {
@@ -1810,14 +1706,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     author: "Helen Hayes",
     category: "🌱 Growth",
     tags: ["growth", "expert", "beginner", "learning"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-growth-15",
-    text: "Don't be afraid to give up the good to go for the great.",
-    author: "John D. Rockefeller",
-    category: "🌱 Growth",
-    tags: ["growth", "good", "great", "ambition"],
     source: "Boostlly",
   },
   {
@@ -1887,46 +1775,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
 
   // Additional 💭 Mindset & Positivity (10 new quotes)
   {
-    id: "boostlly-mindset-14",
-    text: "Keep your face always toward the sunshine—and shadows will fall behind you.",
-    author: "Walt Whitman",
-    category: "💭 Mindset",
-    tags: ["mindset", "sunshine", "shadows", "optimism"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-mindset-15",
-    text: "You are never too old to set another goal or to dream a new dream.",
-    author: "C.S. Lewis",
-    category: "💭 Mindset",
-    tags: ["mindset", "age", "goals", "dreams"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-mindset-16",
-    text: "Believe you can and you're halfway there.",
-    author: "Theodore Roosevelt",
-    category: "💭 Mindset",
-    tags: ["mindset", "belief", "halfway", "confidence"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-mindset-17",
-    text: "When you have a dream, you've got to grab it and never let go.",
-    author: "Carol Burnett",
-    category: "💭 Mindset",
-    tags: ["mindset", "dreams", "grab", "persistence"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-mindset-18",
-    text: "Nothing is impossible, the word itself says 'I'm possible'!",
-    author: "Audrey Hepburn",
-    category: "💭 Mindset",
-    tags: ["mindset", "impossible", "possible", "belief"],
-    source: "Boostlly",
-  },
-  {
     id: "boostlly-mindset-19",
     text: "There is nothing impossible to they who will try.",
     author: "Alexander the Great",
@@ -1969,78 +1817,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
 
   // Additional 💪 Courage & Confidence (10 new quotes)
   {
-    id: "boostlly-courage-14",
-    text: "You have been assigned this mountain to show others it can be moved.",
-    author: "Mel Robbins",
-    category: "💪 Courage",
-    tags: ["courage", "mountain", "assigned", "show"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-courage-15",
-    text: "Courage is not the absence of fear, but action in spite of it.",
-    author: "Mark Twain",
-    category: "💪 Courage",
-    tags: ["courage", "fear", "action", "spite"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-courage-16",
-    text: "The brave man is not he who does not feel afraid, but he who conquers that fear.",
-    author: "Nelson Mandela",
-    category: "💪 Courage",
-    tags: ["courage", "brave", "afraid", "conquers"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-courage-17",
-    text: "I learned that courage was not the absence of fear, but the triumph over it.",
-    author: "Nelson Mandela",
-    category: "💪 Courage",
-    tags: ["courage", "fear", "triumph", "overcome"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-courage-18",
-    text: "You are braver than you believe, stronger than you seem, and smarter than you think.",
-    author: "A.A. Milne",
-    category: "💪 Confidence",
-    tags: ["confidence", "brave", "strong", "smart"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-courage-19",
-    text: "Confidence comes not from always being right but from not fearing to be wrong.",
-    author: "Peter T. McIntyre",
-    category: "💪 Confidence",
-    tags: ["confidence", "right", "wrong", "fear"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-courage-20",
-    text: "The way to develop self-confidence is to do the thing you fear and get a record of successful experiences behind you.",
-    author: "William Jennings Bryan",
-    category: "💪 Confidence",
-    tags: ["confidence", "fear", "successful", "experiences"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-courage-21",
-    text: "No one can make you feel inferior without your consent.",
-    author: "Eleanor Roosevelt",
-    category: "💪 Confidence",
-    tags: ["confidence", "inferior", "consent", "power"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-courage-22",
-    text: "You have power over your mind - not outside events. Realize this, and you will find strength.",
-    author: "Marcus Aurelius",
-    category: "💪 Courage",
-    tags: ["courage", "power", "mind", "strength"],
-    source: "Boostlly",
-  },
-  {
     id: "boostlly-courage-23",
     text: "The only way to deal with an unfree world is to become so absolutely free that your very existence is an act of rebellion.",
     author: "Albert Camus",
@@ -2050,30 +1826,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
   },
 
   // Additional 🌈 Life & Purpose (10 new quotes)
-  {
-    id: "boostlly-life-17",
-    text: "The purpose of our lives is to be happy.",
-    author: "Dalai Lama",
-    category: "🌈 Life",
-    tags: ["life", "purpose", "happy", "lives"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-life-18",
-    text: "Life is what happens to you while you're busy making other plans.",
-    author: "John Lennon",
-    category: "🌈 Life",
-    tags: ["life", "happens", "busy", "plans"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-life-19",
-    text: "You only live once, but if you do it right, once is enough.",
-    author: "Mae West",
-    category: "🌈 Life",
-    tags: ["life", "once", "right", "enough"],
-    source: "Boostlly",
-  },
   {
     id: "boostlly-life-20",
     text: "Many of life's failures are people who did not realize how close they were to success when they gave up.",
@@ -2104,14 +1856,6 @@ export const BOOSTLLY_FALLBACK_QUOTES: Quote[] = [
     author: "Will Smith",
     category: "🌈 Life",
     tags: ["life", "money", "success", "amplify"],
-    source: "Boostlly",
-  },
-  {
-    id: "boostlly-life-24",
-    text: "Your time is limited, so don't waste it living someone else's life.",
-    author: "Steve Jobs",
-    category: "🌈 Life",
-    tags: ["life", "time", "limited", "waste"],
     source: "Boostlly",
   },
   {
@@ -2173,222 +1917,222 @@ const CATEGORY_ALIASES: Record<string, string> = {
   "faith": "✨ Faith",
   "hope": "✨ Hope",
   "general": "🌟 General",
-  "motivation & success": "💪 Motivation & Success",
-  "growth & learning": "🌱 Growth & Learning",
-  "mindset & positivity": "💭 Mindset & Positivity",
-  "courage & confidence": "💪 Courage & Confidence",
-  "peace & simplicity": "☁️ Peace & Simplicity",
-  "discipline & focus": "🎯 Discipline & Focus",
-  "love & kindness": "💖 Love & Kindness",
-  "life & purpose": "🌈 Life & Purpose",
-  "inspiration & resilience": "🔥 Inspiration & Resilience",
-  "leadership & vision": "🎖️ Leadership & Vision",
-  "creativity & innovation": "🎨 Creativity & Innovation",
-  "gratitude & mindfulness": "🙏 Gratitude & Mindfulness",
-  "change & adaptability": "🔄 Change & Adaptability",
-  "faith & hope": "✨ Faith & Hope"
 };
+
+/**
+ * Category groups for combined category matching
+ * Maps combined category names to arrays of actual categories
+ */
+const CATEGORY_GROUPS: Record<string, string[]> = {
+  "motivation & success": ["💪 Motivation", "🏆 Success"],
+  "growth & learning": ["🌱 Growth", "🌱 Learning"],
+  "mindset & positivity": ["💭 Mindset", "💭 Positivity"],
+  "courage & confidence": ["💪 Courage", "💪 Confidence"],
+  "peace & simplicity": ["☁️ Peace", "☁️ Simplicity"],
+  "discipline & focus": ["🎯 Discipline", "🎯 Focus"],
+  "love & kindness": ["💖 Love", "💖 Kindness"],
+  "life & purpose": ["🌈 Life", "🌈 Purpose"],
+  "inspiration & resilience": ["🔥 Inspiration", "🔥 Resilience"],
+};
+
+/**
+ * Helper functions for safe quote selection
+ */
+function safeArray<T>(arr: T[] | undefined | null): T[] {
+  return Array.isArray(arr) ? arr : [];
+}
+
+function normalizeCategory(input?: string): string | null {
+  if (!input) return null;
+  const key = input.trim().toLowerCase();
+  return CATEGORY_ALIASES[key] || input.trim();
+}
+
+function getTodayKeyLocal(date: Date): string {
+  return getDateKey(date, "local");
+}
+
+function dateMinusDaysKey(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return getTodayKeyLocal(d);
+}
+
+function isWithinRange(dateStr: string, start: string, end: string): boolean {
+  const s = String(dateStr || "").trim();
+  return s >= start && s <= end; // works only if YYYY-MM-DD
+}
+
+/**
+ * Simple deterministic PRNG (Mulberry32)
+ */
+function mulberry32(seed: number) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Deterministic shuffle (Fisher-Yates)
+ */
+function seededShuffle<T>(items: T[], seed: number): T[] {
+  const a = items.slice();
+  const rnd = mulberry32(seed);
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const HISTORY_KEY = "quoteHistoryV2"; // new key to avoid breaking older installs
+const HISTORY_DAYS = 7;
 
 /**
  * Get a random fallback quote from the centralized collection
  * 
  * IMPROVED VERSION with:
  * - 7-day repetition avoidance (if storage available)
- * - Better variety with time-based selection
+ * - Better variety with deterministic seeded shuffle
  * - Automatic fallback to all quotes if category filter fails
- * - Always returns a valid quote
+ * - Always returns a valid quote (never crashes)
  * - Better source naming ("Local" instead of "Boostlly")
+ * - Compact history storage (uses IDs instead of full objects)
  * 
  * @param category - Optional category filter (supports both old and new category names)
  * @param storage - Optional storage service for tracking quote history (prevents repetition)
  * @returns Random quote from the fallback collection with source: "Local"
  */
-export function getRandomFallbackQuote(category?: string, storage?: any): Quote {
-  let availableQuotes = BOOSTLLY_FALLBACK_QUOTES;
-  
-  // Map old category names to new emoji categories
+export function getRandomFallbackQuote(category?: string, storage?: StorageLike): Quote {
+  const all = safeArray(BOOSTLLY_FALLBACK_QUOTES);
+
+  // Hard fallback if somehow empty
+  if (all.length === 0) {
+    return {
+      id: "local-fallback-1",
+      text: "Keep going. One step at a time.",
+      author: "Local",
+      category: "🌟 General",
+      source: "Local",
+    };
+  }
+
+  // Filter by category OR tags
+  let pool = all;
   if (category) {
-    const mappedCategory = CATEGORY_ALIASES[category.toLowerCase()] || category;
-    
-    availableQuotes = BOOSTLLY_FALLBACK_QUOTES.filter(
-      quote => quote.category === mappedCategory || 
-      quote.tags?.includes(category.toLowerCase())
-    );
-  }
-  
+    const normalized = normalizeCategory(category);
+    if (normalized) {
+      const needle = normalized.toLowerCase();
+      // Check if it's a category group (combined categories)
+      const group = CATEGORY_GROUPS[category.toLowerCase()];
+      if (group) {
+        // Match any category in the group
+        pool = all.filter((q) => {
+          const catMatch = group.some((cat) => (q.category || "").toLowerCase() === cat.toLowerCase());
+          const tagMatch = q.tags?.some((t) => t.toLowerCase() === needle) || false;
+          return catMatch || tagMatch;
+        });
+      } else {
+        // Single category match
+        pool = all.filter((q) => {
+          const catMatch = (q.category || "").toLowerCase() === needle;
+          const tagMatch = q.tags?.some((t) => t.toLowerCase() === needle) || false;
+          return catMatch || tagMatch;
+        });
+      }
+    }
   // If no quotes match the category, use all quotes (ensures we always have quotes)
-  if (availableQuotes.length === 0) {
-    availableQuotes = BOOSTLLY_FALLBACK_QUOTES;
+    if (pool.length === 0) {
+      pool = all;
+    }
   }
-  
-  // Use provided storage or fallback to global storage reference
-  // This allows providers (which don't have storage) to still track history
-  const effectiveStorage = storage || globalStorageRef;
-  
-  // IMPROVEMENT: Enhanced selection algorithm with circular rotation and history tracking
-   const today = new Date();
+
+  const effectiveStorage = (storage || globalStorageRef) as StorageLike | null;
+
+  const now = new Date();
+  const todayKey = getTodayKeyLocal(now);
+  const cutoffKey = dateMinusDaysKey(HISTORY_DAYS);
+
+  // Deterministic seed: day + hour + category length + pool size
    const dayOfYear = Math.floor(
-     (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) /
-       (1000 * 60 * 60 * 24),
-   );
-   const year = today.getFullYear();
-   const month = today.getMonth() + 1;
-   const day = today.getDate();
-  const hour = today.getHours();
-  
-  // Calculate base index from date (deterministic per day)
-  // Use larger prime numbers for better distribution
-  const dateSeed = (dayOfYear * 17 + year * 7 + month * 13 + day * 19) % availableQuotes.length;
-  
-  // Add hour-based offset for time variation (changes every hour)
-  const hourOffset = (hour * 23) % Math.min(availableQuotes.length, 24);
-  
-  // Use rotating index: (dateSeed + hourOffset) % length
-  // This ensures circular rotation through all quotes
-  let quoteIndex = (dateSeed + hourOffset) % availableQuotes.length;
-  
-  // CRITICAL FIX: Filter out recently shown quotes and find best available quote
-  if (effectiveStorage && typeof effectiveStorage.getSync === 'function') {
+    (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24),
+  );
+  const seed =
+    now.getFullYear() * 100000 + dayOfYear * 100 + now.getHours() * 10 + (pool.length % 10);
+
+  const shuffled = seededShuffle(pool, seed);
+
+  // History logic uses quoteId (compact storage)
+  let history: Array<{ quoteId: string; date: string; timestamp: number }> = [];
+  if (effectiveStorage?.getSync) {
     try {
-      const quoteHistory = effectiveStorage.getSync('quoteHistory') || [];
-      // Use same date format as quote service for consistency
-      const todayStr = getDateKey(today, "local");
-      const cutoffDateObj = new Date();
-      cutoffDateObj.setDate(cutoffDateObj.getDate() - 7);
-      const cutoffDate = getDateKey(cutoffDateObj, "local");
-      
-      const recentQuotes = quoteHistory
-        .filter((entry: any) => {
-          if (!entry || !entry.date || !entry.quote) return false;
-          // Use string comparison for dates (YYYY-MM-DD format) - same as quote service
-          const entryDate = String(entry.date).trim();
-          // Check if entry is within last 7 days using string comparison
-          return entryDate >= cutoffDate && entryDate <= todayStr;
-        })
-        .map((entry: any) => entry.quote);
-      
-      const quotesAreEqual = (q1: Quote, q2: Quote): boolean => {
-        if (q1.id && q2.id && q1.id === q2.id) return true;
-        const text1 = (q1.text || '').trim().toLowerCase();
-        const text2 = (q2.text || '').trim().toLowerCase();
-        const author1 = (q1.author || '').trim().toLowerCase();
-        const author2 = (q2.author || '').trim().toLowerCase();
-        return text1 === text2 && author1 === author2;
-      };
-      
-      // CRITICAL FIX: Try to find a quote that hasn't been shown recently
-      // Rotate through ALL available quotes to ensure circular rotation
-      let attempts = 0;
-      let selectedQuote = availableQuotes[quoteIndex];
-      const maxAttempts = Math.min(availableQuotes.length, 50); // Limit attempts for performance
-      
-      // First, try to find a quote that hasn't been shown in last 7 days
-      while (attempts < maxAttempts) {
-        const isRecent = recentQuotes.some((recent: Quote) => quotesAreEqual(recent, selectedQuote));
-        if (!isRecent) {
-          break; // Found a quote that hasn't been shown recently - use it!
-        }
-        // Try next quote in rotation (circular)
-        quoteIndex = (quoteIndex + 1) % availableQuotes.length;
-        selectedQuote = availableQuotes[quoteIndex];
-        attempts++;
-      }
-      
-      // CRITICAL FIX: If all quotes were shown recently, find the one shown longest ago
-      // This ensures circular rotation - quotes cycle through before repeating
-      if (attempts >= maxAttempts && recentQuotes.length > 0) {
-        let oldestQuote: Quote | null = null;
-        let oldestTimestamp = Infinity;
-        let neverShownQuote: Quote | null = null;
-        
-        // Check all available quotes to find:
-        // 1. Quotes never shown (preferred)
-        // 2. Quote shown longest ago (fallback)
-        for (const quote of availableQuotes) {
-          const historyEntry = quoteHistory.find((entry: any) => {
-            if (!entry || !entry.quote) return false;
-            return quotesAreEqual(entry.quote, quote);
-          });
-          
-          if (!historyEntry) {
-            // This quote was never shown - use it immediately!
-            neverShownQuote = quote;
-            break;
-          }
-          
-          // Track the quote shown longest ago
-          const entryTimestamp = historyEntry.timestamp || 0;
-          if (entryTimestamp < oldestTimestamp) {
-            oldestTimestamp = entryTimestamp;
-            oldestQuote = quote;
-          }
-        }
-        
-        // Use never-shown quote if available, otherwise use oldest quote
-        if (neverShownQuote) {
-          selectedQuote = neverShownQuote;
-        } else if (oldestQuote) {
-          selectedQuote = oldestQuote;
-        }
-        // If somehow we still don't have a quote, selectedQuote already has a value from rotation
-      }
-      
-      // Update history with selected quote
-      try {
-        // Use same date format as quote service (YYYY-MM-DD via getDateKey)
-        const todayStr = getDateKey(today, "local");
-        const history = effectiveStorage.getSync('quoteHistory') || [];
-        
-        // Remove existing entries for same quote (deduplicate)
-        const filteredHistory = history.filter((entry: any) => {
-          if (!entry || !entry.quote) return true;
-          return !quotesAreEqual(entry.quote, selectedQuote);
-        });
-        
-        // Add new entry
-        filteredHistory.push({
-          quote: selectedQuote,
-          date: todayStr,
-          timestamp: Date.now(),
-        });
-        
-        // Keep only last 100 entries to prevent storage bloat
-        const trimmedHistory = filteredHistory.slice(-100);
-        effectiveStorage.setSync('quoteHistory', trimmedHistory);
-      } catch (historyError) {
-        console.warn('[Boostlly] Failed to update quote history:', historyError);
-      }
-      
-      // Return quote with proper source
-      return {
-        ...selectedQuote,
-        source: "Local",
-      };
-    } catch (error) {
-      console.warn('[Boostlly] Failed to filter quote history, using date-based selection:', error);
+      history = safeArray(effectiveStorage.getSync(HISTORY_KEY));
+    } catch {
+      history = [];
     }
   }
-  
-  // Fallback: Use date-based selection if history tracking fails
-  const selectedQuote = availableQuotes[quoteIndex];
-  
-  // IMPROVEMENT: Ensure quote has proper source and is valid
-  if (!selectedQuote || !selectedQuote.text) {
-    // Fallback to first available quote if selection is invalid
-    const fallback = availableQuotes[0] || BOOSTLLY_FALLBACK_QUOTES[0];
-    if (fallback) {
-      return {
-        ...fallback,
+
+  const recentIds = new Set(
+    history
+      .filter((h) => h?.quoteId && isWithinRange(h.date, cutoffKey, todayKey))
+      .map((h) => h.quoteId),
+  );
+
+  // Pick first not in recent
+  let selected = shuffled.find((q) => !recentIds.has(q.id)) || shuffled[0];
+
+  // If all were recent, pick oldest (least recently used)
+  if (selected && recentIds.has(selected.id) && history.length) {
+    const lastSeen = new Map<string, number>();
+    for (const h of history) {
+      if (!h?.quoteId) continue;
+      lastSeen.set(h.quoteId, Math.max(lastSeen.get(h.quoteId) || 0, h.timestamp || 0));
+    }
+
+    let best = shuffled[0];
+    let bestTs = Infinity;
+    for (const q of shuffled) {
+      const ts = lastSeen.get(q.id);
+      if (ts == null) {
+        return { ...q, source: "Local" }; // never shown -> best
+      }
+      if (ts < bestTs) {
+        bestTs = ts;
+        best = q;
+      }
+    }
+    selected = best;
+  }
+
+  // Ensure we have a valid quote
+  if (!selected || !selected.text) {
+    selected = all[0] || {
+      id: "local-fallback-2",
+      text: "Keep going. One step at a time.",
+      author: "Local",
+      category: "🌟 General",
         source: "Local",
       };
+  }
+
+  // Update history
+  if (effectiveStorage?.setSync) {
+    try {
+      const next = history
+        .filter((h) => h?.quoteId !== selected.id) // dedupe
+        .concat([{ quoteId: selected.id, date: todayKey, timestamp: Date.now() }])
+        .slice(-150); // keep last 150
+
+      effectiveStorage.setSync(HISTORY_KEY, next);
+    } catch {
+      // ignore storage errors
     }
   }
-  
-  // IMPROVEMENT: Set source to "Local" instead of "Boostlly" for better UI display
-  return {
-    ...selectedQuote,
-    source: "Local", // Better than "Boostlly" for user-facing display
-  };
+
+  return { ...selected, source: "Local" };
 }
 
 /**
@@ -2397,12 +2141,29 @@ export function getRandomFallbackQuote(category?: string, storage?: any): Quote 
  * @returns Array of quotes matching the category
  */
 export function getFallbackQuotesByCategory(category: string): Quote[] {
-  const mappedCategory = CATEGORY_ALIASES[category.toLowerCase()] || category;
-  
-  return BOOSTLLY_FALLBACK_QUOTES.filter(
-    quote => quote.category === mappedCategory || 
-    quote.tags?.includes(category.toLowerCase())
-  );
+  const normalized = normalizeCategory(category);
+  if (!normalized) {
+    return [];
+  }
+
+  const needle = normalized.toLowerCase();
+  // Check if it's a category group (combined categories)
+  const group = CATEGORY_GROUPS[category.toLowerCase()];
+  if (group) {
+    // Match any category in the group
+    return BOOSTLLY_FALLBACK_QUOTES.filter((q) => {
+      const catMatch = group.some((cat) => (q.category || "").toLowerCase() === cat.toLowerCase());
+      const tagMatch = q.tags?.some((t) => t.toLowerCase() === needle) || false;
+      return catMatch || tagMatch;
+    });
+  }
+
+  // Single category match
+  return BOOSTLLY_FALLBACK_QUOTES.filter((q) => {
+    const catMatch = (q.category || "").toLowerCase() === needle;
+    const tagMatch = q.tags?.some((t) => t.toLowerCase() === needle) || false;
+    return catMatch || tagMatch;
+  });
 }
 
 /**
@@ -2413,12 +2174,17 @@ export function getFallbackQuotesByCategory(category: string): Quote[] {
 export function searchFallbackQuotes(query: string): Quote[] {
   const normalizedQuery = query.toLowerCase();
   
-  return BOOSTLLY_FALLBACK_QUOTES.filter(quote =>
+  return BOOSTLLY_FALLBACK_QUOTES.filter((quote) => {
+    // Guard against malformed quotes
+    if (!quote || !quote.text) return false;
+
+    return (
     quote.text.toLowerCase().includes(normalizedQuery) ||
     quote.author?.toLowerCase().includes(normalizedQuery) ||
     quote.category?.toLowerCase().includes(normalizedQuery) ||
-    quote.tags?.some(tag => tag.toLowerCase().includes(normalizedQuery))
+      quote.tags?.some((tag) => tag.toLowerCase().includes(normalizedQuery))
   );
+  });
 }
 
 /**
@@ -2468,4 +2234,45 @@ export function getFallbackStats(): {
     tags: Array.from(tags).sort(),
     quotesPerCategory,
   };
+}
+
+/**
+ * Find duplicate quotes in the fallback collection
+ * Useful for validation and ensuring "duplicates removed" stays true
+ * @returns Array of duplicate entries with first occurrence ID and duplicate ID
+ */
+export function findDuplicateFallbackQuotes(): Array<{
+  key: string;
+  firstId: string;
+  dupId: string;
+  text: string;
+  author: string;
+}> {
+  const seen = new Map<string, string>(); // key -> id
+  const dups: Array<{
+    key: string;
+    firstId: string;
+    dupId: string;
+    text: string;
+    author: string;
+  }> = [];
+
+  for (const q of BOOSTLLY_FALLBACK_QUOTES) {
+    if (!q.text || !q.author) continue; // skip malformed quotes
+    const key = `${(q.text || "").trim().toLowerCase()}__${(q.author || "").trim().toLowerCase()}`;
+    const first = seen.get(key);
+    if (first) {
+      dups.push({
+        key,
+        firstId: first,
+        dupId: q.id,
+        text: q.text,
+        author: q.author,
+      });
+    } else {
+      seen.set(key, q.id);
+    }
+  }
+
+  return dups;
 }
